@@ -1,0 +1,12 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens are placeholders until the Nivomi design system is defined
+ * (BMAD UX phase). Components should reference these tokens, never raw colors.
+ */
+@theme {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --color-surface: #ffffff;
+  --color-ink: #0f172a;
+  --color-muted: #475569;
+}
