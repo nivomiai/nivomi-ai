@@ -1,0 +1,12 @@
+node_modules
+dist
+.next
+coverage
+playwright-report
+test-results
+package-lock.json
+next-env.d.ts
+
+# Vendored BMAD Method installation — managed by `npx bmad-method install`
+_bmad
+.claude/skills
