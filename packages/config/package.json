@@ -1,0 +1,26 @@
+{
+  "name": "@nivomi/config",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Centralized, fail-fast environment configuration and validation",
+  "type": "module",
+  "exports": {
+    ".": {
+      "@nivomi/source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test:unit": "vitest run",
+    "clean": "rimraf dist"
+  },
+  "dependencies": {
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "vitest": "5.0.1"
+  }
+}
