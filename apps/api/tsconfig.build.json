@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // Emit against the built output of workspace packages (their dist/).
+    "customConditions": [],
+    "noEmit": false,
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts"]
+}

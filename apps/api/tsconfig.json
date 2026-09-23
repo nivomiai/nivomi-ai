@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    // Resolve workspace packages to their TypeScript source for typechecking
+    // and editor navigation, so no prior build is needed.
+    "customConditions": ["@nivomi/source"],
+    "noEmit": true
+  },
+  "include": ["src", "test", "vitest.config.ts"]
+}
