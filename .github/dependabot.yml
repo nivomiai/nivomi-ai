@@ -5,7 +5,7 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 10
-    target-branch: development
+    target-branch: develop
     groups:
       # Minor and patch updates arrive as one weekly PR; majors stay separate
       # so each gets its own review (CLAUDE.md: no uncontrolled upgrades).
@@ -16,4 +16,4 @@ updates:
     directory: /
     schedule:
       interval: weekly
-    target-branch: development
+    target-branch: develop
