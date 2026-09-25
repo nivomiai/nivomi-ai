@@ -16,6 +16,16 @@ Foundation only (bootstrap, 2026-09): npm-workspaces monorepo, NestJS API with l
 health check, Next.js shell, centralized env validation, tests, CI. **No product features, no
 database, no auth yet.** Next step is the BMAD planning phase (see docs/ROADMAP.md).
 
+## Platform decisions (accepted — see ADRs before touching these areas)
+
+India first, jurisdiction rules as data in a `ComplianceEngine` (ADR-014) · languages en, hi, ml,
+ta, te, kn · Exotel telephony via `VoiceProvider`, Sarvam streaming STT/TTS, LLM via
+`LLMProvider`/`LLMRouter`, barge-in + fallback, < 1.5–2 s turn-latency target (ADR-011) · HubSpot
+per-organization OAuth via `CRMProvider`, Nivomi DB authoritative (ADR-012) · Razorpay via
+`PaymentProvider`, Nivomi-owned billing (ADR-013) · Clerk authN + Clerk Organizations, Nivomi-owned
+authZ (ADR-009) · AWS ap-south-1 on ECS Fargate, RDS, ElastiCache, S3 (ADR-010). Vendor specifics
+must come from current official docs, never memory.
+
 ## Commands (npm workspaces — do not use pnpm/yarn)
 
 | Command                    | Purpose                                                                  |
@@ -81,9 +91,10 @@ authenticated membership — never from client-supplied IDs. Enforce isolation i
 repository, queue payloads, workers, files, AI tools, exports, webhooks. Every data-touching story
 ships cross-tenant access tests.
 
-**AuthZ.** Centralized policies (RBAC: SUPER_ADMIN, ORG_OWNER, ORG_ADMIN, MANAGER, AGENT, OPERATOR,
-VIEWER), never ad-hoc checks in controllers/components. Super Admin actions are always audited;
-no hidden bypasses.
+**AuthZ.** Clerk proves identity; Nivomi decides permissions. Centralized policies (RBAC: OWNER,
+ADMIN, MANAGER, AGENT, ANALYST, VIEWER; platform SUPER_ADMIN granted only in Nivomi's DB), never
+ad-hoc checks in controllers/components or Clerk role strings in business code. Super Admin
+actions are always audited; no hidden bypasses.
 
 **Config & secrets.** All config goes through `@nivomi/config` (`parseEnv` + zod). Services inject
 `API_ENV`, never read `process.env`. No fallback secrets; production fails fast. Only
@@ -100,7 +111,9 @@ audit flag, timeout, retry, rate limit, side-effect definition. Never give the m
 filesystem, code execution or arbitrary HTTP. Meter tokens/cost per call; guard against loops.
 
 **Outbound communication** always passes the eligibility engine (consent, DNC, status, hours,
-retries, cooldown, jurisdiction, budget → ELIGIBLE / BLOCKED / DEFERRED / REQUIRES_REVIEW).
+retries, cooldown, jurisdiction, budget → ELIGIBLE / BLOCKED / DEFERRED / REQUIRES_REVIEW), which
+delegates regulatory rules to the `ComplianceEngine`. Fail closed: unknown jurisdiction or missing
+rules never allow a call. No regulatory rule is hard-coded in campaign or voice code.
 
 **Async & events.** Campaigns, imports, exports, CRM sync, AI post-processing run in queues —
 never in an HTTP request. Jobs have identity, idempotency, timeout, backoff, dead-letter. Events

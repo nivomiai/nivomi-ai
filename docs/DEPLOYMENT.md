@@ -28,10 +28,12 @@ Each app documents its variables in its own `.env.example`.
 → lint → typecheck → unit → integration → build → dependency audit → Playwright E2E. Any failure
 blocks the merge once branch protection is enabled on the remote.
 
-## Production (not yet decided)
+## Production (decided, not built)
 
-Hosting platform, regions, container strategy and CD are **undecided** (product-brief open
-question 7). Requirements the chosen platform must meet:
+AWS **ap-south-1 (Mumbai)** per [ADR-010](decisions/ADR-010-hosting-aws.md): ECS on Fargate (API,
+web, workers) with images in ECR, ALB (HTTP + WebSocket), CloudFront, RDS PostgreSQL, ElastiCache
+Redis, S3, Secrets Manager, KMS, CloudWatch. No infrastructure exists yet; it is created as code
+by the first infrastructure story. Requirements:
 
 - Deploys only from `main` after CI passes, then runs smoke tests (health, key flow).
 - Database migrations run as a separate, reviewed step; never destructive automatically.

@@ -19,7 +19,9 @@
 
 ## Planned (not implemented)
 
-Authentication (MFA-ready) and session security · RBAC policies and resource permissions · tenant
+Authentication and MFA via Clerk, with Nivomi-owned RBAC (ADR-009) · DPDP Act compliance
+(notice, consent, retention, data-principal rights; ADR-014) · KMS envelope encryption for
+HubSpot/provider tokens (ADR-010, ADR-012) · RBAC policies and resource permissions · tenant
 isolation at repository/DB level (+ possible RLS, ADR-008) · rate limiting (Redis-backed, so it
 works across instances) · CSRF protection for cookie sessions · encrypted provider credentials
 (envelope encryption, masked, rotatable) · webhook signature verification and replay protection ·

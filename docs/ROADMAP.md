@@ -9,27 +9,34 @@ BMAD installation, engineering rules (`CLAUDE.md`).
 
 ## Phase 1: Planning (next)
 
-1. Resolve the open questions in [planning/product-brief.md](planning/product-brief.md)
-   (markets/jurisdictions, first providers, auth approach, hosting).
-2. `bmad-prd`: PRD with MVP scope and measurable acceptance criteria → `docs/planning/prd.md`.
-3. `bmad-ux`: key flows and design tokens for the org app and Super Admin.
-4. `bmad-architecture`: data model, tenancy enforcement, auth, queues/outbox, provider interfaces;
-   accept ADR-008 (data access).
-5. `bmad-create-epics-and-stories` → `bmad-sprint-planning`.
+1. ✅ Launch decisions resolved (2026-09-25): India, Exotel, Sarvam, HubSpot, Razorpay, Clerk, AWS
+   ap-south-1 (ADR-009 to ADR-014).
+2. India compliance research (`bmad-deep-recon`): TRAI/TCCCPR/DLT, DND, DPDP Act, recording;
+   feeds ADR-014 and the PRD.
+3. `bmad-prd`: PRD for the MVP journey with measurable acceptance criteria → `docs/planning/prd.md`.
+4. `bmad-ux`: key flows and design tokens for the org app and Super Admin.
+5. `bmad-architecture`: data model, tenancy enforcement, queues/outbox, voice runtime; accept
+   ADR-008 (data access).
+6. LLM evaluation plan for Indic-language sales calls (default model for `LLMRouter`).
+7. `bmad-create-epics-and-stories` → `bmad-sprint-planning`.
 
-## Phase 2: Platform core (expected first epics, to be confirmed by the PRD)
+## Phase 2: Platform core (expected epics, to be confirmed by the PRD)
 
 - Data foundation: PostgreSQL + migrations, Docker Compose for local PG/Redis, readiness check.
-- Identity and tenancy: organizations, memberships, RBAC, tenant-isolation test suite, audit log.
-- Super Admin basics: organizations, users, plans/limits, feature flags.
+- Identity and tenancy: Clerk integration, organization/membership sync, Nivomi RBAC,
+  tenant-isolation test suite, audit log.
+- Super Admin basics: organizations, users, plans/limits, provider configuration, feature flags.
 - Customer model, status engine and CSV/Excel import pipeline (async).
+- AWS infrastructure as code and CI deploy stage.
 
-## Phase 3: Voice MVP
+## Phase 3: MVP journey
 
-Provider interfaces + first adapters (LLM, STT, TTS, telephony), AI tool registry, eligibility
-engine, a single outbound campaign flow end to end, usage metering.
+Lead → AI outbound call → qualification → appointment → human handoff → transcript → AI summary →
+HubSpot sync → usage → analytics. Covers the eligibility + ComplianceEngine (India rules), voice
+runtime (Exotel + Sarvam streaming, LLMRouter, barge-in, fallback), AI tool registry, HubSpot
+OAuth and sync worker, usage metering and Razorpay subscription billing, and MVP analytics.
 
 ## Later
 
-CRM integration, workflows, billing, analytics, additional providers. Items deferred beyond MVP
-are listed in the product brief.
+Additional CRMs, telephony and speech providers, advanced workflows and analytics, other
+jurisdictions, SSO, multi-region. See the product brief's MVP boundary.

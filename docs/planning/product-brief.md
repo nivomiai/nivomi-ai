@@ -1,8 +1,8 @@
 # Nivomi AI — Product Brief
 
-> **Status:** Draft input for the BMAD PRD workflow (`bmad-prd`). Captured from the founding
-> engineering brief (2026-09-23). Nothing here is implemented yet. Open questions at the end must
-> be resolved during PRD/architecture.
+> **Status:** Input for the BMAD PRD workflow (`bmad-prd`). Captured from the founding engineering
+> brief (2026-09-23); launch decisions resolved 2026-09-25 (see [Resolved decisions](#resolved-decisions)).
+> Nothing here is implemented yet.
 
 ## Vision
 
@@ -13,18 +13,20 @@ for day-to-day operation.
 
 ## Customers / tenancy
 
+- **Target persona (MVP):** SMB and mid-market sales teams in India.
 - **Individual users**: a single-seat account.
-- **Organizations**: teams with roles (ORG_OWNER, ORG_ADMIN, MANAGER, AGENT, OPERATOR, VIEWER).
+- **Organizations**: teams with roles Owner, Admin, Manager, Agent, Analyst, Viewer.
 - **Enterprise / custom tenants**: custom limits, integrations, later SSO and custom roles.
-- **Platform operator**: SUPER_ADMIN, operating the platform through a control plane.
+- **Platform operator**: Super Admin, operating the platform through a control plane.
 
 ## Core value flow
 
 ```
-Organization → Users/Roles → Customer data (CRM, Excel/CSV, API)
-  → Unified customer model → Status & eligibility engine
-  → AI agent runtime → Voice/communication → Conversation & decision
-  → Business action → CRM / workflow → Analytics → Usage & billing
+Organization → Users/Roles → Customer data (HubSpot, Excel/CSV, API)
+  → Unified customer model → Status engine → Eligibility (incl. ComplianceEngine)
+  → AI agent runtime → VoiceProvider (Exotel) + Sarvam STT/TTS + LLMRouter
+  → Conversation & decision → Business action → Nivomi DB → Event/queue
+  → CRM sync worker → HubSpot (the organization's own account) → Analytics → Usage & billing
 ```
 
 ## Capabilities
@@ -58,14 +60,55 @@ Explicitly **deferred** unless approved: additional CRMs beyond the first, advan
 multi-region, advanced SSO, API marketplace, advanced AI evaluation, lead scoring, dedicated
 tenant infrastructure.
 
-## Open questions (resolve in PRD / architecture)
+## MVP journey
 
-1. **Launch markets and jurisdictions**: which countries first? This drives calling-hour, consent
-   and DNC rules (e.g. TCPA, GDPR, national DND registries) and data residency.
-2. **First voice/telephony provider** and phone-number strategy.
-3. **Default LLM, STT and TTS providers** and latency budget for live calls.
-4. **First CRM** integration.
-5. **Billing/payment provider** and pricing model (per-minute, seats, tiers).
-6. **Authentication approach**: build on a library vs. managed identity provider; MFA timing.
-7. **Hosting platform and region(s)**.
-8. **MVP persona and first workflow**: which single end-to-end journey proves value first?
+The MVP proves one complete end-to-end workflow rather than breadth of AI automation:
+
+```
+Lead → AI outbound call → Qualification → Interested / Not interested
+  → Appointment scheduling → Human handoff when required → Transcript
+  → AI summary → CRM sync (HubSpot) → Usage tracking → Analytics
+```
+
+## Resolved decisions
+
+Recorded 2026-09-25 by the product owner. Architecture consequences are in the ADRs.
+
+| #   | Topic                    | Decision                                                                                                                                                                                                                                                                                                                      | ADR                                                         |
+| --- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| 1   | Markets & compliance     | **India first.** Jurisdiction-aware `ComplianceEngine`; calling hours, consent, DND/opt-out, recording, privacy and retention rules are configurable per jurisdiction, never hard-coded in campaign logic. Languages: English, Hindi, Malayalam, Tamil, Telugu, Kannada                                                       | [ADR-014](../decisions/ADR-014-compliance-engine.md)        |
+| 2   | Telephony                | **Exotel** behind `VoiceProvider`. Number provisioning, ownership, routing, caller ID and number lifecycle isolated in the provider layer                                                                                                                                                                                     | [ADR-011](../decisions/ADR-011-voice-pipeline-providers.md) |
+| 3   | STT / TTS / LLM          | **Sarvam** STT and TTS. LLM is provider-independent via `LLMProvider`/`LLMRouter`; the default model is chosen by evaluation (accuracy, latency, cost, Indic-language quality, reliability, availability). Streaming STT/TTS, barge-in and provider fallback required. Turn-latency **target** (not SLA): < 1.5–2 s perceived | [ADR-011](../decisions/ADR-011-voice-pipeline-providers.md) |
+| 4   | CRM                      | **HubSpot** for MVP. Each organization connects its own HubSpot account via tenant-scoped OAuth. Nivomi PostgreSQL is authoritative for Nivomi data; sync is async with retries, idempotency, webhooks and rate-limit handling                                                                                                | [ADR-012](../decisions/ADR-012-hubspot-crm.md)              |
+| 5   | Billing                  | **Razorpay** behind `PaymentProvider`; Nivomi owns the billing domain. Subscription + included usage + metered overage, computed server-side. Tiers and included usage decided in PRD/business model                                                                                                                          | [ADR-013](../decisions/ADR-013-billing-razorpay.md)         |
+| 6   | Identity                 | **Clerk** authentication + **Clerk Organizations** for org/membership identity. Nivomi owns authorization and RBAC (Owner, Admin, Manager, Agent, Analyst, Viewer; Super Admin for the control plane). MFA supported; enforcement policy set in security/PRD                                                                  | [ADR-009](../decisions/ADR-009-identity-clerk.md)           |
+| 7   | Hosting                  | **AWS ap-south-1 (Mumbai)**: ECS/Fargate, RDS PostgreSQL, ElastiCache Redis, S3, CloudFront, ALB, ECR, Secrets Manager, KMS, CloudWatch. EKS deferred                                                                                                                                                                         | [ADR-010](../decisions/ADR-010-hosting-aws.md)              |
+| 8   | Persona & first workflow | SMB and mid-market sales teams; the MVP journey above                                                                                                                                                                                                                                                                         | —                                                           |
+
+## Still open (PRD / architecture)
+
+- Pricing tiers, included usage per plan, overage rates.
+- Default LLM model(s): needs an evaluation set of Indic-language sales conversations.
+- MFA enforcement policy per role (Super Admin at minimum).
+- **Appointment scheduling target:** HubSpot meetings, an external calendar (Google/Microsoft), or
+  a Nivomi-native calendar?
+- **Human handoff mechanism:** live call transfer via Exotel to a rep's number, a queued callback,
+  or both? What happens outside business hours?
+- Consent capture: how do customers prove consent for imported leads?
+- Recording and transcript retention defaults per jurisdiction.
+
+## Compliance items to verify (from official sources, before the PRD is final)
+
+These are known to be relevant for AI outbound calling in India but must be confirmed against
+current regulator and provider documentation, not assumed:
+
+- TRAI commercial-communication rules (TCCCPR) and the DND / National Customer Preference
+  Register: registration obligations, DLT (distributed-ledger) consent and header registration,
+  permitted number series for promotional vs. transactional/service calls, calling-hour limits.
+- Digital Personal Data Protection Act 2023 and its Rules: notice, consent, purpose limitation,
+  retention, data-principal rights, breach reporting, cross-border transfer.
+- Call recording and AI-disclosure expectations.
+- Data residency of third parties that hold personal data (Clerk, Sarvam, the chosen LLM
+  provider, HubSpot, Razorpay) relative to hosting in ap-south-1.
+
+Suggested method: `bmad-deep-recon` (domain research) → findings feed ADR-014 and the PRD.

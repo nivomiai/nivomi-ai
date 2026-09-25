@@ -71,6 +71,31 @@ flowchart TB
   API -. outbox events .-> Redis
 ```
 
+Initial providers and hosting (ADR-009 to ADR-014):
+
+```mermaid
+flowchart TB
+  Org[Organization / user<br/>Clerk + Clerk Organizations] --> Campaign[AI voice campaign]
+  SA[Super Admin control plane] -.-> Campaign
+  Campaign --> Elig[Eligibility engine]
+  Elig --> Compliance[ComplianceEngine<br/>India rule set]
+  Elig --> Voice[VoiceProvider → Exotel]
+  Voice <--> STT[STTProvider → Sarvam, streaming]
+  Voice <--> TTS[TTSProvider → Sarvam, streaming]
+  STT --> LLM[LLMRouter → LLMProvider]
+  LLM --> TTS
+  LLM --> Conv[Conversation + AI tools]
+  Conv --> DB[(Nivomi PostgreSQL<br/>source of truth)]
+  DB --> Outbox[Outbox → queue]
+  Outbox --> CRMW[CRM sync worker]
+  CRMW --> CRM[CRMProvider → HubSpot<br/>the organization's own account]
+  DB --> Usage[Usage metering → PaymentProvider → Razorpay]
+```
+
+Everything runs in AWS ap-south-1 on ECS Fargate with RDS PostgreSQL, ElastiCache Redis and S3.
+The voice runtime is a separate stateful worker service because calls are long-lived streaming
+sessions.
+
 Key rules (full list in [CLAUDE.md](../CLAUDE.md)):
 
 - **Tenancy:** every tenant-owned row has `organization_id`; tenant context comes from the
