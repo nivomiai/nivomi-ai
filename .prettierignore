@@ -13,3 +13,7 @@ _bmad
 
 # Generated research briefings (rendered from research.md)
 **/research-briefing.html
+
+# BMAD skill memory logs: append-only, machine-written by _bmad/scripts/memlog.py
+# (CRLF on Windows); Git normalizes them to LF on commit.
+**/.memlog.md
