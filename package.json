@@ -28,7 +28,7 @@
     "clean": "npm run clean --workspaces --if-present && rimraf coverage playwright-report test-results"
   },
   "devDependencies": {
-    "@eslint/js": "9.39.5",
+    "@eslint/js": "10.0.1",
     "@next/eslint-plugin-next": "16.3.6",
     "@playwright/test": "1.63.0",
     "@types/node": "22.20.4",
