@@ -111,4 +111,7 @@ current regulator and provider documentation, not assumed:
 - Data residency of third parties that hold personal data (Clerk, Sarvam, the chosen LLM
   provider, HubSpot, Razorpay) relative to hosting in ap-south-1.
 
-Suggested method: `bmad-deep-recon` (domain research) → findings feed ADR-014 and the PRD.
+Researched 2026-09-25 (`bmad-deep-recon`, domain): see
+[India compliance research](research/domain-india-ai-outbound-calling-compliance-2026-09-25/research.md).
+Its recommendations R1–R4 feed ADR-014 and the PRD; its open questions need Exotel and Indian
+counsel.

@@ -26,6 +26,15 @@ India and must be able to add jurisdictions without rewriting campaign logic.
 - India is the first rule set. Its contents come from verified regulator sources (product-brief
   compliance items), reviewed before launch.
 
+## Evidence
+
+The India rule set v1 is specified in recommendation R1 of the
+[India compliance research](../planning/research/domain-india-ai-outbound-calling-compliance-2026-09-25/research.md)
+(2026-09-25): TRAI TCCCPR as amended in 2025 and 2026 (140xx/1601xx series, DLT registration, A2P
+declaration, preferences and time bands, inquiry window, complaint thresholds), DPDP from ~13 May
+2027, CERT-In now, and AI-disclosure by default. Items the research could not settle are listed in
+its open questions and must be confirmed by counsel before the rules are marked final.
+
 ## Consequences
 
 - Fail-closed: missing configuration or an unreachable DND source blocks or defers calls; it

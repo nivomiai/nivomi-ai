@@ -10,3 +10,6 @@ next-env.d.ts
 # Vendored BMAD Method installation — managed by `npx bmad-method install`
 _bmad
 .claude/skills
+
+# Generated research briefings (rendered from research.md)
+**/research-briefing.html

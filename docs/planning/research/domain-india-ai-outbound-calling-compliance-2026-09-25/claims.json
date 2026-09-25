@@ -1,0 +1,152 @@
+[
+  {
+    "claim": "AI sales/lead-qualification calls, incl. prospects who inquired but have not bought, are Promotional Voice Calls; mixed content makes a call promotional; promotional only from 140xx",
+    "class": "regulatory",
+    "pub_date": "2025-02",
+    "ref": 1
+  },
+  {
+    "claim": "Third Amendment (05 of 2026) defines A2P incl. artificial voice; A2P CLI ranges must be declared and recorded on DLT; undeclared A2P = UCC; adopted 18 Sep 2026, not yet gazetted",
+    "class": "regulatory",
+    "pub_date": "2026-09",
+    "ref": 2
+  },
+  {
+    "claim": "Sender suspension at >=5 unique complaints in 10 days, or >=3 with an operator AI/ML flag",
+    "class": "enforcement",
+    "pub_date": "2026-09",
+    "ref": 5
+  },
+  {
+    "claim": "First violation bars all sender resources 15 days; repeat -> 1-year disconnection and blacklisting",
+    "class": "enforcement",
+    "pub_date": "2025-04",
+    "ref": 7
+  },
+  {
+    "claim": "7-day complaint window; written advance notice of auto-dialer/robo-call use required since Feb 2025",
+    "class": "regulatory",
+    "pub_date": "2025-04",
+    "ref": 6
+  },
+  {
+    "claim": "Written/digital inquiry creates a 7-day Relationship (inferred consent), kept verifiable; DND override not stated",
+    "class": "regulatory",
+    "pub_date": "2026-09",
+    "ref": 16
+  },
+  {
+    "claim": "No statutory calling window; time bands 21:00-10:00 default OFF for promotional; service/transactional not time-blockable",
+    "class": "regulatory",
+    "pub_date": "2026-03",
+    "ref": 4
+  },
+  {
+    "claim": "1600-series mandatory for RBI/SEBI/PFRDA-regulated entities, phased Jan-Mar 2026",
+    "class": "regulatory",
+    "pub_date": "2025-11",
+    "ref": 8
+  },
+  {
+    "claim": "CCPA 2026 working draft would require audible AI disclosure at call outset; official status and scope over registered 140xx senders unconfirmed",
+    "class": "regulatory",
+    "pub_date": "2026-09",
+    "ref": 19
+  },
+  {
+    "claim": "IT Rules 2026 synthetic-audio disclosure binds intermediaries; no telephony application found",
+    "class": "regulatory",
+    "pub_date": "2026-02",
+    "ref": 21
+  },
+  {
+    "claim": "Vibhor Garg v. Neha: secretly recorded calls admissible; lawfulness of participant recording not decided",
+    "class": "case-law",
+    "pub_date": "2025-07",
+    "ref": 23
+  },
+  {
+    "claim": "DPDP Rules core obligations commence ~13/14 May 2027; Consent Managers ~Nov 2026",
+    "class": "regulatory",
+    "pub_date": "2025-11",
+    "ref": 28
+  },
+  {
+    "claim": "Jan 2026 acceleration proposal targeted SDFs and remained a consultation; no amendment notified",
+    "class": "regulatory",
+    "pub_date": "2026-02",
+    "ref": 32
+  },
+  {
+    "claim": "Calling purchased/third-party lists needs DPDP consent; follow-up of own inquiry may rely on s.7(a) (inference)",
+    "class": "regulatory",
+    "pub_date": "2023-08",
+    "ref": 29
+  },
+  {
+    "claim": "Nivomi is a processor for tenant lead data only absent own-purpose reuse; vendor autonomy may make it (joint) fiduciary",
+    "class": "regulatory",
+    "pub_date": "2023-12",
+    "ref": 38
+  },
+  {
+    "claim": "CERT-In: 6-hour incident reporting; 180-day ICT logs retained in India; NTP sync",
+    "class": "regulatory",
+    "pub_date": "2022-04",
+    "ref": 34
+  },
+  {
+    "claim": "No India-only inference for Claude on Bedrock (Global endpoint only in ap-south-1/2)",
+    "class": "gatekeeper-policy",
+    "pub_date": "2026-09",
+    "ref": 54
+  },
+  {
+    "claim": "India geo inference profile on Bedrock exists for OpenAI GPT-5.6 Terra/Luna",
+    "class": "gatekeeper-policy",
+    "pub_date": "2026-08",
+    "ref": 55
+  },
+  {
+    "claim": "HubSpot hosts data in US/EU/CA/AU only; no India option",
+    "class": "gatekeeper-policy",
+    "pub_date": "2026-09",
+    "ref": 61
+  },
+  {
+    "claim": "Sarvam trains on customer content unless opted out (privacy policy) vs consent-based (terms)",
+    "class": "gatekeeper-policy",
+    "pub_date": "2026-07",
+    "ref": 52
+  },
+  {
+    "claim": "Exotel: voice needs no DLT (undated FAQ) vs TRAI registration rule for all commercial calls",
+    "class": "gatekeeper-policy",
+    "pub_date": "2026-09",
+    "ref": 44
+  },
+  {
+    "claim": "Exotel data stays in signup region (Mumbai/Singapore); recordings 90 days default; DPA enterprise-only",
+    "class": "gatekeeper-policy",
+    "pub_date": "2026-09",
+    "ref": 47
+  },
+  {
+    "claim": "Exotel voicebot human handoff documented only after stream ends (Passthru -> Connect)",
+    "class": "gatekeeper-policy",
+    "pub_date": "2025-07",
+    "ref": 50
+  },
+  {
+    "claim": "A multi-tenant calling platform may need registered telemarketer (aggregator) status (inference)",
+    "class": "regulatory",
+    "pub_date": "2023-06",
+    "ref": 12
+  },
+  {
+    "claim": "1,150 senders blacklisted and 18.8 lakh resources disconnected by 19 Mar 2025",
+    "class": "quantitative",
+    "pub_date": "2025-03",
+    "ref": 10
+  }
+]
