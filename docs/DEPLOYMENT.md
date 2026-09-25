@@ -24,9 +24,10 @@ Each app documents its variables in its own `.env.example`.
 
 ## CI
 
-`.github/workflows/ci.yml` runs on every PR and on pushes to `main`/`development`: install → format
+`.github/workflows/ci.yml` runs on every PR and on pushes to `main`/`develop`: install → format
 → lint → typecheck → unit → integration → build → dependency audit → Playwright E2E. Any failure
-blocks the merge once branch protection is enabled on the remote.
+blocks the merge once branch protection is enabled on the remote (settings in
+[CONTRIBUTING.md](../CONTRIBUTING.md#branch-protection)).
 
 ## Production (decided, not built)
 

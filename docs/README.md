@@ -16,6 +16,7 @@ _pending_ does not exist yet on purpose: it is written by the story that introdu
 | [DEPLOYMENT.md](DEPLOYMENT.md)                         | Partial | Local dev + CI; AWS decided, not built              |
 | [ROADMAP.md](ROADMAP.md)                               | Current | BMAD phase plan                                     |
 | [TECH_DEBT.md](TECH_DEBT.md)                           | Current | Known gaps and constraints                          |
+| [../CONTRIBUTING.md](../CONTRIBUTING.md)               | Current | Branching, commits, PRs, releases, protection       |
 | DATABASE.md                                            | Pending | With the data-access ADR-008 and first schema story |
 | AI_AGENTS.md                                           | Pending | With the AI runtime / tool registry epic            |
 | VOICE.md                                               | Pending | With the voice provider epic                        |

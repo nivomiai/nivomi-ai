@@ -149,9 +149,12 @@ works unless it was actually run. Report real status, including what was skipped
 
 ## Git
 
-`main` ← `development` ← `feature/*`, `fix/*`, `chore/*`, `docs/*`. Never work directly on `main`.
+`main` (production) ← `develop` (integration) ← `feature/*`, `bugfix/*` (also `chore/*`, `docs/*`);
+`hotfix/*` branches from `main` and merges back into both. Never commit directly to `main` or
+`develop` — every change lands by PR. Full workflow and branch protection: [CONTRIBUTING.md](CONTRIBUTING.md).
 Conventional commits (`feat(scope): …`, `fix(…)`, `test(…)`, `docs(…)`, `chore(…)`). Never commit
-`.env*` (except `.env.example`), keys, credentials, customer data or exports. Don't rewrite history.
+`.env*` (except `.env.example`), keys, credentials, customer data or exports. Don't rewrite
+history.
 
 ## Ask before
 
