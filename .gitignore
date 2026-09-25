@@ -31,10 +31,25 @@ exports/
 data-exports/
 imports/
 uploads/
+recordings/
+transcripts/
+*.sqlite
+*.sqlite3
+*.db
+
+# Infrastructure-as-code state and local cloud config (state files embed secrets)
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+cdk.out/
+.aws/
 
 # ── Dependencies ───────────────────────────────────────────────────────
 node_modules/
 .npm/
+*.tgz
 
 # ── Build output ───────────────────────────────────────────────────────
 dist/
