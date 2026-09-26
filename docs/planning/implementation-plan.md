@@ -40,6 +40,8 @@
 
 ## 3. Phases
 
+Current status, owner holds and the next phase: [status-holds-and-next.md](status-holds-and-next.md).
+
 | #                         | Phase                                  | Contents                                                                                                                                                                                                                                                                                                                                                                                                           | Depends on / blocked by                                     |
 | ------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
 | 1                         | **Platform foundation**                | `packages/database` (Drizzle, migrations, PGlite/pg); auth (ADR-018); organizations and memberships; invitations; RBAC `PermissionService` and guard; audit log; rate limiting (memory store); jobs table and worker; `EmailProvider` (dev mailbox); error envelope v2 (`success`, `retryable`); web: sign-up, login, email verification, password reset, organization setup, app shell, team, sessions, audit log | —                                                           |
