@@ -21,9 +21,14 @@ database, no auth yet.** Next step is the BMAD planning phase (see docs/ROADMAP.
 India first, jurisdiction rules as data in a `ComplianceEngine` (ADR-014) · languages en, hi, ml,
 ta, te, kn · Exotel telephony via `VoiceProvider`, Sarvam streaming STT/TTS, LLM via
 `LLMProvider`/`LLMRouter`, barge-in + fallback, < 1.5–2 s turn-latency target (ADR-011) · HubSpot
-per-organization OAuth via `CRMProvider`, Nivomi DB authoritative (ADR-012) · Razorpay via
+per-organization OAuth via `CRMProvider`, optional per org, Nivomi DB authoritative (ADR-012) · every
+source (Excel/CSV, CRM, manual, inbound) converges on the Nivomi Contact/Lead domain; campaigns never
+touch CRM objects (ADR-017) · Razorpay via
 `PaymentProvider`, Nivomi-owned billing (ADR-013) · Clerk authN + Clerk Organizations, Nivomi-owned
-authZ (ADR-009) · AWS ap-south-1 on ECS Fargate, RDS, ElastiCache, S3 (ADR-010). Vendor specifics
+authZ (ADR-009) · AWS ap-south-1 on ECS Fargate, RDS, ElastiCache, S3 (ADR-010) · SES email
+via `EmailProvider`, MSG91 OTP via `OtpProvider` (ADR-015) · OpenTelemetry → Grafana Cloud (India
+region), CloudWatch for AWS infrastructure (ADR-016). Inbound calls and human escalation are MVP
+capabilities (PRD revision 2). Vendor specifics
 must come from current official docs, never memory.
 
 ## Commands (npm workspaces — do not use pnpm/yarn)
@@ -103,7 +108,8 @@ never returned or logged. Operational settings (providers, models, limits, plans
 belong in DB/Super Admin, not source code.
 
 **Providers.** Business logic depends on interfaces (`LLMProvider`, `VoiceProvider`,
-`STTProvider`, `TTSProvider`, `CRMProvider`, `PaymentProvider`, `StorageProvider`); vendor code
+`STTProvider`, `TTSProvider`, `CRMProvider`, `PaymentProvider`, `StorageProvider`, `CalendarProvider`,
+`EmailProvider`, `OtpProvider`, `FileImportProvider`); vendor code
 lives in adapters. Use official docs for every integration — never guess an API.
 
 **AI tools.** Explicitly registered with schema, authorization, tenant scope, allowed roles,
