@@ -2,7 +2,7 @@
 title: 'Nivomi public website: MVP voice automation + Coming Soon product pages'
 type: 'feature'
 created: '2026-09-26'
-status: 'in-review'
+status: 'done'
 route: 'dispatch'
 review_loop_iteration: 0
 baseline_commit: 'f3e977d2b633c83e79e4042230d85a6b9fcc148c'
@@ -131,6 +131,20 @@ Decisions from the owner's brief (2026-09-26):
 
   E2e now asserts that the only MVP badge on a Coming Soon page is the platform card, plus the
   FAQ count.
+
+## Review Triage Log
+
+Review run inline by the implementing session (edge-case and verification-gap methods), not by
+independent sub-agents; the owner did not request sub-agents. Diff: `f3e977d..HEAD`, excluding
+the lockfile and binary assets.
+
+| #   | Finding                                                                                                                                | Verdict | Evidence / route                                                                                                                                                                                                             |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | CTA clicks did not update the form's preselected intent: Next `Link` changes the hash through `pushState`, which fires no `hashchange` | medium  | `LeadForm` subscribes only to `hashchange`, and the e2e test loaded `/#get-started` directly. Patched: `SectionLink` renders a native anchor for same-page sections; e2e "clicking the CTAs preselects the matching intent". |
+| 2   | Double-click could hand the enquiry off twice: the `status` state guard is stale within one tick                                       | low     | Patched: a ref-based `submitting` guard; e2e "a double-click hands the enquiry off only once".                                                                                                                               |
+| 3   | Coming Soon notify form (fixed intent + product) had no test                                                                           | low     | Verification gap. Patched with e2e "the Coming Soon notify form names the product".                                                                                                                                          |
+| 4   | Next logs `NoFallbackError` for the unknown-slug 404                                                                                   | false   | Expected log for `dynamicParams = false`; the route returns 404 and the e2e test asserts it.                                                                                                                                 |
+| 5   | Spec claims: no invented prices, seven analytics events, one shared template, legal warning, six languages note                        | false   | Each verified in code and by e2e; none falsified.                                                                                                                                                                            |
 
 ## Verification
 
