@@ -46,6 +46,7 @@ const AUDIT_LABELS: Record<string, string> = {
   'organization.invitation_created': 'Invited a member',
   'organization.invitation_revoked': 'Revoked an invitation',
   'organization.invitation_accepted': 'Accepted an invitation',
+  'platform.dev_seed_applied': 'Seeded the development data',
 };
 
 export function describeAuditAction(action: string): string {

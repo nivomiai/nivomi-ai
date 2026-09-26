@@ -12,6 +12,15 @@ npm run verify                                # full quality gate
 npx playwright install chromium               # once, before the first `npm run test:e2e`
 ```
 
+`npm run dev` seeds development data before the API starts (also `npm run db:seed:dev`), defined
+in `apps/api/src/dev/seed-data.ts`: organizations in every status (ACTIVE, PENDING_APPROVAL,
+SUSPENDED), a member for every tenant role, a platform Super Admin (`admin@example.com`), users in
+two organizations, open invitations (`/invite?token=<token>`) and an unverified account. Every
+account uses the password `nivomi-dev-admin`. Each start restores the declared accounts, roles,
+statuses and open invitations; rows the seed does not declare are left alone. Seed runs are audited
+as `platform.dev_seed_applied`; the seed refuses to run when `NODE_ENV=production`. PGlite allows
+one process per data directory, so run `db:seed:dev` only while `npm run dev` is stopped.
+
 ## Environments and configuration
 
 | Environment | Config source                                                                      |

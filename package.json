@@ -13,6 +13,7 @@
   ],
   "scripts": {
     "dev": "node scripts/dev.js",
+    "db:seed:dev": "npm run db:seed:dev -w @nivomi/api",
     "build": "npm run build --workspaces --if-present",
     "test": "npm run test:unit && npm run test:integration",
     "test:unit": "npm run test:unit --workspaces --if-present",

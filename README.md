@@ -28,16 +28,18 @@ integration and usage-based billing.
 npm install
 cp apps/api/.env.example apps/api/.env.local   # local only, never committed
 npm run dev            # API http://localhost:4000/api/v1/health · web http://localhost:3000
+                       # seeds dev users/orgs; e.g. admin@example.com / nivomi-dev-admin
 npm run verify         # format, lint, typecheck, tests, build, audit, e2e
 ```
 
-| Command                    | Purpose                                   |
-| -------------------------- | ----------------------------------------- |
-| `npm run verify`           | Full quality gate; the same steps CI runs |
-| `npm run test:unit`        | Vitest, colocated `src/**/*.test.ts`      |
-| `npm run test:integration` | Vitest, `apps/*/test/**`                  |
-| `npm run test:e2e`         | Playwright (run `npm run build` first)    |
-| `npm run lint` / `format`  | ESLint (zero warnings) / Prettier         |
+| Command                    | Purpose                                               |
+| -------------------------- | ----------------------------------------------------- |
+| `npm run verify`           | Full quality gate; the same steps CI runs             |
+| `npm run db:seed:dev`      | Dev users, organizations and roles (never production) |
+| `npm run test:unit`        | Vitest, colocated `src/**/*.test.ts`                  |
+| `npm run test:integration` | Vitest, `apps/*/test/**`                              |
+| `npm run test:e2e`         | Playwright (run `npm run build` first)                |
+| `npm run lint` / `format`  | ESLint (zero warnings) / Prettier                     |
 
 ## Repository
 

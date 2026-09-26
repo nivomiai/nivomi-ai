@@ -12,6 +12,13 @@ if (initial.status !== 0) {
   process.exit(initial.status ?? 1);
 }
 
+// Development data (users, organizations, roles, invitations). Runs before the API opens the
+// database because PGlite allows one process per data directory.
+const seed = spawnSync(process.execPath, ['dist/dev/seed.main.js'], { stdio: 'inherit' });
+if (seed.status !== 0) {
+  process.exit(seed.status ?? 1);
+}
+
 const children = [
   spawn(process.execPath, [tsc, ...project, '--watch', '--preserveWatchOutput'], {
     stdio: 'inherit',

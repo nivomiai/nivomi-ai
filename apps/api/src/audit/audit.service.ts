@@ -24,6 +24,7 @@ export type AuditAction =
   | 'organization.invitation_created'
   | 'organization.invitation_revoked'
   | 'organization.invitation_accepted'
+  | 'platform.dev_seed_applied'
   | 'security.cross_tenant_access_denied';
 
 export interface AuditEntry {

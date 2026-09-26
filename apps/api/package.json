@@ -8,6 +8,7 @@
     "build": "rimraf dist && tsc -p tsconfig.build.json",
     "dev": "node scripts/dev.js",
     "start": "node dist/main.js",
+    "db:seed:dev": "tsc -p tsconfig.build.json && node dist/dev/seed.main.js",
     "typecheck": "tsc --noEmit",
     "test:unit": "vitest run src/",
     "test:integration": "vitest run test/",
