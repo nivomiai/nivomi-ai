@@ -14,7 +14,7 @@ import {
   type dataSources,
   type statusChangeSources,
 } from '@nivomi/database';
-import { and, eq, inArray, notInArray, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, notInArray, sql } from 'drizzle-orm';
 import {
   DEFAULT_COUNTRY,
   cleanText,
@@ -552,7 +552,12 @@ export class IngestionEngine {
 
     const lead = await this.openLead(ctx.organizationId, contactId);
     let leadId: string;
-    if (!lead) {
+    const closed = lead ? null : await this.latestLead(ctx.organizationId, contactId);
+    if (closed) {
+      // A converted or closed Lead is never reopened by a re-import or a CRM sync.
+      leadId = closed.id;
+      notes.push(`Existing lead is ${closed.status}; it was not reopened.`);
+    } else if (!lead) {
       leadId = await this.createLead(contactId, record, ctx);
       changed = true;
     } else {
@@ -578,6 +583,16 @@ export class IngestionEngine {
 
     if (await this.linkAndSuppress(contactId, record, ctx)) changed = true;
     return { outcome: changed ? 'UPDATE' : 'SKIP', contactId, leadId, notes };
+  }
+
+  private async latestLead(organizationId: string, contactId: string) {
+    const [lead] = await this.db
+      .select({ id: leads.id, status: leads.status })
+      .from(leads)
+      .where(and(eq(leads.organizationId, organizationId), eq(leads.contactId, contactId)))
+      .orderBy(desc(leads.createdAt))
+      .limit(1);
+    return lead ?? null;
   }
 
   async openLead(organizationId: string, contactId: string) {

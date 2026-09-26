@@ -9,7 +9,8 @@ import { and, eq, isNull } from 'drizzle-orm';
 import { AuditService } from '../audit/audit.service.js';
 import { hashPassword } from '../auth/password.js';
 import { hashToken } from '../auth/tokens.js';
-import { DEV_ORGANIZATIONS, DEV_PASSWORD, DEV_USERS } from './seed-data.js';
+import { IngestionEngine, lockOrganizationIngestion } from '../leads/ingestion.js';
+import { DEV_LEADS, DEV_ORGANIZATIONS, DEV_PASSWORD, DEV_USERS } from './seed-data.js';
 
 const INVITATION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -18,14 +19,68 @@ export interface DevSeedResult {
   readonly userIds: ReadonlyMap<string, string>;
   /** Seeded organization id by slug. */
   readonly organizationIds: ReadonlyMap<string, string>;
+  /** Leads created on this run (0 when they all existed already). */
+  readonly leadsCreated: number;
 }
 
 /**
  * Brings the development dataset to its declared state: accounts (password, verification,
- * lockout, Super Admin), organization status, memberships and open invitations. Rows it does not
- * declare are left alone. Safe to run on every start.
+ * lockout, Super Admin), organization status, memberships, open invitations and demo leads. Rows
+ * it does not declare are left alone. Safe to run on every start.
  */
 export async function seedDevData(db: Database): Promise<DevSeedResult> {
+  const accounts = await seedAccounts(db);
+  const leadsCreated = await seedLeads(db, accounts.userIds, accounts.organizationIds);
+  return { ...accounts, leadsCreated };
+}
+
+/**
+ * Leads go through the real ingestion engine, so a re-run matches every existing record (SKIP)
+ * instead of duplicating it, and edits made in the app are never overwritten.
+ */
+async function seedLeads(
+  db: Database,
+  userIds: ReadonlyMap<string, string>,
+  organizationIds: ReadonlyMap<string, string>,
+): Promise<number> {
+  let created = 0;
+  for (const [slug, list] of Object.entries(DEV_LEADS)) {
+    const organizationId = organizationIds.get(slug);
+    if (!organizationId) throw new Error(`seed leads reference unknown organization ${slug}`);
+    await db.transaction(async (tx) => {
+      await lockOrganizationIngestion(tx, organizationId);
+      const engine = new IngestionEngine(tx);
+      for (const lead of list) {
+        const result = await engine.ingest(
+          {
+            fullName: lead.fullName,
+            phone: lead.phone,
+            email: lead.email ?? null,
+            company: lead.company ?? null,
+            city: lead.city ?? null,
+            leadStatus: lead.status,
+            consentStatus: lead.consent ?? null,
+            sourceLabel: lead.consentSource ?? null,
+          },
+          {
+            organizationId,
+            source: lead.source,
+            sourceReference: 'dev-seed',
+            actorUserId: null,
+            ownerUserId: lead.ownerEmail ? (userIds.get(lead.ownerEmail) ?? null) : null,
+          },
+        );
+        if (result.outcome === 'INVALID' || result.outcome === 'REVIEW') {
+          throw new Error(`seed lead ${lead.fullName} was not ingested (${result.outcome})`);
+        }
+        if (result.outcome === 'CREATE') created += 1;
+      }
+    });
+  }
+  return created;
+}
+
+async function seedAccounts(db: Database): Promise<Omit<DevSeedResult, 'leadsCreated'>> {
   // One hash for the shared password keeps every start fast (Argon2id is deliberately slow).
   const passwordHash = await hashPassword(DEV_PASSWORD);
   const audit = new AuditService(db);

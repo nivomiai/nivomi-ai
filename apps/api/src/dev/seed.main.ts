@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { EnvValidationError, loadEnvFiles } from '@nivomi/config';
 import { loadApiEnv, type ApiEnv } from '../config/env.js';
 import { openDatabase } from '../database/database.module.js';
-import { DEV_ORGANIZATIONS, DEV_PASSWORD, DEV_USERS } from './seed-data.js';
+import { DEV_LEADS, DEV_ORGANIZATIONS, DEV_PASSWORD, DEV_USERS } from './seed-data.js';
 import { seedDevData } from './seed.js';
 
 // `npm run db:seed:dev` (also run by `npm run dev`). PGlite allows one process per data
@@ -27,8 +27,9 @@ if (env.NODE_ENV === 'production') {
 }
 
 const handle = await openDatabase(env);
+let leadsCreated = 0;
 try {
-  await seedDevData(handle.db);
+  ({ leadsCreated } = await seedDevData(handle.db));
 } finally {
   await handle.close();
 }
@@ -42,6 +43,7 @@ const width = Math.max(...DEV_USERS.map((u) => u.email.length));
 process.stdout.write(
   [
     `Development data ready. Password for every account: ${DEV_PASSWORD}`,
+    `Leads: ${Object.values(DEV_LEADS).reduce((n, list) => n + list.length, 0)} demo leads in ${Object.keys(DEV_LEADS).join(', ')} (${leadsCreated} created this run)`,
     ...DEV_USERS.map(
       (u) =>
         `  ${u.email.padEnd(width)}  ${u.superAdmin ? 'SUPER_ADMIN ' : ''}${memberships(u.email)}`,

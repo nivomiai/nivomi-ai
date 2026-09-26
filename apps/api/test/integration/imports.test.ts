@@ -203,6 +203,26 @@ describe('file import (FR-14, FR-125–FR-128)', () => {
       .expect(409);
   });
 
+  it('never reopens a converted lead when the same person is imported again', async () => {
+    const o = await owner(t, 'Converted Leads');
+    const created = await o.client
+      .post('/api/v1/leads')
+      .send({ fullName: 'Won Customer', phone: '9877700001' })
+      .expect(201);
+    const leadId = (created.body as { id: string }).id;
+    await o.client.post(`/api/v1/leads/${leadId}/status`).send({ status: 'CONVERTED' }).expect(201);
+
+    const csv = ['Name,Phone', 'Won Customer,9877700001'].join('\n');
+    const analyzed = await upload(o.client, 'again.csv', Buffer.from(csv));
+    await mapAndPreview(o.client, analyzed.id, { mapping: { Name: 'fullName', Phone: 'phone' } });
+    await o.client.post(`/api/v1/imports/${analyzed.id}/confirm`).expect(200);
+    await t.worker.drain();
+
+    const rows = await t.db.select().from(leads).where(eq(leads.organizationId, o.organizationId));
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.status).toBe('CONVERTED');
+  });
+
   it('imports .xlsx files, keeping numeric phone cells intact', async () => {
     const o = await owner(t, 'Excel Motors');
     const analyzed = await upload(

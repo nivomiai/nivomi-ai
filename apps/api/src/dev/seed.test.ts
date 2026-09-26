@@ -1,6 +1,9 @@
 import {
   auditLogs,
+  contacts,
   createDatabase,
+  leads,
+  suppressionEntries,
   organizationInvitations,
   organizationMembers,
   organizations,
@@ -11,7 +14,7 @@ import { and, eq } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { verifyPassword } from '../auth/password.js';
 import { hashToken } from '../auth/tokens.js';
-import { DEV_ORGANIZATIONS, DEV_PASSWORD, DEV_USERS } from './seed-data.js';
+import { DEV_LEADS, DEV_ORGANIZATIONS, DEV_PASSWORD, DEV_USERS } from './seed-data.js';
 import { seedDevData } from './seed.js';
 
 describe('seedDevData', () => {
@@ -149,5 +152,30 @@ describe('seedDevData', () => {
       .from(organizationInvitations)
       .where(eq(organizationInvitations.tokenHash, hashToken(token)));
     expect(row?.acceptedAt).toEqual(acceptedAt);
+  });
+
+  it('seeds demo leads once, with owners, consent and suppression, and never duplicates them', async () => {
+    const first = await seedDevData(handle.db);
+    const again = await seedDevData(handle.db);
+    expect(again.leadsCreated).toBe(0);
+
+    const total = Object.values(DEV_LEADS).reduce((n, list) => n + list.length, 0);
+    const rows = await handle.db
+      .select({ lead: leads, contact: contacts })
+      .from(leads)
+      .innerJoin(contacts, eq(contacts.id, leads.contactId));
+    expect(rows).toHaveLength(total);
+
+    const demo = first.organizationIds.get('nivomi-demo') ?? '';
+    const priya = first.userIds.get('priya.agent@example.com');
+    const owned = rows.filter(
+      (r) => r.lead.organizationId === demo && r.lead.ownerUserId === priya,
+    );
+    expect(owned.length).toBe(
+      DEV_LEADS['nivomi-demo']?.filter((l) => l.ownerEmail === 'priya.agent@example.com').length,
+    );
+    expect(rows.some((r) => r.lead.consentBasis === null)).toBe(true);
+    const suppressed = await handle.db.select().from(suppressionEntries);
+    expect(suppressed.map((e) => e.phoneE164)).toContain('+919847000110');
   });
 });
