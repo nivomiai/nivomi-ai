@@ -1,0 +1,3 @@
+node_modules/
+# Per-call logs contain test-call transcripts: keep local only.
+runs/
