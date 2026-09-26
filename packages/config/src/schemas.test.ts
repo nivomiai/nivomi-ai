@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { originListSchema, portSchema } from './schemas.js';
+import { booleanFlagSchema, originListSchema, portSchema } from './schemas.js';
 
 describe('originListSchema', () => {
   it('splits, trims and drops empty entries', () => {
@@ -26,5 +26,16 @@ describe('portSchema', () => {
 
   it.each(['0', '65536', '3.5', 'http'])('rejects %s', (value) => {
     expect(portSchema.safeParse(value).success).toBe(false);
+  });
+});
+
+describe('booleanFlagSchema', () => {
+  it('parses common boolean spellings and rejects others', () => {
+    expect(booleanFlagSchema.parse('true')).toBe(true);
+    expect(booleanFlagSchema.parse(' TRUE ')).toBe(true);
+    expect(booleanFlagSchema.parse('1')).toBe(true);
+    expect(booleanFlagSchema.parse('false')).toBe(false);
+    expect(booleanFlagSchema.parse('0')).toBe(false);
+    expect(() => booleanFlagSchema.parse('yes')).toThrow();
   });
 });
