@@ -24,19 +24,41 @@ export interface EnqueueJob {
 
 export type JobHandler = (payload: Record<string, unknown>) => Promise<void>;
 
+export interface JobHandlerOptions {
+  /** Per-type time limit; must stay below the stale-lock window so a job never runs twice. */
+  readonly timeoutMs?: number;
+}
+
+interface RegisteredHandler {
+  readonly run: JobHandler;
+  readonly timeoutMs: number;
+}
+
+/**
+ * Thrown by a handler when retrying cannot help (invalid input, a record that no longer exists):
+ * the job fails immediately instead of retrying with backoff.
+ */
+export class PermanentJobError extends Error {
+  override readonly name = 'PermanentJobError';
+}
+
 /** Handlers by job type. Modules register theirs at startup. */
 @Injectable()
 export class JobHandlerRegistry {
-  private readonly handlers = new Map<string, JobHandler>();
+  private readonly handlers = new Map<string, RegisteredHandler>();
 
-  register(type: string, handler: JobHandler): void {
+  register(type: string, handler: JobHandler, options: JobHandlerOptions = {}): void {
     if (this.handlers.has(type)) {
       throw new Error(`Job handler already registered for ${type}`);
     }
-    this.handlers.set(type, handler);
+    const timeoutMs = options.timeoutMs ?? JOB_TIMEOUT_MS;
+    if (timeoutMs >= STALE_LOCK_MS) {
+      throw new Error(`Job timeout for ${type} must be below the stale-lock window`);
+    }
+    this.handlers.set(type, { run: handler, timeoutMs });
   }
 
-  get(type: string): JobHandler | undefined {
+  get(type: string): RegisteredHandler | undefined {
     return this.handlers.get(type);
   }
 }
@@ -167,13 +189,13 @@ export class JobWorker implements OnApplicationBootstrap, OnApplicationShutdown 
     const handler = this.registry.get(job.type);
     try {
       if (!handler) throw new Error(`No handler registered for job type ${job.type}`);
-      await withTimeout(handler(job.payload), JOB_TIMEOUT_MS);
+      await withTimeout(handler.run(job.payload), handler.timeoutMs);
       await this.db
         .update(jobs)
         .set({ status: 'COMPLETED', completedAt: new Date(), lockedAt: null, lockedBy: null })
         .where(eq(jobs.id, job.id));
     } catch (error) {
-      const exhausted = job.attempts >= job.maxAttempts;
+      const exhausted = job.attempts >= job.maxAttempts || error instanceof PermanentJobError;
       const message = error instanceof Error ? error.message : String(error);
       await this.db
         .update(jobs)

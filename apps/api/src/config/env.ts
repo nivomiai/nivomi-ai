@@ -51,6 +51,26 @@ export const apiEnvSchema = z
 
     /** Run the background-job worker inside this process (ADR-019). */
     WORKER_ENABLED: booleanFlagSchema.default(true),
+
+    /** Uploaded import files (StorageProvider). `local` is for development only. */
+    STORAGE_PROVIDER: z.enum(['local', 's3']).default('local'),
+    STORAGE_LOCAL_DIR: z.string().default('.data/uploads'),
+
+    /**
+     * 32-byte key (base64) for encrypting stored provider credentials such as CRM tokens
+     * (AES-256-GCM). Required when a CRM app is configured, and in production.
+     */
+    CREDENTIALS_ENCRYPTION_KEY: z.string().optional(),
+    /** The previous key during a rotation; still used to decrypt. */
+    CREDENTIALS_ENCRYPTION_PREVIOUS_KEY: z.string().optional(),
+
+    /** HubSpot app credentials (ADR-012). Both or neither; unset = "Connect HubSpot" unavailable. */
+    HUBSPOT_CLIENT_ID: z.string().optional(),
+    HUBSPOT_CLIENT_SECRET: z.string().optional(),
+    /** Official endpoints; override only to point tests at a local fake. */
+    HUBSPOT_AUTHORIZE_URL: z.url().default('https://app.hubspot.com/oauth/authorize'),
+    HUBSPOT_OAUTH_API_URL: z.url().default('https://api.hubspot.com'),
+    HUBSPOT_CRM_API_URL: z.url().default('https://api.hubapi.com'),
   })
   .superRefine((env, ctx) => {
     const requireInProduction = (key: keyof typeof env, present: boolean) => {
@@ -68,6 +88,44 @@ export const apiEnvSchema = z
         message: 'dev-mailbox is not allowed in production',
       });
     }
+    if (env.STORAGE_PROVIDER === 'local' && env.NODE_ENV === 'production') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['STORAGE_PROVIDER'],
+        message: 'local storage is not allowed in production',
+      });
+    }
+    if (env.STORAGE_PROVIDER === 's3') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['STORAGE_PROVIDER'],
+        message: 's3 is not implemented yet (see docs/TECH_DEBT.md)',
+      });
+    }
+    for (const key of [
+      'CREDENTIALS_ENCRYPTION_KEY',
+      'CREDENTIALS_ENCRYPTION_PREVIOUS_KEY',
+    ] as const) {
+      const value = env[key];
+      if (value !== undefined && Buffer.from(value, 'base64').length !== 32) {
+        ctx.addIssue({ code: 'custom', path: [key], message: 'must be 32 bytes, base64-encoded' });
+      }
+    }
+    requireInProduction('CREDENTIALS_ENCRYPTION_KEY', env.CREDENTIALS_ENCRYPTION_KEY !== undefined);
+    if (Boolean(env.HUBSPOT_CLIENT_ID) !== Boolean(env.HUBSPOT_CLIENT_SECRET)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['HUBSPOT_CLIENT_SECRET'],
+        message: 'HUBSPOT_CLIENT_ID and HUBSPOT_CLIENT_SECRET must be set together',
+      });
+    }
+    if (env.HUBSPOT_CLIENT_ID && !env.CREDENTIALS_ENCRYPTION_KEY) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['CREDENTIALS_ENCRYPTION_KEY'],
+        message: 'is required when HubSpot is configured',
+      });
+    }
     if (env.EMAIL_PROVIDER === 'ses') {
       // Fail fast rather than pretend: the SES adapter lands with the notifications phase.
       ctx.addIssue({
@@ -83,6 +141,7 @@ export const apiEnvSchema = z
     APP_WEB_URL: (env.APP_WEB_URL ?? DEVELOPMENT_WEB_URL).replace(/\/+$/, ''),
     DATABASE_AUTO_MIGRATE: env.DATABASE_AUTO_MIGRATE ?? env.NODE_ENV !== 'production',
     COOKIE_SECURE: env.NODE_ENV === 'production',
+    HUBSPOT_CONFIGURED: Boolean(env.HUBSPOT_CLIENT_ID && env.HUBSPOT_CLIENT_SECRET),
   }));
 
 export type ApiEnv = z.output<typeof apiEnvSchema>;

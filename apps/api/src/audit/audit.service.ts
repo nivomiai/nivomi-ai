@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { auditLogs, type Database } from '@nivomi/database';
 import { and, desc, eq, lt, or } from 'drizzle-orm';
+import { decodeCursor, encodeCursor } from '../common/pagination.js';
 import type { ClientContext } from '../common/request-context.js';
 import { DATABASE } from '../database/database.module.js';
 
@@ -25,7 +26,23 @@ export type AuditAction =
   | 'organization.invitation_revoked'
   | 'organization.invitation_accepted'
   | 'platform.dev_seed_applied'
-  | 'security.cross_tenant_access_denied';
+  | 'security.cross_tenant_access_denied'
+  | 'lead.created'
+  | 'lead.updated'
+  | 'lead.status_changed'
+  | 'suppression.added'
+  | 'suppression.removed'
+  | 'ingestion.review_resolved'
+  | 'import.created'
+  | 'import.confirmed'
+  | 'import.cancelled'
+  | 'import.error_report_downloaded'
+  | 'crm.connected'
+  | 'crm.connection_rejected'
+  | 'crm.disconnected'
+  | 'crm.settings_updated'
+  | 'crm.sync_requested'
+  | 'crm.token_invalid';
 
 export interface AuditEntry {
   readonly action: AuditAction;
@@ -111,15 +128,4 @@ export class AuditService {
         rows.length > options.limit && last ? encodeCursor(last.createdAt, last.id) : null,
     };
   }
-}
-
-function encodeCursor(createdAt: Date, id: string): string {
-  return Buffer.from(`${createdAt.toISOString()}|${id}`).toString('base64url');
-}
-
-function decodeCursor(cursor: string | undefined): { createdAt: Date; id: string } | null {
-  if (!cursor) return null;
-  const [iso, id] = Buffer.from(cursor, 'base64url').toString('utf8').split('|');
-  const createdAt = new Date(iso ?? '');
-  return id && !Number.isNaN(createdAt.getTime()) ? { createdAt, id } : null;
 }
