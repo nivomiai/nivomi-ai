@@ -126,6 +126,46 @@ test.describe('lead form', () => {
     expect(decodeURIComponent(opened[0] ?? '')).toContain('Company: Kochi Homes');
   });
 
+  test('clicking the CTAs preselects the matching intent', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('#top').getByRole('link', { name: 'Get started' }).click();
+    const form = page.locator('#get-started form');
+    await expect(form.getByLabel('Get started (early access)')).toBeChecked();
+    await page.getByRole('banner').getByRole('link', { name: 'Book a demo' }).click();
+    await expect(form.getByLabel('Book a demo')).toBeChecked();
+  });
+
+  test('a double-click hands the enquiry off only once', async ({ page }) => {
+    await stubWindowOpen(page, 'opened');
+    await page.goto('/#contact');
+    const form = await fillValidLead(page);
+    await form.getByRole('button', { name: 'Send enquiry' }).dblclick();
+    await expect(page.getByText('Thanks — your details are ready to send')).toBeVisible();
+    const opened = await page.evaluate(
+      () => (window as unknown as { __opened: string[] }).__opened,
+    );
+    expect(opened).toHaveLength(1);
+  });
+
+  test('the Coming Soon notify form names the product', async ({ page }) => {
+    await stubWindowOpen(page, 'opened');
+    await page.goto('/coming-soon/whatsapp-ai');
+    await page.getByRole('link', { name: 'Get notified' }).click();
+    const form = page.locator('#notify form');
+    await form.getByLabel('Name').fill('Priya Nair');
+    await form.getByLabel('Work email').fill('priya@example.in');
+    await form.getByLabel('Company').fill('Kochi Homes');
+    await form.getByLabel('Phone').fill('+91 98765 43210');
+    await form.getByRole('button', { name: 'Send enquiry' }).click();
+    await expect(page.getByText('Thanks — your details are ready to send')).toBeVisible();
+    const opened = await page.evaluate(
+      () => (window as unknown as { __opened: string[] }).__opened,
+    );
+    const text = decodeURIComponent(opened[0] ?? '');
+    expect(text).toContain('Interested in an upcoming product');
+    expect(text).toContain('Product: WhatsApp AI Manager');
+  });
+
   test('offers the email fallback when the new tab is blocked', async ({ page }) => {
     await stubWindowOpen(page, 'blocked');
     await page.goto('/#contact');

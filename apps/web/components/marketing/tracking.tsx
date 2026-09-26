@@ -1,8 +1,46 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { type ReactNode, useEffect, useRef } from 'react';
 import { type AnalyticsEvent, type AnalyticsProps, track } from '@/lib/site/analytics';
+
+/**
+ * Link to a page or a section. A section on the current page (`#id` or `/current#id`) renders a
+ * native anchor: Next.js client navigation updates the hash with `pushState`, which does not
+ * fire `hashchange`, and the lead form reads its preselected intent from the hash.
+ */
+export function SectionLink({
+  href,
+  className,
+  onClick,
+  children,
+}: {
+  readonly href: string;
+  readonly className?: string | undefined;
+  readonly onClick?: (() => void) | undefined;
+  readonly children: ReactNode;
+}) {
+  const pathname = usePathname();
+  const extra = {
+    ...(className === undefined ? {} : { className }),
+    ...(onClick === undefined ? {} : { onClick }),
+  };
+  const hashAt = href.indexOf('#');
+  const path = hashAt === -1 ? href : href.slice(0, hashAt);
+  if (hashAt !== -1 && (path === '' || path === pathname)) {
+    return (
+      <a href={href.slice(hashAt)} {...extra}>
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link href={href} {...extra}>
+      {children}
+    </Link>
+  );
+}
 
 /** Link that records a (non-personal) analytics event when clicked. */
 export function TrackedLink({
@@ -15,13 +53,13 @@ export function TrackedLink({
   readonly href: string;
   readonly event: AnalyticsEvent;
   readonly props?: AnalyticsProps;
-  readonly className?: string;
+  readonly className?: string | undefined;
   readonly children: ReactNode;
 }) {
   return (
-    <Link href={href} className={className} onClick={() => track(event, props)}>
+    <SectionLink href={href} className={className} onClick={() => track(event, props)}>
       {children}
-    </Link>
+    </SectionLink>
   );
 }
 

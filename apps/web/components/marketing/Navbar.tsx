@@ -6,6 +6,7 @@ import { track } from '@/lib/site/analytics';
 import { primaryNav } from '@/lib/site/content';
 import { cx } from '@/lib/site/cx';
 import { ThemeToggle } from './ThemeToggle';
+import { SectionLink } from './tracking';
 import { Icon, Logo } from './primitives';
 
 export function Navbar() {
@@ -84,13 +85,13 @@ export function Navbar() {
           >
             Login
           </Link>
-          <Link
+          <SectionLink
             href="/#contact"
             className="btn btn-primary btn-sm hidden sm:inline-flex"
             onClick={() => track('demo_cta_clicked', { placement: 'navbar' })}
           >
             Book a demo
-          </Link>
+          </SectionLink>
           <button
             ref={menuButton}
             type="button"
@@ -150,7 +151,7 @@ export function Navbar() {
             Login
             <Icon name="i-arrow" className="size-4 text-muted" />
           </Link>
-          <Link
+          <SectionLink
             href="/#contact"
             onClick={() => {
               track('demo_cta_clicked', { placement: 'mobile_menu' });
@@ -159,7 +160,7 @@ export function Navbar() {
             className="btn btn-primary mt-3"
           >
             Book a demo
-          </Link>
+          </SectionLink>
         </nav>
       </div>
     </header>

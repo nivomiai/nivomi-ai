@@ -59,6 +59,8 @@ export function LeadForm({
   const [status, setStatus] = useState<Status>('idle');
   const [chosenIntent, setChosenIntent] = useState<LeadIntent | null>(null);
   const started = useRef(false);
+  // A ref, not state: a second click in the same tick must see the in-flight submit.
+  const submitting = useRef(false);
   const fieldRefs = useRef<Partial<Record<LeadField, HTMLElement | null>>>({});
 
   const hash = useSyncExternalStore(subscribeHash, readHash, serverHash);
@@ -103,7 +105,7 @@ export function LeadForm({
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (status === 'submitting') return;
+    if (submitting.current) return;
     const found = validateLead(lead);
     setErrors(found);
     const first = firstInvalidField(found);
@@ -111,6 +113,7 @@ export function LeadForm({
       fieldRefs.current[first]?.focus();
       return;
     }
+    submitting.current = true;
     setStatus('submitting');
     try {
       await client.submit(lead);
@@ -118,6 +121,8 @@ export function LeadForm({
       setStatus('success');
     } catch {
       setStatus('error');
+    } finally {
+      submitting.current = false;
     }
   };
 
