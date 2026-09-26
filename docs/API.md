@@ -114,3 +114,64 @@ not yet verified may call it; everything else that is not public requires a veri
 Role rules (PRD FR-2): only an OWNER grants or changes OWNER/ADMIN; an ADMIN cannot modify or
 remove owners or admins; an organization always keeps at least one OWNER. Role changes and
 removals take effect on the member's next request.
+
+### Leads (PRD FR-18–FR-25, FR-130)
+
+AGENTs see and edit only leads assigned to them; ANALYSTs read only; VIEWERs have no access.
+
+| Method | Path                | Permission    | Body → Response                                                                                                                                                                      |
+| ------ | ------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| GET    | `/leads`            | `leads.read`  | `?limit&cursor&search&status&source&consent=with_basis\|missing&owner=me\|unassigned` → `{ items, nextCursor }`                                                                      |
+| POST   | `/leads`            | `leads.write` | contact fields + `phone` (required) + optional `consentBasis`, `consentAt`, `consentSource`, `consentReference` → `201 { id }`; `409` if the phone/email matches an existing contact |
+| GET    | `/leads/:id`        | `leads.read`  | → lead, contact, consent evidence, `sources` (External Record Links with connection state), `timeline`                                                                               |
+| PATCH  | `/leads/:id`        | `leads.write` | any of `fullName`, `phone`, `email`, `company`, `jobTitle`, `city`, `state`, `country`, `preferredLanguage`, `ownerUserId` → `204`; changes go to the timeline                       |
+| POST   | `/leads/:id/status` | `leads.write` | `{ status, reason? }` with optional `Idempotency-Key` header → `201 { changed }`                                                                                                     |
+
+### Suppression list (FR-22)
+
+| Method | Path               | Permission           | Body → Response                                                                       |
+| ------ | ------------------ | -------------------- | ------------------------------------------------------------------------------------- |
+| GET    | `/suppression`     | `leads.read`         | `?limit&cursor` → `{ items: [{ id, phone, source, reason, createdAt }], nextCursor }` |
+| POST   | `/suppression`     | `suppression.manage` | `{ phone, reason? }` → `201 { id, phone }`; `409` if already listed                   |
+| DELETE | `/suppression/:id` | `suppression.manage` | → `204`; only `MANUAL`/`IMPORT` entries (opt-outs are permanent, `409`)               |
+
+### Possible duplicates (FR-17)
+
+| Method | Path                             | Permission       | Body → Response                                                                     |
+| ------ | -------------------------------- | ---------------- | ----------------------------------------------------------------------------------- |
+| GET    | `/ingestion/reviews`             | `imports.manage` | → open items with the incoming record and candidate contacts                        |
+| POST   | `/ingestion/reviews/:id/resolve` | `imports.manage` | `{ action: CREATE_NEW \| MERGE \| DISCARD, contactId? }` → `201 { status, leadId }` |
+
+### File import (FR-14, FR-125–FR-128)
+
+Flow: `POST /imports` → PUT the file to `upload.url` → `POST /imports/:id/uploaded` → (job)
+`MAPPING_REQUIRED` → `PUT /imports/:id/mapping` → (job) `READY` with `preview` →
+`POST /imports/:id/confirm` → (chunked job) `COMPLETED`. Nothing is written to leads before
+`confirm`. All routes need `imports.manage` (MANAGER and above).
+
+| Method | Path                        | Body → Response                                                                                                                                                               |
+| ------ | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/imports`                  | `?limit&cursor` → import history                                                                                                                                              |
+| GET    | `/imports/fields`           | → the Nivomi fields a column can map to                                                                                                                                       |
+| POST   | `/imports`                  | `{ fileName (.csv/.xlsx), fileSize (≤ 20 MB) }` → `201 { id, upload: { url, method, headers, expiresAt } }`                                                                   |
+| GET    | `/imports/:id`              | → status, headers, suggested mapping, preview, counts, first 5 rows while mapping                                                                                             |
+| POST   | `/imports/:id/uploaded`     | → `200`; starts analysis                                                                                                                                                      |
+| PUT    | `/imports/:id/mapping`      | `{ mapping: { column: field \| "custom:<name>" \| "ignore" }, defaultCountry?, consentDefault?: { basis, source?, reference?, attested: true } }` → `200`; starts the preview |
+| POST   | `/imports/:id/confirm`      | → `200`; queues the import                                                                                                                                                    |
+| POST   | `/imports/:id/cancel`       | → `204` (before confirmation)                                                                                                                                                 |
+| GET    | `/imports/:id/error-report` | → `text/csv` of failed and review rows with reasons (download is audited)                                                                                                     |
+| PUT    | `/uploads/:token`           | Public; the signed, 15-minute token authorizes one file (local storage adapter only)                                                                                          |
+
+### CRM — HubSpot (FR-19, FR-84–FR-86, FR-137)
+
+| Method | Path                                  | Permission                         | Body → Response                                                                             |
+| ------ | ------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------- |
+| GET    | `/integrations/crm`                   | `integrations.read`                | → `{ available, connection (never tokens), runs }`                                          |
+| POST   | `/integrations/crm/hubspot/authorize` | `integrations.manage`              | `{ confirmAccountChange? }` → `200 { authorizeUrl }`                                        |
+| GET    | `/integrations/crm/hubspot/callback`  | Public (session cookie re-checked) | HubSpot redirect → `303` to `/app/data-sources?crm=<outcome>`                               |
+| PUT    | `/integrations/crm/settings`          | `integrations.manage`              | `{ consentProperty, consentValueMap: { value: CONSENT_BASIS \| "DND" } }` → `204`           |
+| POST   | `/integrations/crm/sync`              | `integrations.sync`                | `{ full? }` → `201 { id }`; `409` if a sync is running or the connection needs reconnecting |
+| DELETE | `/integrations/crm`                   | `integrations.manage`              | → `204`; revokes and deletes tokens, keeps every lead                                       |
+
+Callback outcomes: `connected`, `denied`, `invalid_state`, `signed_out`, `not_allowed`,
+`account_in_use`, `account_change_requires_confirmation`, `provider_error`.
