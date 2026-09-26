@@ -281,6 +281,69 @@
   }
 }
 
+/* Coming Soon product accents: one hue per future product, tuned for both themes. */
+.cs-accent-green {
+  --cs: #0f8a4a;
+}
+.cs-accent-sky {
+  --cs: #0b6fb8;
+}
+.cs-accent-amber {
+  --cs: #a85a00;
+}
+.cs-accent-indigo {
+  --cs: #4f46e5;
+}
+.cs-accent-teal {
+  --cs: #0e7c86;
+}
+.cs-accent-orange {
+  --cs: #c2410c;
+}
+[data-theme='dark'] .cs-accent-green {
+  --cs: #5be59a;
+}
+[data-theme='dark'] .cs-accent-sky {
+  --cs: #7cc4ff;
+}
+[data-theme='dark'] .cs-accent-amber {
+  --cs: #ffc56b;
+}
+[data-theme='dark'] .cs-accent-indigo {
+  --cs: #a5b4fc;
+}
+[data-theme='dark'] .cs-accent-teal {
+  --cs: #5fd6dd;
+}
+[data-theme='dark'] .cs-accent-orange {
+  --cs: #ff9a62;
+}
+.cs-text {
+  color: var(--cs);
+}
+.cs-bg {
+  background: color-mix(in srgb, var(--cs) 12%, transparent);
+}
+.cs-border {
+  border-color: color-mix(in srgb, var(--cs) 32%, transparent);
+}
+.cs-solid {
+  background: var(--cs);
+  color: #fff;
+}
+[data-theme='dark'] .cs-solid {
+  color: #10050e;
+}
+.cs-glow {
+  background:
+    radial-gradient(
+      55% 45% at 85% 15%,
+      color-mix(in srgb, var(--cs) 22%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(45% 40% at 5% 35%, rgba(204, 0, 126, 0.1), transparent 70%);
+}
+
 /* Workflow step highlight: a slow, CSS-only pulse through the steps of a diagram. */
 @keyframes nv-step {
   0%,

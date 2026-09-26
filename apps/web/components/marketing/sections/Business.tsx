@@ -50,12 +50,12 @@ export function Roadmap() {
           </p>
           <ul className="grid gap-4 sm:grid-cols-2">
             {comingSoonProducts.map((product) => (
-              <li key={product.slug}>
+              <li key={product.slug} className={`cs-accent-${product.accent}`}>
                 <Link
                   href={`/coming-soon/${product.slug}`}
                   className="card-nv group flex h-full items-start gap-4 p-5 transition-colors hover:border-line-hover"
                 >
-                  <span className="inline-grid size-11 shrink-0 place-items-center rounded-[12px] bg-soon-soft text-soon">
+                  <span className="cs-bg cs-text inline-grid size-11 shrink-0 place-items-center rounded-[12px]">
                     <Icon name={product.icon} />
                   </span>
                   <span className="min-w-0 flex-1">

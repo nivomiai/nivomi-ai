@@ -5,27 +5,64 @@
  */
 import type { IconName } from './icons';
 
+export type AccentName = 'green' | 'sky' | 'amber' | 'indigo' | 'teal' | 'orange';
+
 export interface PreviewMessage {
   readonly from: 'customer' | 'ai' | 'system';
   readonly text: string;
 }
 
+/** Product-specific mockup shown in the hero. All values are illustrative. */
 export type ProductPreview =
   | {
-      readonly kind: 'chat';
-      readonly channel: string;
+      readonly kind: 'whatsapp';
+      readonly business: string;
       readonly messages: readonly PreviewMessage[];
+      readonly quickReplies: readonly string[];
     }
   | {
-      readonly kind: 'pipeline';
-      readonly title: string;
-      readonly steps: readonly { readonly label: string; readonly detail: string }[];
+      readonly kind: 'sms';
+      readonly sender: string;
+      readonly messages: readonly PreviewMessage[];
+      readonly trigger: { readonly when: string; readonly action: string };
+    }
+  | {
+      readonly kind: 'operations';
+      readonly columns: readonly {
+        readonly title: string;
+        readonly cards: readonly {
+          readonly title: string;
+          readonly detail: string;
+          readonly tone?: 'approval' | 'done';
+        }[];
+      }[];
     }
   | {
       readonly kind: 'analytics';
       readonly question: string;
       readonly answer: string;
+      readonly kpis: readonly { readonly label: string; readonly value: string }[];
       readonly bars: readonly { readonly label: string; readonly value: number }[];
+      readonly trend: readonly number[];
+    }
+  | {
+      readonly kind: 'hotel';
+      readonly call: { readonly title: string; readonly detail: string; readonly time: string };
+      readonly tickets: readonly {
+        readonly request: string;
+        readonly team: string;
+        readonly status: 'routed' | 'captured' | 'needs-staff';
+      }[];
+    }
+  | {
+      readonly kind: 'logistics';
+      readonly trackingId: string;
+      readonly stops: readonly {
+        readonly label: string;
+        readonly detail: string;
+        readonly state: 'done' | 'issue' | 'current' | 'next';
+      }[];
+      readonly notice: string;
     };
 
 export interface ComingSoonProduct {
@@ -33,15 +70,33 @@ export interface ComingSoonProduct {
   readonly title: string;
   readonly seoTitle: string;
   readonly icon: IconName;
+  readonly accent: AccentName;
   readonly tagline: string;
   readonly description: string;
+  /** Three short planned highlights shown under the hero. */
+  readonly highlights: readonly string[];
   readonly problem: { readonly title: string; readonly points: readonly string[] };
-  readonly workflow: readonly string[];
+  /** Planned outcomes, shown opposite the problem ("With this product"). */
+  readonly outcomes: readonly string[];
+  readonly workflow: readonly { readonly label: string; readonly icon: IconName }[];
   readonly capabilities: readonly { readonly title: string; readonly body: string }[];
   readonly benefits: readonly { readonly title: string; readonly body: string }[];
   readonly connections: readonly { readonly name: string; readonly note: string }[];
+  readonly faq: readonly { readonly q: string; readonly a: string }[];
   readonly preview: ProductPreview;
 }
+
+const launchFaq = (title: string) =>
+  [
+    {
+      q: `When will ${title} be available?`,
+      a: 'There is no public date yet. It follows the AI voice launch — register your interest and we will tell you when early access opens.',
+    },
+    {
+      q: 'Can I use Nivomi today?',
+      a: 'Yes. Nivomi AI voice automation for sales teams — outbound and inbound calls, qualification, appointments, human handoff and CRM sync — is in early access.',
+    },
+  ] as const;
 
 export const comingSoonProducts: readonly ComingSoonProduct[] = [
   {
@@ -49,9 +104,11 @@ export const comingSoonProducts: readonly ComingSoonProduct[] = [
     title: 'WhatsApp AI Manager',
     seoTitle: 'Nivomi WhatsApp AI Manager | Coming Soon',
     icon: 'i-wa-line',
+    accent: 'green',
     tagline: 'Conversations on the channel your customers already use.',
     description:
       'An AI manager for WhatsApp that answers enquiries, qualifies leads, follows up and brings in your team when a person is needed — with every conversation recorded in Nivomi.',
+    highlights: ['Replies around the clock', 'Qualifies in chat', 'Hands over to your team'],
     problem: {
       title: 'WhatsApp enquiries pile up',
       points: [
@@ -60,14 +117,19 @@ export const comingSoonProducts: readonly ComingSoonProduct[] = [
         'Conversations live on individual phones instead of the CRM.',
       ],
     },
+    outcomes: [
+      'Every enquiry gets a prompt, on-brand first reply.',
+      'Qualification answers are captured as structured data.',
+      'Chats and calls sit on one lead record in Nivomi.',
+    ],
     workflow: [
-      'Customer',
-      'WhatsApp',
-      'AI conversation',
-      'Qualification',
-      'Appointment / follow-up',
-      'Human escalation',
-      'CRM',
+      { label: 'Customer', icon: 'i-user' },
+      { label: 'WhatsApp', icon: 'i-wa-line' },
+      { label: 'AI conversation', icon: 'i-chat' },
+      { label: 'Qualification', icon: 'i-target' },
+      { label: 'Appointment / follow-up', icon: 'i-cal' },
+      { label: 'Human escalation', icon: 'i-users' },
+      { label: 'CRM', icon: 'i-refresh' },
     ],
     capabilities: [
       {
@@ -99,19 +161,27 @@ export const comingSoonProducts: readonly ComingSoonProduct[] = [
       { name: 'Nivomi lead list', note: 'Shared with voice campaigns' },
       { name: 'Your connected CRM', note: 'Conversation sync' },
     ],
+    faq: [
+      ...launchFaq('WhatsApp AI Manager'),
+      {
+        q: 'Will it use my existing WhatsApp number?',
+        a: 'It is planned to work through the WhatsApp Business Platform. Number and approval requirements will be confirmed before launch.',
+      },
+    ],
     preview: {
-      kind: 'chat',
-      channel: 'WhatsApp',
+      kind: 'whatsapp',
+      business: 'Kochi Homes',
       messages: [
         { from: 'customer', text: 'Hi, I need more information about the 2BHK units.' },
         {
           from: 'ai',
-          text: 'Absolutely. Which location are you considering, and when are you planning to move?',
+          text: 'Happy to help! Which location are you considering, and when do you plan to move?',
         },
         { from: 'customer', text: 'Kakkanad, within six months.' },
-        { from: 'ai', text: 'Thanks! Would you like a site visit this Saturday or Sunday?' },
+        { from: 'ai', text: 'Great. Would you like a site visit this Saturday or Sunday?' },
         { from: 'system', text: 'Lead qualified · Visit requested' },
       ],
+      quickReplies: ['Saturday 11 AM', 'Share brochure', 'Talk to a person'],
     },
   },
   {
@@ -119,9 +189,11 @@ export const comingSoonProducts: readonly ComingSoonProduct[] = [
     title: 'SMS Automation',
     seoTitle: 'Nivomi SMS Automation | Coming Soon',
     icon: 'i-sms',
+    accent: 'sky',
     tagline: 'Reminders and follow-ups that go out on time.',
     description:
       'Automated SMS for follow-ups, appointment reminders and lead notifications, triggered by what happens in your Nivomi workflows and handled by AI or your team when leads reply.',
+    highlights: ['Triggered by your workflows', 'Registered templates', 'Replies on record'],
     problem: {
       title: 'Follow-up messages depend on someone remembering',
       points: [
@@ -130,7 +202,19 @@ export const comingSoonProducts: readonly ComingSoonProduct[] = [
         'Replies are scattered and never reach the CRM.',
       ],
     },
-    workflow: ['Lead', 'Trigger', 'SMS', 'Response', 'AI / human', 'CRM'],
+    outcomes: [
+      'Reminders go out automatically before every appointment.',
+      'Missed calls get a written next step.',
+      'Replies are routed to AI or your team and synced.',
+    ],
+    workflow: [
+      { label: 'Lead', icon: 'i-user' },
+      { label: 'Trigger', icon: 'i-zap' },
+      { label: 'SMS', icon: 'i-sms' },
+      { label: 'Response', icon: 'i-chat' },
+      { label: 'AI / human', icon: 'i-users' },
+      { label: 'CRM', icon: 'i-refresh' },
+    ],
     capabilities: [
       { title: 'Follow-up messages', body: 'Send a follow-up after a missed or completed call.' },
       { title: 'Appointment reminders', body: 'Remind leads before a booked appointment.' },
@@ -152,9 +236,16 @@ export const comingSoonProducts: readonly ComingSoonProduct[] = [
       { name: 'Nivomi workflows', note: 'Triggers from calls and appointments' },
       { name: 'Your connected CRM', note: 'Message and reply sync' },
     ],
+    faq: [
+      ...launchFaq('SMS Automation'),
+      {
+        q: 'Do SMS messages need DLT registration?',
+        a: 'Yes. In India, business SMS needs DLT-registered headers and templates. Setting these up will be part of onboarding.',
+      },
+    ],
     preview: {
-      kind: 'chat',
-      channel: 'SMS',
+      kind: 'sms',
+      sender: 'AD-KCHOME',
       messages: [
         {
           from: 'ai',
@@ -162,8 +253,11 @@ export const comingSoonProducts: readonly ComingSoonProduct[] = [
         },
         { from: 'customer', text: '2' },
         { from: 'ai', text: 'No problem. Our team will call you to find a new time.' },
-        { from: 'system', text: 'Reschedule request · Task created for the team' },
       ],
+      trigger: {
+        when: 'Appointment in 24 hours',
+        action: 'Reminder sent · reply routed to the team',
+      },
     },
   },
   {
@@ -171,9 +265,15 @@ export const comingSoonProducts: readonly ComingSoonProduct[] = [
     title: 'Operations AI',
     seoTitle: 'Nivomi Operations AI | Coming Soon',
     icon: 'i-flow',
+    accent: 'amber',
     tagline: 'Routine operational work, handled with a person in the loop.',
     description:
       'An AI manager for internal operations: it watches business events, decides the next step within your rules, carries it out, checks the result and escalates anything unusual.',
+    highlights: [
+      'Watches business events',
+      'Acts within your rules',
+      'Asks before sensitive steps',
+    ],
     problem: {
       title: 'Operations run on reminders and chasing',
       points: [
@@ -182,14 +282,19 @@ export const comingSoonProducts: readonly ComingSoonProduct[] = [
         'Handovers between teams lose context.',
       ],
     },
+    outcomes: [
+      'Routine steps run as soon as the event happens.',
+      'Exceptions reach the right person with context.',
+      'Sensitive actions wait for a human approval.',
+    ],
     workflow: [
-      'Business event',
-      'Operations AI',
-      'Analyse',
-      'Decide',
-      'Execute',
-      'Verify',
-      'Human escalation',
+      { label: 'Business event', icon: 'i-zap' },
+      { label: 'Operations AI', icon: 'i-spark' },
+      { label: 'Analyse', icon: 'i-target' },
+      { label: 'Decide', icon: 'i-flow' },
+      { label: 'Execute', icon: 'i-check-c' },
+      { label: 'Verify', icon: 'i-shield' },
+      { label: 'Human escalation', icon: 'i-users' },
     ],
     capabilities: [
       { title: 'Workflow automation', body: 'Run repeatable steps when an event happens.' },
@@ -209,14 +314,34 @@ export const comingSoonProducts: readonly ComingSoonProduct[] = [
       { name: 'Webhooks and APIs', note: 'Your internal systems' },
       { name: 'Team notifications', note: 'Email and in-app' },
     ],
+    faq: [
+      ...launchFaq('Operations AI'),
+      {
+        q: 'Can the AI take actions without approval?',
+        a: 'Only the actions you allow. Sensitive actions are planned to wait for a person’s approval.',
+      },
+    ],
     preview: {
-      kind: 'pipeline',
-      title: 'Example: overdue appointment follow-up',
-      steps: [
-        { label: 'Event', detail: 'Appointment marked no-show' },
-        { label: 'AI analysis', detail: 'Lead is qualified; no callback scheduled' },
-        { label: 'Action', detail: 'Create a callback task for the assigned rep' },
-        { label: 'Verification', detail: 'Task accepted · reminder set' },
+      kind: 'operations',
+      columns: [
+        {
+          title: 'Detected',
+          cards: [
+            { title: 'Appointment no-show', detail: 'Qualified lead · no callback set' },
+            { title: 'Lead unassigned for 2 days', detail: 'Campaign: Site visits' },
+          ],
+        },
+        {
+          title: 'In progress',
+          cards: [{ title: 'Callback task created', detail: 'Assigned to the lead owner' }],
+        },
+        {
+          title: 'Needs approval',
+          cards: [
+            { title: 'Refund request', detail: 'Waiting for a manager', tone: 'approval' },
+            { title: 'Reminder sent', detail: 'Verified · done', tone: 'done' },
+          ],
+        },
       ],
     },
   },
@@ -225,9 +350,11 @@ export const comingSoonProducts: readonly ComingSoonProduct[] = [
     title: 'Analytics AI',
     seoTitle: 'Nivomi Analytics AI | Coming Soon',
     icon: 'i-trend',
+    accent: 'indigo',
     tagline: 'Ask questions about your campaigns in plain language.',
     description:
       'Conversational analytics for your Nivomi data: campaign insights, lead trends, call insights and anomalies, answered from your own organisation’s records.',
+    highlights: ['Ask in plain language', 'Answers with charts', 'Your data only'],
     problem: {
       title: 'Answers are buried in reports',
       points: [
@@ -236,7 +363,18 @@ export const comingSoonProducts: readonly ComingSoonProduct[] = [
         'Call insights stay locked inside transcripts.',
       ],
     },
-    workflow: ['Your question', 'Analytics AI', 'Your Nivomi data', 'Insight', 'Visualisation'],
+    outcomes: [
+      'Everyday questions answered in seconds, with a chart.',
+      'Unusual drops and spikes flagged for review.',
+      'Objections and questions surfaced from transcripts.',
+    ],
+    workflow: [
+      { label: 'Your question', icon: 'i-chat' },
+      { label: 'Analytics AI', icon: 'i-spark' },
+      { label: 'Your Nivomi data', icon: 'i-db' },
+      { label: 'Insight', icon: 'i-trend' },
+      { label: 'Visualisation', icon: 'i-chart' },
+    ],
     capabilities: [
       {
         title: 'Conversational analytics',
@@ -258,16 +396,29 @@ export const comingSoonProducts: readonly ComingSoonProduct[] = [
       { name: 'Usage records', note: 'Cost and volume' },
       { name: 'Exports', note: 'Share results with your team' },
     ],
+    faq: [
+      ...launchFaq('Analytics AI'),
+      {
+        q: 'Which data will it use?',
+        a: 'Only your organisation’s Nivomi data — campaigns, calls, outcomes and usage. No other customer’s data is ever used.',
+      },
+    ],
     preview: {
       kind: 'analytics',
       question: 'Which campaigns generated the most qualified leads this week?',
-      answer: 'Example answer: “Site visits – Kochi” led, followed by “Course enquiries – Hindi”.',
+      answer: '“Site visits – Kochi” led, followed by “Course enquiries – Hindi”.',
+      kpis: [
+        { label: 'Calls', value: '1,240' },
+        { label: 'Qualified', value: '186' },
+        { label: 'Appointments', value: '74' },
+      ],
       bars: [
         { label: 'Site visits – Kochi', value: 86 },
         { label: 'Course enquiries – Hindi', value: 64 },
         { label: 'Test drives – Pune', value: 41 },
         { label: 'Loan enquiries', value: 23 },
       ],
+      trend: [12, 18, 15, 22, 27, 24, 31],
     },
   },
   {
@@ -275,9 +426,15 @@ export const comingSoonProducts: readonly ComingSoonProduct[] = [
     title: 'Hotel AI Automation',
     seoTitle: 'Nivomi Hotel AI Automation | Coming Soon',
     icon: 'i-bed',
+    accent: 'teal',
     tagline: 'Guest calls and requests, answered around the clock.',
     description:
       'An AI workflow for hotels and hospitality teams: reservation enquiries, guest questions and service requests over calls and messages, with your staff brought in whenever needed.',
+    highlights: [
+      'Answers when the desk is busy',
+      'Routes guest requests',
+      'Staff always a step away',
+    ],
     problem: {
       title: 'The front desk cannot answer every call',
       points: [
@@ -286,13 +443,18 @@ export const comingSoonProducts: readonly ComingSoonProduct[] = [
         'Service requests are noted on paper and forgotten.',
       ],
     },
+    outcomes: [
+      'Every call gets an answer, day or night.',
+      'Requests reach the right team as trackable tickets.',
+      'Staff step in for anything the AI should not handle.',
+    ],
     workflow: [
-      'Guest',
-      'Call / message',
-      'AI',
-      'Understand request',
-      'Reservation / service',
-      'Human escalation',
+      { label: 'Guest', icon: 'i-user' },
+      { label: 'Call / message', icon: 'i-phone' },
+      { label: 'AI', icon: 'i-spark' },
+      { label: 'Understand request', icon: 'i-target' },
+      { label: 'Reservation / service', icon: 'i-bed' },
+      { label: 'Human escalation', icon: 'i-users' },
     ],
     capabilities: [
       {
@@ -318,17 +480,28 @@ export const comingSoonProducts: readonly ComingSoonProduct[] = [
       { name: 'Property systems', note: 'To be scoped with pilot customers' },
       { name: 'Staff notifications', note: 'Email and in-app' },
     ],
+    faq: [
+      ...launchFaq('Hotel AI Automation'),
+      {
+        q: 'Will it connect to my property management system?',
+        a: 'Integrations will be scoped with pilot customers. No specific property system is supported yet.',
+      },
+    ],
     preview: {
-      kind: 'chat',
-      channel: 'Guest call',
-      messages: [
-        { from: 'customer', text: 'Do you have a family room for two nights from the 14th?' },
+      kind: 'hotel',
+      call: {
+        title: 'Incoming call · Guest',
+        detail: 'Family room for 2 nights from the 14th',
+        time: '02:14 AM',
+      },
+      tickets: [
         {
-          from: 'ai',
-          text: 'I can check that for you. How many adults and children will be staying?',
+          request: 'Reservation request · 2 adults, 1 child',
+          team: 'Front desk',
+          status: 'routed',
         },
-        { from: 'customer', text: 'Two adults and one child.' },
-        { from: 'system', text: 'Reservation request captured · Front desk notified' },
+        { request: 'Extra towels · Room 204', team: 'Housekeeping', status: 'captured' },
+        { request: 'Late checkout · Room 311', team: 'Duty manager', status: 'needs-staff' },
       ],
     },
   },
@@ -337,9 +510,11 @@ export const comingSoonProducts: readonly ComingSoonProduct[] = [
     title: 'Logistics AI Automation',
     seoTitle: 'Nivomi Logistics AI Automation | Coming Soon',
     icon: 'i-truck',
+    accent: 'orange',
     tagline: 'Shipment questions and delivery updates, handled.',
     description:
       'An AI workflow for logistics teams: shipment enquiries, delivery communication, status requests and operational notifications, with escalation when something goes wrong.',
+    highlights: ['Answers status questions', 'Calls about delays', 'Logs every issue'],
     problem: {
       title: '“Where is my shipment?” all day long',
       points: [
@@ -348,13 +523,18 @@ export const comingSoonProducts: readonly ComingSoonProduct[] = [
         'Delivery issues are reported by phone and never logged.',
       ],
     },
+    outcomes: [
+      'Status questions answered from your shipment data.',
+      'Customers hear about delays before they ask.',
+      'Every reported issue is logged and routed.',
+    ],
     workflow: [
-      'Customer / shipment event',
-      'AI agent',
-      'Understand',
-      'Respond / notify',
-      'Escalate if required',
-      'System update',
+      { label: 'Customer / shipment event', icon: 'i-truck' },
+      { label: 'AI agent', icon: 'i-spark' },
+      { label: 'Understand', icon: 'i-target' },
+      { label: 'Respond / notify', icon: 'i-phone' },
+      { label: 'Escalate if required', icon: 'i-users' },
+      { label: 'System update', icon: 'i-refresh' },
     ],
     capabilities: [
       { title: 'Shipment inquiries', body: 'Answer status questions from your systems.' },
@@ -374,15 +554,24 @@ export const comingSoonProducts: readonly ComingSoonProduct[] = [
       { name: 'Webhooks and APIs', note: 'Status events in, updates out' },
       { name: 'Nivomi voice', note: 'Calls and callbacks' },
     ],
+    faq: [
+      ...launchFaq('Logistics AI Automation'),
+      {
+        q: 'Which tracking systems will it connect to?',
+        a: 'Integrations will be scoped with pilot customers through webhooks and APIs. No specific system is supported yet.',
+      },
+    ],
     preview: {
-      kind: 'pipeline',
-      title: 'Example: delayed delivery',
-      steps: [
-        { label: 'Shipment event', detail: 'Delivery slot missed' },
-        { label: 'AI agent', detail: 'Calls the customer to confirm a new slot' },
-        { label: 'Respond', detail: 'New slot agreed for tomorrow' },
-        { label: 'System update', detail: 'Status updated · dispatcher notified' },
+      kind: 'logistics',
+      trackingId: 'SHP-48213',
+      stops: [
+        { label: 'Picked up', detail: 'Kochi hub · Mon 09:10', state: 'done' },
+        { label: 'In transit', detail: 'Coimbatore · Mon 18:40', state: 'done' },
+        { label: 'Delivery slot missed', detail: 'Customer not reachable', state: 'issue' },
+        { label: 'Rescheduled', detail: 'AI called · new slot Tue 10–12', state: 'current' },
+        { label: 'Delivered', detail: 'Pending', state: 'next' },
       ],
+      notice: 'Customer called · new slot agreed · dispatcher notified',
     },
   },
 ];

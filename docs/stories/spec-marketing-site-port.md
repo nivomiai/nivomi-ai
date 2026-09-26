@@ -116,6 +116,22 @@ Decisions from the owner's brief (2026-09-26):
   - Build: succeeded. Audit: 0 vulnerabilities. End-to-end: 26.
   - Playwright screenshots at 1440 and 390 px in both themes: no overflow, no console errors.
 
+- Owner follow-up (2026-09-26): "design the Coming Soon pages". The shared template was
+  redesigned, still data-driven, with:
+  - a per-product accent (`cs-accent-*` in `globals.css`: green, sky, amber, indigo, teal,
+    orange) for both themes;
+  - a bespoke hero mockup per product: WhatsApp phone chat, SMS thread plus trigger, Operations
+    board with approval, Analytics dashboard with example KPIs, chart and sparkline, Hotel
+    front-desk console, Logistics shipment tracker. Every mockup is labelled
+    "Preview · Illustration" and "Coming soon";
+  - a Today vs. With-product comparison, an icon workflow stepper, capabilities and benefits;
+  - "Built on the Nivomi platform", with the platform badged early access and the product's
+    connections badged Coming Soon;
+  - a three-question honest FAQ, the notify form, and other products.
+
+  E2e now asserts that the only MVP badge on a Coming Soon page is the platform card, plus the
+  FAQ count.
+
 ## Verification
 
 **Commands:**

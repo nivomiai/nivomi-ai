@@ -25,8 +25,13 @@ test.describe('public website routes', () => {
       await expect(page).toHaveTitle(title);
       await expect(page.locator('h1')).toHaveCount(1);
       await expect(page.locator('[data-status="soon"]').first()).toBeVisible();
-      await expect(page.locator('[data-status="mvp"]')).toHaveCount(0);
-      await expect(page.getByText('Product concept — not a working feature.')).toBeVisible();
+      // The only "available" badge is the shared-platform card; the product itself is Coming Soon.
+      await expect(page.locator('[data-status="mvp"]')).toHaveCount(1);
+      await expect(page.locator('#connections [data-status="mvp"]')).toHaveCount(1);
+      await expect(
+        page.getByText('Product concept with example content — not a working feature.'),
+      ).toBeVisible();
+      await expect(page.locator('#faq details')).toHaveCount(3);
     });
   }
 
