@@ -12,9 +12,11 @@ a real production SaaS?", not for volume of code.
 
 ## Current state
 
-Foundation only (bootstrap, 2026-09): npm-workspaces monorepo, NestJS API with liveness
-health check, Next.js shell, centralized env validation, tests, CI. **No product features, no
-database, no auth yet.** Next step is the BMAD planning phase (see docs/ROADMAP.md).
+Foundation (bootstrap, 2026-09): npm-workspaces monorepo, NestJS API with liveness health check,
+centralized env validation, tests, CI. `apps/web` serves the **public website** (MVP voice
+automation + Coming Soon product pages, brand design tokens in `apps/web/app/globals.css`).
+**No product app features, no database, no auth yet.** Planning: PRD draft in
+`docs/planning/prds/`; next BMAD step is architecture (see docs/ROADMAP.md).
 
 ## Platform decisions (accepted — see ADRs before touching these areas)
 

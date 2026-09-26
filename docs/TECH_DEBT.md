@@ -10,4 +10,7 @@
 | No deploy stage in CI                     | Nothing is deployed                                                                                        | After the hosting decision                                      |
 | `uv` not installed                        | BMAD skills that shell out via `uv run` need the `python` fallback; `bmad-build(-auto)` halt on activation | Install uv (`winget install astral-sh.uv` or `pip install uv`)  |
 | Placeholder git author on initial commits | Bootstrap commits are authored `Your Name <you@example.com>`                                               | Set a real identity; optionally rewrite before the first push   |
-| Web design tokens are placeholders        | UI work would diverge without a design system                                                              | BMAD UX phase                                                   |
+| Web design system is only the brand seed  | Product app UI would diverge without components/patterns beyond the website tokens                         | BMAD UX phase, building on `apps/web/app/globals.css` tokens    |
+| Website legal pages are placeholders      | `/privacy` and `/terms` cannot be published as final                                                       | Counsel-approved text before production launch                  |
+| Website lead form has no backend          | Enquiries go only via WhatsApp/email handoff; nothing is stored or tracked server-side                     | Add an API `LeadCaptureClient` once the database exists         |
+| No analytics provider on the website      | `track()` events are no-ops                                                                                | Choose a provider (privacy-reviewed) and register a sink        |

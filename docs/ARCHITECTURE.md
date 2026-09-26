@@ -14,7 +14,7 @@ flowchart LR
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `packages/config` | Loads dev-only env files, validates env with zod, fails fast without echoing values                                                                          |
 | `apps/api`        | HTTP API. Request pipeline: pino-http (request ID, structured log) → helmet → CORS allowlist → JSON body (1 MB) → versioned router → global exception filter |
-| `apps/web`        | Next.js App Router shell with security headers and Tailwind design tokens                                                                                    |
+| `apps/web`        | Public website (App Router, static): homepage, Coming Soon product pages, legal placeholders; brand tokens in Tailwind; no API calls yet                     |
 
 API request lifecycle:
 
