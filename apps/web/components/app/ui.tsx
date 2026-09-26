@@ -167,7 +167,7 @@ export function PageHeader({
   actions,
 }: {
   readonly title: string;
-  readonly description?: string;
+  readonly description?: string | undefined;
   readonly actions?: ReactNode;
 }) {
   return (
@@ -271,6 +271,107 @@ export function ErrorBlock({
           Try again
         </button>
       ) : null}
+    </div>
+  );
+}
+
+type BadgeTone = 'neutral' | 'accent' | 'live' | 'warn' | 'soon';
+
+const BADGE_TONES: Record<BadgeTone, string> = {
+  neutral: 'border-line bg-soft text-ink-2',
+  accent: 'border-accent-tint bg-accent-soft text-accent',
+  live: 'border-live/25 bg-live-soft text-live',
+  warn: 'border-warn/25 bg-warn-soft text-warn',
+  soon: 'border-soon/25 bg-soon-soft text-soon',
+};
+
+export function Badge({
+  tone = 'neutral',
+  children,
+}: {
+  readonly tone?: BadgeTone;
+  readonly children: ReactNode;
+}) {
+  return (
+    <span
+      className={cx(
+        'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap',
+        BADGE_TONES[tone],
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+export function SelectField({
+  id,
+  label,
+  value,
+  onChange,
+  options,
+  hint,
+  className,
+  disabled,
+}: {
+  readonly id: string;
+  readonly label: string;
+  readonly value: string;
+  readonly onChange: (value: string) => void;
+  readonly options: readonly { readonly value: string; readonly label: string }[];
+  readonly hint?: string;
+  readonly className?: string;
+  readonly disabled?: boolean;
+}) {
+  return (
+    <div className={className}>
+      <label htmlFor={id} className="text-sm font-semibold text-ink">
+        {label}
+      </label>
+      <select
+        id={id}
+        className={selectClass}
+        value={value}
+        disabled={disabled}
+        aria-describedby={hint ? `${id}-hint` : undefined}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+      {hint ? (
+        <p id={`${id}-hint`} className="mt-1.5 text-[13px] text-muted">
+          {hint}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+/** A labelled number for summaries (import preview, sync results). */
+export function Stat({
+  label,
+  value,
+  tone = 'neutral',
+}: {
+  readonly label: string;
+  readonly value: ReactNode;
+  readonly tone?: 'neutral' | 'live' | 'warn';
+}) {
+  return (
+    <div className="rounded-[14px] border border-line bg-card px-4 py-3">
+      <p className="text-xs font-bold tracking-[0.08em] text-muted uppercase">{label}</p>
+      <p
+        className={cx(
+          'mt-1 text-2xl font-extrabold tracking-[-0.02em]',
+          tone === 'live' ? 'text-live' : tone === 'warn' ? 'text-warn' : 'text-ink',
+        )}
+      >
+        {value}
+      </p>
     </div>
   );
 }

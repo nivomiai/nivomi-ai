@@ -141,3 +141,32 @@ describe('errorMessage', () => {
     );
   });
 });
+
+describe('downloads and uploads', () => {
+  it('downloads a file with the server-suggested name', async () => {
+    const fetch = vi.fn().mockResolvedValue(
+      new Response('Row,Reason\n', {
+        status: 200,
+        headers: { 'content-disposition': 'attachment; filename="leads-errors.csv"' },
+      }),
+    );
+    const result = await createApiClient({ fetch }).download('/imports/1/error-report');
+    expect(result.fileName).toBe('leads-errors.csv');
+    await expect(result.blob.text()).resolves.toBe('Row,Reason\n');
+  });
+
+  it('uploads to the signed URL and reports envelope errors', async () => {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(json(204))
+      .mockResolvedValueOnce(
+        json(403, envelope('AUTHORIZATION_ERROR', 'This upload link is invalid or has expired.')),
+      );
+    const api = createApiClient({ fetch });
+    const target = { url: 'https://app.test/api/v1/uploads/t', method: 'PUT', headers: {} };
+    await expect(api.upload(target, new Blob(['a,b']))).resolves.toBeUndefined();
+    await expect(api.upload(target, new Blob(['a,b']))).rejects.toMatchObject({
+      code: 'AUTHORIZATION_ERROR',
+    });
+  });
+});

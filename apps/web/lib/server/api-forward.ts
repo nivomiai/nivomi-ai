@@ -12,7 +12,10 @@ const FORWARDED_REQUEST_HEADERS = [
 /** Response headers passed back to the browser. */
 const FORWARDED_RESPONSE_HEADERS = [
   'cache-control',
+  'content-disposition',
   'content-type',
+  // The OAuth callback answers with a redirect back into the app.
+  'location',
   'retry-after',
   'x-request-id',
 ] as const;

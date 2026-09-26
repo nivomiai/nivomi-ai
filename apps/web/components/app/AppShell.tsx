@@ -32,6 +32,13 @@ interface NavItem {
 
 const NAV: readonly NavItem[] = [
   { href: '/app', label: 'Overview', icon: 'i-layers' },
+  { href: '/app/leads', label: 'Leads', icon: 'i-target', permission: 'leads.read' },
+  {
+    href: '/app/data-sources',
+    label: 'Data sources',
+    icon: 'i-db',
+    permission: 'integrations.read',
+  },
   { href: '/app/team', label: 'Team', icon: 'i-users', permission: 'members.read' },
   { href: '/app/audit', label: 'Audit log', icon: 'i-shield', permission: 'audit.read' },
   { href: '/app/security', label: 'Security', icon: 'i-user' },
