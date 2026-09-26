@@ -14,7 +14,9 @@ test.describe('smoke', () => {
     const res = await page.goto('/');
 
     expect(res?.status()).toBe(200);
-    await expect(page.getByRole('heading', { level: 1, name: 'Nivomi AI' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'AI voice automation for sales teams.' }),
+    ).toBeVisible();
 
     const headers = res?.headers() ?? {};
     expect(headers['x-frame-options']).toBe('DENY');

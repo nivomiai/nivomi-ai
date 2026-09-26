@@ -9,7 +9,8 @@
     "build": "next build",
     "start": "next start --port 3000",
     "typecheck": "next typegen && tsc --noEmit",
-    "clean": "rimraf .next"
+    "clean": "rimraf .next",
+    "test:unit": "vitest run"
   },
   "dependencies": {
     "next": "16.3.6",
@@ -20,6 +21,7 @@
     "@tailwindcss/postcss": "4.3.3",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
-    "tailwindcss": "4.3.3"
+    "tailwindcss": "4.3.3",
+    "vitest": "5.0.1"
   }
 }
