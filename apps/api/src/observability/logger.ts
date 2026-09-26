@@ -13,6 +13,10 @@ export const REDACTED_PATHS = [
   'req.headers["proxy-authorization"]',
   'res.headers["set-cookie"]',
   '*.password',
+  '*.currentPassword',
+  '*.newPassword',
+  '*.passwordHash',
+  '*.tokenHash',
   '*.token',
   '*.accessToken',
   '*.refreshToken',
@@ -20,7 +24,7 @@ export const REDACTED_PATHS = [
   '*.secret',
 ];
 
-const HEALTH_PATH = /^\/api\/v\d+\/health(\?|$)/;
+const HEALTH_PATH = /^\/api\/v\d+\/health(\/ready)?(\?|$)/;
 
 export function buildLoggerOptions(env: ApiEnv): Params {
   return {

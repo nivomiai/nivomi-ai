@@ -1,6 +1,6 @@
 # ADR-009: Clerk for authentication, Nivomi-owned authorization
 
-- **Status:** Accepted
+- **Status:** Superseded by ADR-018 (Nivomi-owned authentication), 2026-09-26.
 - **Date:** 2026-09-25
 
 ## Context

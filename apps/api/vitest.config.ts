@@ -11,9 +11,16 @@ export default defineConfig({
       '@nivomi/config': fileURLToPath(
         new URL('../../packages/config/src/index.ts', import.meta.url),
       ),
+      '@nivomi/database': fileURLToPath(
+        new URL('../../packages/database/src/index.ts', import.meta.url),
+      ),
     },
   },
   test: {
     include: ['src/**/*.test.ts', 'test/**/*.test.ts'],
+    // Each integration file boots the app on an in-memory PostgreSQL (~400 MB); keep one at a time.
+    fileParallelism: false,
+    testTimeout: 30_000,
+    hookTimeout: 60_000,
   },
 });

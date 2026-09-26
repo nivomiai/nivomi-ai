@@ -17,3 +17,6 @@ _bmad
 # BMAD skill memory logs: append-only, machine-written by _bmad/scripts/memlog.py
 # (CRLF on Windows); Git normalizes them to LF on commit.
 **/.memlog.md
+
+# Generated SQL migrations and drizzle-kit snapshots (committed, never hand-formatted)
+packages/database/migrations

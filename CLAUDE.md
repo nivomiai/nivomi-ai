@@ -12,11 +12,13 @@ a real production SaaS?", not for volume of code.
 
 ## Current state
 
-Foundation (bootstrap, 2026-09): npm-workspaces monorepo, NestJS API with liveness health check,
-centralized env validation, tests, CI. `apps/web` serves the **public website** (MVP voice
-automation + Coming Soon product pages, brand design tokens in `apps/web/app/globals.css`).
-**No product app features, no database, no auth yet.** Planning: PRD draft in
-`docs/planning/prds/`; next BMAD step is architecture (see docs/ROADMAP.md).
+Phase 1 platform foundation (2026-09, see `docs/planning/implementation-plan.md`): PostgreSQL via
+Drizzle (`packages/database`; PGlite for dev/tests), Nivomi-owned auth (ADR-018), organizations,
+memberships, invitations, RBAC, audit log, rate limiting, PostgreSQL job queue (ADR-019), dev
+email mailbox. `apps/web` serves the **public website** plus the **customer app** (`/login`,
+`/signup`, verification, recovery, `/invite`, `/app/*`: onboarding, overview, team, security,
+audit log). Not built yet: leads, campaigns, calls, CRM, billing, Super Admin UI, MFA, SES/MSG91
+adapters. Requirement status: `docs/planning/requirements-matrix.md`.
 
 ## Platform decisions (accepted — see ADRs before touching these areas)
 
@@ -26,8 +28,9 @@ ta, te, kn · Exotel telephony via `VoiceProvider`, Sarvam streaming STT/TTS, LL
 per-organization OAuth via `CRMProvider`, optional per org, Nivomi DB authoritative (ADR-012) · every
 source (Excel/CSV, CRM, manual, inbound) converges on the Nivomi Contact/Lead domain; campaigns never
 touch CRM objects (ADR-017) · Razorpay via
-`PaymentProvider`, Nivomi-owned billing (ADR-013) · Clerk authN + Clerk Organizations, Nivomi-owned
-authZ (ADR-009) · AWS ap-south-1 on ECS Fargate, RDS, ElastiCache, S3 (ADR-010) · SES email
+`PaymentProvider`, Nivomi-owned billing (ADR-013) · Nivomi-owned authentication (JWT + rotating
+refresh tokens, Argon2id, HttpOnly cookies; ADR-018, supersedes Clerk/ADR-009) and authZ · jobs on
+PostgreSQL, rate limits behind `RateLimitStore` (ADR-019) · AWS ap-south-1 on ECS Fargate, RDS, ElastiCache, S3 (ADR-010) · SES email
 via `EmailProvider`, MSG91 OTP via `OtpProvider` (ADR-015) · OpenTelemetry → Grafana Cloud (India
 region), CloudWatch for AWS infrastructure (ADR-016). Inbound calls and human escalation are MVP
 capabilities (PRD revision 2). Vendor specifics
@@ -98,10 +101,12 @@ authenticated membership — never from client-supplied IDs. Enforce isolation i
 repository, queue payloads, workers, files, AI tools, exports, webhooks. Every data-touching story
 ships cross-tenant access tests.
 
-**AuthZ.** Clerk proves identity; Nivomi decides permissions. Centralized policies (RBAC: OWNER,
-ADMIN, MANAGER, AGENT, ANALYST, VIEWER; platform SUPER_ADMIN granted only in Nivomi's DB), never
-ad-hoc checks in controllers/components or Clerk role strings in business code. Super Admin
-actions are always audited; no hidden bypasses.
+**AuthZ.** Nivomi authenticates (ADR-018) and decides permissions. Centralized policies (RBAC:
+OWNER, ADMIN, MANAGER, AGENT, ANALYST, VIEWER in `authorization/permissions.ts`; platform
+SUPER_ADMIN granted only in Nivomi's DB), declared per endpoint with `@RequirePermission`, never
+ad-hoc checks in controllers/components. Tenant endpoints act on the session's active
+organization (`/organizations/current/...`). Super Admin actions are always audited; no hidden
+bypasses.
 
 **Config & secrets.** All config goes through `@nivomi/config` (`parseEnv` + zod). Services inject
 `API_ENV`, never read `process.env`. No fallback secrets; production fails fast. Only

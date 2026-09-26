@@ -36,3 +36,11 @@ export const originListSchema = z
         }),
     ),
   );
+
+/** Boolean flag from an environment string: `true`/`false`/`1`/`0` (case-insensitive). */
+export const booleanFlagSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .pipe(z.enum(['true', 'false', '1', '0']))
+  .transform((value) => value === 'true' || value === '1');
