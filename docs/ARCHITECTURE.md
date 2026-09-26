@@ -75,7 +75,7 @@ Initial providers and hosting (ADR-009 to ADR-014):
 
 ```mermaid
 flowchart TB
-  Org[Organization / user<br/>Clerk + Clerk Organizations] --> Campaign[AI voice campaign]
+  Org[Organization / user<br/>Nivomi auth + RBAC (ADR-018)] --> Campaign[AI voice campaign]
   SA[Super Admin control plane] -.-> Campaign
   Campaign --> Elig[Eligibility engine]
   Elig --> Compliance[ComplianceEngine<br/>India rule set]

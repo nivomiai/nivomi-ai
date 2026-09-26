@@ -2,7 +2,7 @@
 title: 'Nivomi AI — MVP Product Requirements Document'
 status: draft
 created: '2026-09-26'
-updated: '2026-09-26'
+updated: '2026-09-26' # revision 3: Nivomi-owned auth
 ---
 
 # Nivomi AI — MVP Product Requirements Document
@@ -37,6 +37,13 @@ is now also a source. Where it differs from the earlier brain dump, it wins:
 - email goes through Amazon SES and OTP through MSG91 (§8.18);
 - application observability uses OpenTelemetry and Grafana Cloud, with CloudWatch for AWS
   infrastructure (§9.7).
+
+**Revision 3 (2026-09-26).** The owner's full-implementation master prompt replaces Clerk with
+**Nivomi-owned authentication** ([ADR-018](../../../decisions/ADR-018-nivomi-owned-auth.md),
+superseding ADR-009). Wherever this PRD says Clerk, read: Nivomi's own sign-up, sign-in, email
+verification, password reset, sessions and (later) TOTP MFA, with Nivomi sending its own
+authentication emails through `EmailProvider`. Clerk is no longer a processor (§9.6), and there are
+no Clerk webhooks (NFR-20). Roles stay in Nivomi's database and code as before.
 
 The provider checks made for this revision, the full risk review and the implementation plan are
 in the [architecture readiness review](../../architecture-readiness-review-2026-09-26.md).
@@ -244,7 +251,7 @@ into the conversation when human judgement or action is needed.
 Every other section uses these terms exactly.
 
 - **Organization** — A tenant: one customer company. It owns all of its data. It is linked to one
-  Clerk Organization.
+  Clerk Organization (revision 3: Organizations are Nivomi's own; no Clerk).
 - **Member** — A person with access to an Organization. A person can be a Member of several
   Organizations. Each membership has one Role.
 - **Role** — One of `OWNER`, `ADMIN`, `MANAGER`, `AGENT`, `ANALYST`, `VIEWER`. Nivomi decides what
@@ -607,8 +614,8 @@ and is never taken from client input (NFR §9.4).
 
 ### 8.1 Organizations, members and access control
 
-Sign-up and sign-in use Clerk. Organization identity uses Clerk Organizations. Nivomi owns
-permissions (ADR-009).
+Sign-up, sign-in and Organization identity are Nivomi's own (ADR-018, revision 3). Nivomi owns
+permissions.
 
 **FR-1 — Sign-up and organization creation.** A person can sign up and create an Organization,
 and becomes its `OWNER`. Realizes UJ-2.
@@ -1759,8 +1766,9 @@ Nivomi never leaves voicemail on outbound calls (FR-62).
 - scheduled reports.
 
 Sending domains use SPF, DKIM and DMARC. Bounces and complaints put the address on an email
-suppression list. Sends are idempotent and retried. Clerk sends its own authentication emails
-[ASSUMPTION A-86].
+suppression list. Sends are idempotent and retried. Nivomi also sends its own
+authentication emails (verification, password reset) through `EmailProvider` (revision 3;
+replaces A-86).
 
 **FR-147 — Phone verification (OTP).** Nivomi verifies a phone number it will call, such as a
 Member's own number for test calls (FR-33) or a Transfer Destination, with an OTP sent through
@@ -1772,7 +1780,7 @@ Member's own number for test calls (FR-33) or a Transfer Destination, with an OT
 - have a 30-second cooldown before resending;
 - are rate-limited per number and per Member.
 
-Sign-in uses Clerk (email plus authenticator-app MFA) rather than SMS, to avoid SMS cost
+Sign-in uses email and password plus authenticator-app MFA (ADR-018) rather than SMS, to avoid SMS cost
 [ASSUMPTION A-88; VALIDATE VQ-15]. OTP SMS needs Nivomi's own DLT registration and an approved
 template.
 

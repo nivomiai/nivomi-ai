@@ -9,8 +9,8 @@ BMAD installation, engineering rules (`CLAUDE.md`).
 
 ## Phase 1: Planning (next)
 
-1. ✅ Launch decisions resolved (2026-09-25): India, Exotel, Sarvam, HubSpot, Razorpay, Clerk, AWS
-   ap-south-1 (ADR-009 to ADR-014).
+1. ✅ Launch decisions resolved (2026-09-25): India, Exotel, Sarvam, HubSpot, Razorpay, AWS
+   ap-south-1 (ADR-009 to ADR-014). Clerk was later replaced by Nivomi-owned auth (ADR-018).
 2. India compliance research (`bmad-deep-recon`): TRAI/TCCCPR/DLT, DND, DPDP Act, recording;
    feeds ADR-014 and the PRD.
 3. `bmad-prd`: PRD for the MVP journey with measurable acceptance criteria → `docs/planning/prd.md`.
@@ -22,9 +22,10 @@ BMAD installation, engineering rules (`CLAUDE.md`).
 
 ## Phase 2: Platform core (expected epics, to be confirmed by the PRD)
 
-- Data foundation: PostgreSQL + migrations, Docker Compose for local PG/Redis, readiness check.
-- Identity and tenancy: Clerk integration, organization/membership sync, Nivomi RBAC,
-  tenant-isolation test suite, audit log.
+- ✅ Data foundation: PostgreSQL (Drizzle, migrations; PGlite locally), readiness check.
+- ✅ Identity and tenancy: Nivomi-owned auth (ADR-018), organizations, memberships, invitations,
+  RBAC, tenant-isolation tests, audit log, rate limiting, job queue (ADR-019).
+- Web app shell: ✅ sign-up/sign-in/verification/recovery, onboarding, team, security, audit log.
 - Super Admin basics: organizations, users, plans/limits, provider configuration, feature flags.
 - Customer model, status engine and CSV/Excel import pipeline (async).
 - AWS infrastructure as code and CI deploy stage.
