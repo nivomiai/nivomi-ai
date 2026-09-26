@@ -1,0 +1,21 @@
+{
+  "name": "nivomi-spike-voice-loop",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Throwaway spike: Exotel + Sarvam + LLM voice loop (latency, barge-in, transfer). Not product code.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "check": "node --env-file=.env.local src/check.js",
+    "server": "node --env-file=.env.local src/server.js",
+    "call": "node --env-file=.env.local src/call.js",
+    "report": "node src/report.js",
+    "test": "node --test \"src/**/*.test.js\""
+  },
+  "dependencies": {
+    "sarvamai": "1.1.10",
+    "ws": "^8.21.3"
+  }
+}

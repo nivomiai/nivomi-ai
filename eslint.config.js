@@ -13,6 +13,8 @@ export default tseslint.config(
       'playwright-report/**',
       'test-results/**',
       '**/next-env.d.ts',
+      // Throwaway spikes (own package.json, plain JS, never imported by product code)
+      'spikes/**',
       // Vendored BMAD Method installation
       '_bmad/**',
       '.claude/**',

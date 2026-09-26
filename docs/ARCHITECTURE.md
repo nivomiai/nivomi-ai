@@ -104,7 +104,12 @@ Key rules (full list in [CLAUDE.md](../CLAUDE.md)):
 - **Events:** state changes write an outbox row in the same transaction; a relay publishes to
   queues; consumers are idempotent (at-least-once delivery).
 - **Providers:** domain code depends on `LLMProvider`, `VoiceProvider`, `STTProvider`,
-  `TTSProvider`, `CRMProvider`, `PaymentProvider`, `StorageProvider`; vendor code lives in adapters.
+  `TTSProvider`, `CRMProvider`, `PaymentProvider`, `StorageProvider`, `CalendarProvider`,
+  `EmailProvider`, `OtpProvider`, `FileImportProvider`; vendor code lives in adapters.
+- **Data:** every source (Excel/CSV, CRM, manual, inbound calls) converges on Nivomi's Contact/Lead
+  domain through one ingestion path; a CRM is optional (ADR-017).
+- **Observability:** OpenTelemetry → Grafana Cloud (India region); CloudWatch for AWS infrastructure
+  (ADR-016).
 - **Async by default** for campaigns, imports, exports, CRM sync and AI post-processing.
 
 ## 3. Gap between current and target

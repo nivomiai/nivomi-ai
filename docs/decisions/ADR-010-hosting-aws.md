@@ -1,6 +1,6 @@
 # ADR-010: AWS ap-south-1 hosting on ECS Fargate
 
-- **Status:** Accepted
+- **Status:** Accepted. Application observability amended by ADR-016.
 - **Date:** 2026-09-25
 
 ## Context
