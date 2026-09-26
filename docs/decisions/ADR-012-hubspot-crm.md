@@ -1,6 +1,6 @@
 # ADR-012: HubSpot as first CRM, per-tenant OAuth, Nivomi as source of truth
 
-- **Status:** Accepted
+- **Status:** Accepted. Amended by ADR-017: connecting a CRM is optional per organization.
 - **Date:** 2026-09-25
 
 ## Decision
