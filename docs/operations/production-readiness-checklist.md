@@ -25,14 +25,17 @@ Status: ✅ done · 🟡 partial · ⬜ not started · ⛔ blocked (external dep
 
 ## Providers
 
-| Item                                                              | Status | Evidence / gap                         |
-| ----------------------------------------------------------------- | ------ | -------------------------------------- |
-| SES adapter, verified domain, SPF/DKIM/DMARC, bounce handling     | ⛔     | AWS account and domain (ADR-015)       |
-| MSG91 OTP with DLT template                                       | ⛔     | MSG91 account, DLT registration        |
-| Exotel, Sarvam, LLM adapters                                      | ⛔     | Accounts and credentials (ADR-011)     |
-| HubSpot OAuth app                                                 | ⛔     | HubSpot developer account (ADR-012)    |
-| Razorpay                                                          | ⛔     | Account; pricing not final (ADR-013)   |
-| Provider failure behaviour tested per the provider failure matrix | 🟡     | Built rows tested; design rows pending |
+| Item                                                                 | Status | Evidence / gap                               |
+| -------------------------------------------------------------------- | ------ | -------------------------------------------- |
+| SES adapter, verified domain, SPF/DKIM/DMARC, bounce handling        | ⛔     | AWS account and domain (ADR-015)             |
+| S3 storage adapter (SSE-KMS, ap-south-1) and upload malware scanning | ⛔     | AWS account (ADR-020)                        |
+| KMS envelope encryption for stored CRM tokens                        | ⬜     | Static key today (TECH_DEBT)                 |
+| HubSpot app registered and tested against a HubSpot test account     | ⛔     | HubSpot developer account (hubspot-setup.md) |
+| MSG91 OTP with DLT template                                          | ⛔     | MSG91 account, DLT registration              |
+| Exotel, Sarvam, LLM adapters                                         | ⛔     | Accounts and credentials (ADR-011)           |
+| HubSpot OAuth app                                                    | ⛔     | HubSpot developer account (ADR-012)          |
+| Razorpay                                                             | ⛔     | Account; pricing not final (ADR-013)         |
+| Provider failure behaviour tested per the provider failure matrix    | 🟡     | Built rows tested; design rows pending       |
 
 ## Infrastructure (AWS ap-south-1)
 

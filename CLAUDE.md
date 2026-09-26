@@ -17,8 +17,12 @@ Drizzle (`packages/database`; PGlite for dev/tests), Nivomi-owned auth (ADR-018)
 memberships, invitations, RBAC, audit log, rate limiting, PostgreSQL job queue (ADR-019), dev
 email mailbox. `apps/web` serves the **public website** plus the **customer app** (`/login`,
 `/signup`, verification, recovery, `/invite`, `/app/*`: onboarding, overview, team, security,
-audit log). Not built yet: leads, campaigns, calls, CRM, billing, Super Admin UI, MFA, SES/MSG91
-adapters. Requirement status: `docs/planning/requirements-matrix.md`.
+audit log). Phase 2 (ADR-020): contacts, leads, suppression list, dedupe review queue, CSV/XLSX
+import (signed uploads, mapping, preview, chunked jobs) and HubSpot inbound (OAuth, encrypted
+tokens, full + 15-min incremental sync of contacts, companies and HubSpot Leads); web `/app/leads`,
+`/app/data-sources`. Not built yet: campaigns, calls, CRM write-back and webhooks, billing, Super
+Admin UI, MFA, SES/MSG91/S3 adapters. Requirement status: `docs/planning/requirements-matrix.md`. Holds (HubSpot app,
+AWS account — parked until all phases are done) and next steps: `docs/planning/status-holds-and-next.md`.
 
 ## Platform decisions (accepted — see ADRs before touching these areas)
 

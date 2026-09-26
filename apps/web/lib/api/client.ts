@@ -66,7 +66,7 @@ function isErrorEnvelope(value: unknown): value is ErrorEnvelope {
 }
 
 export interface RequestOptions {
-  readonly method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  readonly method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   readonly body?: unknown;
   readonly signal?: AbortSignal;
 }
@@ -145,7 +145,8 @@ export function createApiClient(options: ApiClientOptions = {}) {
     return refreshing;
   }
 
-  async function request<T>(path: string, init: RequestOptions = {}): Promise<T> {
+  /** Sends with a one-time session refresh on 401; throws the envelope error when not ok. */
+  async function authorized(path: string, init: RequestOptions): Promise<Response> {
     let response = await send(path, init);
     if (response.status === 401 && !NO_REFRESH.test(path)) {
       const renewed = await refreshSession().catch(() => false);
@@ -157,6 +158,11 @@ export function createApiClient(options: ApiClientOptions = {}) {
       }
     }
     if (!response.ok) throw await toError(response);
+    return response;
+  }
+
+  async function request<T>(path: string, init: RequestOptions = {}): Promise<T> {
+    const response = await authorized(path, init);
     if (response.status === 204 || response.status === 202) {
       // 202 bodies are informational only.
       const text = await response.text();
@@ -170,7 +176,41 @@ export function createApiClient(options: ApiClientOptions = {}) {
     get: <T>(path: string, signal?: AbortSignal) => request<T>(path, signal ? { signal } : {}),
     post: <T = void>(path: string, body?: unknown) => request<T>(path, { method: 'POST', body }),
     put: <T = void>(path: string, body?: unknown) => request<T>(path, { method: 'PUT', body }),
+    patch: <T = void>(path: string, body?: unknown) => request<T>(path, { method: 'PATCH', body }),
     del: <T = void>(path: string) => request<T>(path, { method: 'DELETE' }),
+    /** A file response (e.g. a CSV report) with the server-suggested file name. */
+    download: async (path: string): Promise<{ blob: Blob; fileName: string | null }> => {
+      const response = await authorized(path, {});
+      const disposition = response.headers.get('content-disposition') ?? '';
+      return {
+        blob: await response.blob(),
+        fileName: /filename="([^"]+)"/.exec(disposition)?.[1] ?? null,
+      };
+    },
+    /** PUTs a file to a signed upload URL; the URL itself authorizes the upload. */
+    upload: async (
+      target: { url: string; method: string; headers: Record<string, string> },
+      file: Blob,
+    ): Promise<void> => {
+      let response: Response;
+      try {
+        response = await doFetch(target.url, {
+          method: target.method,
+          headers: target.headers,
+          body: file,
+          credentials: 'same-origin',
+        });
+      } catch {
+        throw new ApiError(
+          'NETWORK_ERROR',
+          'The upload was interrupted. Check your connection and try again.',
+          0,
+          true,
+          null,
+        );
+      }
+      if (!response.ok) throw await toError(response);
+    },
   };
 }
 

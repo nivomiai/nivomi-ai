@@ -12,6 +12,8 @@ import { JobWorker } from '../../src/jobs/jobs.js';
 
 export const ALLOWED_ORIGIN = 'https://app.nivomi.test';
 export const PASSWORD = 'correct horse battery';
+/** Test-only credential encryption key (32 zero-padded bytes); never a real secret. */
+export const TEST_ENCRYPTION_KEY = Buffer.alloc(32, 7).toString('base64');
 
 export interface TestApp {
   readonly app: NestExpressApplication;
@@ -25,6 +27,7 @@ export interface TestApp {
 /** Boots the real application on an in-memory PostgreSQL (PGlite) with the worker off. */
 export async function createTestApp(overrides: Record<string, string> = {}): Promise<TestApp> {
   const mailbox = mkdtempSync(join(tmpdir(), 'nivomi-mailbox-'));
+  const uploads = mkdtempSync(join(tmpdir(), 'nivomi-uploads-'));
   const app = await createApp(
     loadApiEnv({
       NODE_ENV: 'test',
@@ -38,6 +41,8 @@ export async function createTestApp(overrides: Record<string, string> = {}): Pro
       WORKER_ENABLED: 'false',
       // Lets each test pose as a distinct client IP via X-Forwarded-For.
       TRUST_PROXY: 'true',
+      STORAGE_LOCAL_DIR: uploads,
+      CREDENTIALS_ENCRYPTION_KEY: TEST_ENCRYPTION_KEY,
       ...overrides,
     }),
   );
@@ -51,6 +56,7 @@ export async function createTestApp(overrides: Record<string, string> = {}): Pro
     close: async () => {
       await app.close();
       rmSync(mailbox, { recursive: true, force: true });
+      rmSync(uploads, { recursive: true, force: true });
     },
   };
 }
@@ -137,3 +143,20 @@ export interface ApiBody {
 }
 
 export const body = (res: { body: unknown }): ApiBody => res.body as ApiBody;
+
+/** Invites a new verified user into the owner's active organization with `role`. */
+export async function joinAs(
+  t: TestApp,
+  ownerClient: Browser,
+  role: string,
+  label = role.toLowerCase(),
+) {
+  const member = await signedInUser(t, label, `${role} Person`);
+  await ownerClient
+    .post('/api/v1/organizations/current/invitations')
+    .send({ email: member.email, role })
+    .expect(201);
+  const token = await tokenFromEmail(t, member.email, 'invitation');
+  await member.client.post('/api/v1/organizations/invitations/accept').send({ token }).expect(201);
+  return member;
+}

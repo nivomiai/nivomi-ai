@@ -3,8 +3,8 @@ import type { organizationRoles } from '@nivomi/database';
 export type OrganizationRole = (typeof organizationRoles)[number];
 
 /**
- * Permission catalogue. Grows phase by phase (leads, campaigns, calls…); every endpoint that
- * touches tenant data declares one.
+ * Permission catalogue. Grows phase by phase (campaigns, calls…); every endpoint that touches
+ * tenant data declares one.
  */
 export type Permission =
   | 'organization.read'
@@ -12,34 +12,58 @@ export type Permission =
   | 'members.invite'
   | 'members.update_role'
   | 'members.remove'
-  | 'audit.read';
+  | 'audit.read'
+  | 'leads.read'
+  | 'leads.write'
+  | 'imports.manage'
+  | 'suppression.manage'
+  | 'integrations.read'
+  | 'integrations.manage'
+  | 'integrations.sync';
+
+const ADMINISTRATION: readonly Permission[] = [
+  'organization.read',
+  'members.read',
+  'members.invite',
+  'members.update_role',
+  'members.remove',
+  'audit.read',
+];
+
+const DATA_MANAGEMENT: readonly Permission[] = [
+  'leads.read',
+  'leads.write',
+  'imports.manage',
+  'suppression.manage',
+  'integrations.read',
+  'integrations.sync',
+];
 
 /** Role → permissions, from the PRD §8.1 permission matrix. Central; never checked ad hoc. */
 const ROLE_PERMISSIONS: Record<OrganizationRole, ReadonlySet<Permission>> = {
-  OWNER: new Set<Permission>([
-    'organization.read',
-    'members.read',
-    'members.invite',
-    'members.update_role',
-    'members.remove',
-    'audit.read',
-  ]),
-  ADMIN: new Set<Permission>([
-    'organization.read',
-    'members.read',
-    'members.invite',
-    'members.update_role',
-    'members.remove',
-    'audit.read',
-  ]),
-  MANAGER: new Set<Permission>(['organization.read', 'members.read']),
-  AGENT: new Set<Permission>(['organization.read']),
-  ANALYST: new Set<Permission>(['organization.read']),
+  OWNER: new Set<Permission>([...ADMINISTRATION, ...DATA_MANAGEMENT, 'integrations.manage']),
+  ADMIN: new Set<Permission>([...ADMINISTRATION, ...DATA_MANAGEMENT, 'integrations.manage']),
+  // Leads: import, edit, Suppression List ✓; HubSpot R (plus running an ingest, FR-19).
+  MANAGER: new Set<Permission>(['organization.read', 'members.read', ...DATA_MANAGEMENT]),
+  // Leads: own records only.
+  AGENT: new Set<Permission>(['organization.read', 'leads.read', 'leads.write']),
+  // Leads: read-only.
+  ANALYST: new Set<Permission>(['organization.read', 'leads.read']),
   VIEWER: new Set<Permission>(['organization.read']),
+};
+
+/** Permissions a role holds only for records assigned to the Member ("own" in the matrix). */
+const OWN_SCOPED: Partial<Record<OrganizationRole, ReadonlySet<Permission>>> = {
+  AGENT: new Set<Permission>(['leads.read', 'leads.write']),
 };
 
 export function roleHasPermission(role: OrganizationRole, permission: Permission): boolean {
   return ROLE_PERMISSIONS[role].has(permission);
+}
+
+/** True when `role` may use `permission` only on records assigned to the Member. */
+export function isOwnScoped(role: OrganizationRole, permission: Permission): boolean {
+  return OWN_SCOPED[role]?.has(permission) ?? false;
 }
 
 /** Roles only an OWNER may grant (PRD FR-2). */

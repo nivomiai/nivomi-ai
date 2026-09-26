@@ -62,3 +62,25 @@ describe('forwardToApi', () => {
     expect(body.error.message).not.toContain('ECONNREFUSED');
   });
 });
+
+describe('forwardToApi redirects', () => {
+  it('passes the OAuth callback redirect through', async () => {
+    vi.stubEnv('NIVOMI_API_ORIGIN', 'http://api.test');
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(null, {
+          status: 303,
+          headers: { location: 'http://web.test/app/data-sources?crm=connected' },
+        }),
+      ),
+    );
+    const res = await forwardToApi(
+      new Request('http://web.test/api/v1/integrations/crm/hubspot/callback?code=x'),
+    );
+    expect(res.status).toBe(303);
+    expect(res.headers.get('location')).toBe('http://web.test/app/data-sources?crm=connected');
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+});

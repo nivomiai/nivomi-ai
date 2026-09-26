@@ -1,24 +1,39 @@
 import { describe, expect, it } from 'vitest';
-import { isPrivilegedRole, permissionsFor, roleHasPermission } from './permissions.js';
+import { isOwnScoped, isPrivilegedRole, permissionsFor, roleHasPermission } from './permissions.js';
 
 describe('permission matrix (PRD §8.1)', () => {
-  it('gives OWNER and ADMIN full administration', () => {
+  it('gives OWNER and ADMIN full administration, data and integrations', () => {
     for (const role of ['OWNER', 'ADMIN'] as const) {
       expect(roleHasPermission(role, 'members.invite')).toBe(true);
       expect(roleHasPermission(role, 'audit.read')).toBe(true);
+      expect(roleHasPermission(role, 'integrations.manage')).toBe(true);
+      expect(roleHasPermission(role, 'imports.manage')).toBe(true);
     }
   });
 
-  it('lets MANAGER see the team but not administer it', () => {
+  it('lets MANAGER manage leads and imports, read HubSpot and run an ingest', () => {
     expect(roleHasPermission('MANAGER', 'members.read')).toBe(true);
     expect(roleHasPermission('MANAGER', 'members.invite')).toBe(false);
     expect(roleHasPermission('MANAGER', 'audit.read')).toBe(false);
+    expect(roleHasPermission('MANAGER', 'imports.manage')).toBe(true);
+    expect(roleHasPermission('MANAGER', 'suppression.manage')).toBe(true);
+    expect(roleHasPermission('MANAGER', 'integrations.read')).toBe(true);
+    expect(roleHasPermission('MANAGER', 'integrations.sync')).toBe(true);
+    expect(roleHasPermission('MANAGER', 'integrations.manage')).toBe(false);
   });
 
-  it('limits AGENT, ANALYST and VIEWER to reading the organization', () => {
-    for (const role of ['AGENT', 'ANALYST', 'VIEWER'] as const) {
-      expect(permissionsFor(role)).toEqual(['organization.read']);
-    }
+  it('limits AGENT to their own leads', () => {
+    expect(roleHasPermission('AGENT', 'leads.read')).toBe(true);
+    expect(roleHasPermission('AGENT', 'leads.write')).toBe(true);
+    expect(isOwnScoped('AGENT', 'leads.read')).toBe(true);
+    expect(roleHasPermission('AGENT', 'imports.manage')).toBe(false);
+    expect(isOwnScoped('MANAGER', 'leads.read')).toBe(false);
+  });
+
+  it('makes ANALYST read-only and gives VIEWER no lead access', () => {
+    expect(roleHasPermission('ANALYST', 'leads.read')).toBe(true);
+    expect(roleHasPermission('ANALYST', 'leads.write')).toBe(false);
+    expect(permissionsFor('VIEWER')).toEqual(['organization.read']);
   });
 
   it('treats only OWNER and ADMIN as privileged', () => {

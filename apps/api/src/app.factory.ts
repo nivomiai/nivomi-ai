@@ -2,11 +2,13 @@ import { VersioningType } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import cookieParser from 'cookie-parser';
+import express from 'express';
 import helmet from 'helmet';
 import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module.js';
 import type { ApiEnv } from './config/env.js';
 import { REQUEST_ID_HEADER } from './observability/request-id.js';
+import { IMPORT_MAX_BYTES } from './imports/file-parsing.js';
 
 /**
  * Builds the fully configured HTTP application. Shared by `main.ts` and the
@@ -29,6 +31,9 @@ export async function createApp(env: ApiEnv): Promise<NestExpressApplication> {
     exposedHeaders: [REQUEST_ID_HEADER],
   });
   app.useBodyParser('json', { limit: '1mb' });
+  // Signed file uploads (local storage adapter) take a raw body up to the import size limit;
+  // every other route keeps the 1 MB JSON limit.
+  app.use('/api/v1/uploads', express.raw({ type: () => true, limit: IMPORT_MAX_BYTES }));
   app.use(cookieParser());
   app.setGlobalPrefix('api');
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
