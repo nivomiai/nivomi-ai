@@ -427,6 +427,12 @@ function SettingsPanel({ campaign: c }: { readonly campaign: Campaign }) {
       'Caller number',
       c.callerNumber ? `${formatPhone(c.callerNumber.phone)} (${c.callerNumber.series}xx)` : 'None',
     ],
+    [
+      'AI agent',
+      c.agentVersion
+        ? `${c.agentVersion.agentName} · version ${c.agentVersion.version}`
+        : 'None — choose one before launch',
+    ],
     ['Daily window', `${c.windowStart}–${c.windowEnd}, recipient time`],
     ['Starts', c.startsAt ? formatDateTime(c.startsAt) : 'At launch'],
     ['Ends', c.endsAt ? formatDateTime(c.endsAt) : 'When every lead is done'],

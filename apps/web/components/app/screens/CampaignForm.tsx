@@ -8,6 +8,7 @@ import {
   LEAD_STATUSES,
   LEAD_STATUS_LABELS,
   type CallCategory,
+  type AgentSummary,
   type Campaign,
   type TelecomIdentity,
 } from '@/lib/api/types';
@@ -40,12 +41,14 @@ const fromLocalInput = (value: string) => (value ? new Date(value).toISOString()
 export function CampaignForm({ campaign }: { readonly campaign?: Campaign }) {
   const router = useRouter();
   const identity = useResource<TelecomIdentity>('/telecom-identity');
+  const agents = useResource<{ items: AgentSummary[] }>('/agents');
   const submit = useSubmit();
   const [form, setForm] = useState({
     name: campaign?.name ?? '',
     callCategory: campaign?.callCategory ?? 'PROMOTIONAL',
     type: campaign?.type ?? 'STATIC',
     callerNumberId: campaign?.callerNumber?.id ?? '',
+    agentVersionId: campaign?.agentVersion?.id ?? '',
     statuses: campaign?.selection.statuses ?? [],
     windowStart: campaign?.windowStart ?? '10:00',
     windowEnd: campaign?.windowEnd ?? '19:00',
@@ -64,6 +67,10 @@ export function CampaignForm({ campaign }: { readonly campaign?: Campaign }) {
       setForm((f) => ({ ...f, [key]: e.target.value }));
 
   const numbers = identity.data?.numbers.filter((n) => n.status === 'ACTIVE') ?? [];
+  const publishedAgents =
+    agents.data?.items.filter(
+      (a) => a.latestVersionId && a.status !== 'ARCHIVED' && a.callCategory === form.callCategory,
+    ) ?? [];
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -72,6 +79,7 @@ export function CampaignForm({ campaign }: { readonly campaign?: Campaign }) {
       callCategory: form.callCategory,
       type: form.type,
       callerNumberId: form.callerNumberId || null,
+      agentVersionId: form.agentVersionId || null,
       selection: { kind: 'FILTER', ...(form.statuses.length ? { statuses: form.statuses } : {}) },
       windowStart: form.windowStart,
       windowEnd: form.windowEnd,
@@ -175,6 +183,48 @@ export function CampaignForm({ campaign }: { readonly campaign?: Campaign }) {
                   telecom identity
                 </Link>{' '}
                 page first.
+              </Notice>
+            </div>
+          ) : null}
+        </Panel>
+
+        <Panel
+          title="AI agent"
+          description="The published agent version that speaks on these calls. Its call type must match the campaign's."
+        >
+          <SelectField
+            id="campaign-agent"
+            label="Agent version"
+            value={form.agentVersionId}
+            onChange={(v) => setForm((f) => ({ ...f, agentVersionId: v }))}
+            options={[
+              {
+                value: '',
+                label: publishedAgents.length ? 'Choose an agent' : 'No published agents',
+              },
+              ...publishedAgents.map((a) => ({
+                value: a.latestVersionId ?? '',
+                label: `${a.name} · version ${a.latestVersion}`,
+              })),
+              ...(campaign?.agentVersion &&
+              !publishedAgents.some((a) => a.latestVersionId === campaign.agentVersion?.id)
+                ? [
+                    {
+                      value: campaign.agentVersion.id,
+                      label: `${campaign.agentVersion.agentName} · version ${campaign.agentVersion.version} (current)`,
+                    },
+                  ]
+                : []),
+            ]}
+          />
+          {publishedAgents.length === 0 ? (
+            <div className="mt-4">
+              <Notice tone="warn">
+                Publish an{' '}
+                <Link href="/app/agents" className="font-semibold underline underline-offset-4">
+                  AI agent
+                </Link>{' '}
+                for {CALL_CATEGORY_LABELS[form.callCategory].toLowerCase()} calls first.
               </Notice>
             </div>
           ) : null}

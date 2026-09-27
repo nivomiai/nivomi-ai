@@ -39,6 +39,7 @@ const NAV: readonly NavItem[] = [
     icon: 'i-db',
     permission: 'integrations.read',
   },
+  { href: '/app/agents', label: 'AI Agents', icon: 'i-spark', permission: 'agents.read' },
   { href: '/app/campaigns', label: 'Campaigns', icon: 'i-phone', permission: 'campaigns.read' },
   {
     href: '/app/compliance',

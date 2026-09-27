@@ -27,6 +27,7 @@ test.describe('campaigns and eligibility', () => {
     await page.getByRole('link', { name: 'New campaign' }).click();
     await page.getByLabel('Name').fill(name);
     await page.getByLabel('Caller number').selectOption({ index: 1 });
+    await page.getByLabel('Agent version').selectOption({ index: 1 });
     await page.getByRole('button', { name: 'Create campaign' }).click();
     await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
     await expect(page.getByText('Draft', { exact: true })).toBeVisible();
