@@ -12,21 +12,23 @@ _Last updated: 2026-09-27._
 
 ## Phases
 
-| #   | Phase                                | Status                                                                                   | Where                          |
-| --- | ------------------------------------ | ---------------------------------------------------------------------------------------- | ------------------------------ |
-| 1   | Platform foundation                  | ✅ Done                                                                                  | PR #8                          |
-| 2   | Contacts, leads, CSV/XLSX import     | ✅ Done                                                                                  | PR #9                          |
-| 3   | Compliance engine and campaigns      | 🔨 **Next** — see the [Phase 3 handoff](handoffs/phase-3-kickoff.md)                     | `feature/compliance-campaigns` |
-| 4   | Calls and call history               | Not started                                                                              | —                              |
-| 5   | Inbound calls                        | Not started                                                                              | —                              |
-| 6   | Appointments                         | Not started                                                                              | —                              |
-| 7   | CRM (HubSpot)                        | 🟡 Inbound done (connect, fetch contacts and leads); write-back and webhooks not started | PR #9 (inbound)                |
-| 8   | Usage, quotas, billing               | Not started                                                                              | —                              |
-| 9   | Notifications, OTP, Super Admin, MFA | Not started                                                                              | —                              |
-| 10  | Analytics and observability          | Not started                                                                              | —                              |
-| 11  | Deploy and hardening                 | Not started                                                                              | —                              |
+| #   | Phase                                | Status                                                                                   | Where                                        |
+| --- | ------------------------------------ | ---------------------------------------------------------------------------------------- | -------------------------------------------- |
+| 1   | Platform foundation                  | ✅ Done                                                                                  | PR #8                                        |
+| 2   | Contacts, leads, CSV/XLSX import     | ✅ Done                                                                                  | PR #9                                        |
+| 3   | Compliance engine and campaigns      | ✅ Done — rules are a **draft pending counsel**; the dialer is simulated                 | `feature/compliance-campaigns` (PR after #9) |
+| 4   | Calls and call history               | 🔨 **Next** — see [Next](#next)                                                          | —                                            |
+| 5   | Inbound calls                        | Not started                                                                              | —                                            |
+| 6   | Appointments                         | Not started                                                                              | —                                            |
+| 7   | CRM (HubSpot)                        | 🟡 Inbound done (connect, fetch contacts and leads); write-back and webhooks not started | PR #9 (inbound)                              |
+| 8   | Usage, quotas, billing               | Not started                                                                              | —                                            |
+| 9   | Notifications, OTP, Super Admin, MFA | Not started                                                                              | —                                            |
+| 10  | Analytics and observability          | Not started                                                                              | —                                            |
+| 11  | Deploy and hardening                 | Not started                                                                              | —                                            |
 
 PRs merge in order: **#7 → #8 → #9 → Phase 3**. Each branch builds on the one before.
+
+Phase 3 details: [story spec](../stories/spec-phase-3-compliance-campaigns.md), [ADR-021](../decisions/ADR-021-compliance-rule-data-and-eligibility-decisions.md), the Phase 3 section of the [requirements matrix](requirements-matrix.md).
 
 ## On hold by owner decision (2026-09-27)
 
@@ -48,18 +50,32 @@ the real service later is an adapter and configuration change, not a rewrite.
 These are not parked by the owner decision above, but the product cannot go live without them.
 Work proceeds around them with fakes and fail-closed defaults.
 
-| Dependency                                                                                                                | Needed for                                                        | Status                                                                          |
-| ------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| Indian telecom and privacy **counsel** review of the India rule set (VQ-3, VQ-4, VQ-6)                                    | Marking ComplianceEngine rules final (Phase 3)                    | Not engaged. Rules ship as "draft — pending counsel" and fail closed            |
-| TRAI **Third Amendment** Gazette date (VQ-12)                                                                             | Effective dates of the 7-day inquiry window and A2P rules         | Waiting for notification. Dates are stored as rule data, updated when published |
-| **Exotel** account and written answers (VQ-1, VQ-7, VQ-8, VQ-13; OD-2)                                                    | Real calls, DLT and 140xx numbers, DND filtering, complaints feed | Not opened. Phase 3 uses a telecom-identity model plus a simulated dialer       |
-| **Sarvam** account and DPA (VQ-5, VQ-9)                                                                                   | Speech (Phase 4)                                                  | Not opened                                                                      |
-| **LLM provider** choice and evaluation                                                                                    | AI agent (Phase 4)                                                | Not started                                                                     |
-| **Razorpay** account; **pricing** (OD-4)                                                                                  | Billing (Phase 8)                                                 | Pricing not final                                                               |
-| **MSG91** account and DLT SMS template                                                                                    | Phone OTP (Phase 9)                                               | Not opened                                                                      |
-| Owner decisions **OD-1** (calendar), **OD-3** (consent evidence standard), **OD-5** (BFSI), **OD-6** (lead-ingestion API) | Various                                                           | Open. Safe defaults are applied and logged                                      |
+| Dependency                                                                                                                | Needed for                                                        | Status                                                                                                                                                         |
+| ------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Indian telecom and privacy **counsel** review of the India rule set (VQ-3, VQ-4, VQ-6)                                    | Marking ComplianceEngine rules final (built in Phase 3 as data)   | Not engaged. Rule set IN v1 is stored as `DRAFT`, shown as "pending legal review", and fails closed; approval means publishing an `APPROVED` version (ADR-021) |
+| TRAI **Third Amendment** Gazette date (VQ-12)                                                                             | Effective dates of the 7-day inquiry window and A2P rules         | Waiting for notification. Dates are stored as rule data, updated when published                                                                                |
+| **Exotel** account and written answers (VQ-1, VQ-7, VQ-8, VQ-13; OD-2)                                                    | Real calls, DLT and 140xx numbers, DND filtering, complaints feed | Not opened. Phase 3 uses a telecom-identity model plus a simulated dialer                                                                                      |
+| **Sarvam** account and DPA (VQ-5, VQ-9)                                                                                   | Speech (Phase 4)                                                  | Not opened                                                                                                                                                     |
+| **LLM provider** choice and evaluation                                                                                    | AI agent (Phase 4)                                                | Not started                                                                                                                                                    |
+| **Razorpay** account; **pricing** (OD-4)                                                                                  | Billing (Phase 8)                                                 | Pricing not final                                                                                                                                              |
+| **MSG91** account and DLT SMS template                                                                                    | Phone OTP (Phase 9)                                               | Not opened                                                                                                                                                     |
+| Owner decisions **OD-1** (calendar), **OD-3** (consent evidence standard), **OD-5** (BFSI), **OD-6** (lead-ingestion API) | Various                                                           | Open. Safe defaults are applied and logged                                                                                                                     |
 
 ## Next
 
-**Phase 3 — Compliance engine and campaigns.** The scope, constraints and definition of done are
-in the [Phase 3 handoff](handoffs/phase-3-kickoff.md).
+**Phase 4 — Calls and call history.** Phase 3 left these seams for it:
+
+- **`VoiceProvider`** (`apps/api/src/campaigns/voice-provider.ts`): the Exotel adapter replaces
+  `SimulatedVoiceProvider` and must implement `findCall(reference)` so crash reconciliation works
+  (ADR-021 §5). Its status callback calls `CallOutcomeService.apply` with the attempt id.
+- **`PreferenceRegistry`** (`apps/api/src/compliance/preference-registry.ts`): the real NCPR/DND
+  lookup (VQ-8); keep "unavailable → DEFERRED".
+- The decision's `obligations` (AI disclosure, recording notice) are passed to `placeCall`; the
+  voice agent must speak them. Conversation outcomes (interested, callback requested, opted out)
+  extend `CallOutcome` and the addendum §4 mapping in `campaign-policy.ts`.
+- Still open for launch: counsel review of the rule set, the Third Amendment Gazette date
+  (a rule set v2), Exotel written answers (VQ-1, VQ-7, VQ-8, VQ-13).
+
+Try it locally: `npm run dev`, sign in as `admin@example.com` (password `nivomi-dev-admin`), open
+**Campaigns → Site-visit follow-up (demo)**, run the pre-launch check and launch. Lotus Realty has
+no telecom identity, so its campaigns show the "not verified" block.

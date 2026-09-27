@@ -20,8 +20,13 @@ email mailbox. `apps/web` serves the **public website** plus the **customer app*
 audit log). Phase 2 (ADR-020): contacts, leads, suppression list, dedupe review queue, CSV/XLSX
 import (signed uploads, mapping, preview, chunked jobs) and HubSpot inbound (OAuth, encrypted
 tokens, full + 15-min incremental sync of contacts, companies and HubSpot Leads); web `/app/leads`,
-`/app/data-sources`. Not built yet: campaigns, calls, CRM write-back and webhooks, billing, Super
-Admin UI, MFA, SES/MSG91/S3 adapters. Requirement status: `docs/planning/requirements-matrix.md`. Holds (HubSpot app,
+`/app/data-sources`. Phase 3 (ADR-021): `ComplianceEngine` over versioned rule data (India v1,
+**DRAFT pending counsel**), eligibility engine with a recorded decision per check and dial, two
+append-only consent ledgers, telecom identity and 140xx/1601xx caller numbers, campaigns with
+pre-launch check, job-driven dialling, retries, Emergency Stop and complaint breaker, against a
+**simulated** `VoiceProvider` and preference registry (refused in production); web `/app/campaigns`,
+`/app/compliance`, `/app/telecom`. Not built yet: real calls (Exotel), CRM write-back and webhooks,
+billing, Super Admin UI (a few `/platform` APIs exist), MFA, SES/MSG91/S3 adapters. Requirement status: `docs/planning/requirements-matrix.md`. Holds (HubSpot app,
 AWS account — parked until all phases are done) and next steps: `docs/planning/status-holds-and-next.md`.
 
 ## Platform decisions (accepted — see ADRs before touching these areas)

@@ -62,9 +62,11 @@ Status: ✅ done · 🟡 partial · ⬜ not started · ⛔ blocked (external dep
 
 ## Compliance and legal
 
-| Item                                                                       | Status | Evidence / gap                 |
-| -------------------------------------------------------------------------- | ------ | ------------------------------ |
-| Counsel-approved privacy policy and terms                                  | ⬜     | Website pages are placeholders |
-| India rule set reviewed by counsel (TCCCPR, DLT, DND, calling hours, DPDP) | ⛔     | Counsel (ADR-014)              |
-| Processor list and DPAs (AWS, Sarvam, LLM, HubSpot, Razorpay, Grafana)     | ⬜     | —                              |
-| Retention matrix and data-rights request handling                          | ⬜     | PRD FR-121, FR-123             |
+| Item                                                                       | Status | Evidence / gap                  |
+| -------------------------------------------------------------------------- | ------ | ------------------------------- |
+| Counsel-approved privacy policy and terms                                  | ⬜     | Website pages are placeholders  |
+| India rule set reviewed by counsel (TCCCPR, DLT, DND, calling hours, DPDP) | ⛔     | Counsel (ADR-014)               |
+| An `APPROVED` rule set version is in force (v1 ships as `DRAFT`)           | ⛔     | Counsel review, then ADR-021 §1 |
+| Real dialer and NCPR/DND lookup (production refuses the simulators)        | ⛔     | Exotel adapter, Phase 4         |
+| Processor list and DPAs (AWS, Sarvam, LLM, HubSpot, Razorpay, Grafana)     | ⬜     | —                               |
+| Retention matrix and data-rights request handling                          | ⬜     | PRD FR-121, FR-123              |
