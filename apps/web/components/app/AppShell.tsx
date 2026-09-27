@@ -30,32 +30,59 @@ interface NavItem {
   readonly permission?: Permission;
 }
 
-const NAV: readonly NavItem[] = [
-  { href: '/app', label: 'Overview', icon: 'i-layers' },
-  { href: '/app/leads', label: 'Leads', icon: 'i-target', permission: 'leads.read' },
+/** Grouped like the MVP mock-up: Overview, AI & Automation, Operations, Administration. */
+const NAV: readonly { readonly title: string; readonly items: readonly NavItem[] }[] = [
   {
-    href: '/app/data-sources',
-    label: 'Data sources',
-    icon: 'i-db',
-    permission: 'integrations.read',
+    title: 'Overview',
+    items: [
+      { href: '/app', label: 'Dashboard', icon: 'i-layers' },
+      { href: '/app/leads', label: 'Leads', icon: 'i-target', permission: 'leads.read' },
+      { href: '/app/campaigns', label: 'Campaigns', icon: 'i-phone', permission: 'campaigns.read' },
+      {
+        href: '/app/call-queue',
+        label: 'Call queue',
+        icon: 'i-repeat',
+        permission: 'campaigns.read',
+      },
+    ],
   },
-  { href: '/app/agents', label: 'AI Agents', icon: 'i-spark', permission: 'agents.read' },
-  { href: '/app/campaigns', label: 'Campaigns', icon: 'i-phone', permission: 'campaigns.read' },
   {
-    href: '/app/compliance',
-    label: 'Compliance',
-    icon: 'i-check-c',
-    permission: 'compliance.read',
+    title: 'AI & Automation',
+    items: [
+      { href: '/app/agents', label: 'AI Agents', icon: 'i-spark', permission: 'agents.read' },
+    ],
   },
   {
-    href: '/app/telecom',
-    label: 'Telecom identity',
-    icon: 'i-globe',
-    permission: 'telecom.read',
+    title: 'Operations',
+    items: [
+      {
+        href: '/app/data-sources',
+        label: 'Data sources',
+        icon: 'i-db',
+        permission: 'integrations.read',
+      },
+      {
+        href: '/app/compliance',
+        label: 'Compliance',
+        icon: 'i-check-c',
+        permission: 'compliance.read',
+      },
+      {
+        href: '/app/telecom',
+        label: 'Telecom identity',
+        icon: 'i-globe',
+        permission: 'telecom.read',
+      },
+    ],
   },
-  { href: '/app/team', label: 'Team', icon: 'i-users', permission: 'members.read' },
-  { href: '/app/audit', label: 'Audit log', icon: 'i-shield', permission: 'audit.read' },
-  { href: '/app/security', label: 'Security', icon: 'i-user' },
+  {
+    title: 'Administration',
+    items: [
+      { href: '/app/team', label: 'Team', icon: 'i-users', permission: 'members.read' },
+      { href: '/app/audit', label: 'Audit log', icon: 'i-shield', permission: 'audit.read' },
+      { href: '/app/security', label: 'Security', icon: 'i-user' },
+    ],
+  },
 ];
 
 const ONBOARDING = '/app/onboarding';
@@ -181,29 +208,42 @@ function Frame({ me, children }: { readonly me: Me; readonly children: ReactNode
   const [menuOpen, setMenuOpen] = useState(false);
   const [switchError, setSwitchError] = useState<string | null>(null);
   const active = me.organizations.find((o) => o.id === me.activeOrganization?.id);
-  const items = NAV.filter((item) => !item.permission || can(item.permission));
+  const sections = NAV.map((section) => ({
+    ...section,
+    items: section.items.filter((item) => !item.permission || can(item.permission)),
+  })).filter((section) => section.items.length > 0);
 
   useEffect(() => setMenuOpen(false), [pathname]);
 
   const nav = (
-    <nav aria-label="App" className="grid gap-1">
-      {items.map((item) => {
-        const current = item.href === '/app' ? pathname === '/app' : pathname.startsWith(item.href);
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            aria-current={current ? 'page' : undefined}
-            className={cx(
-              'flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-[15px] font-semibold transition-colors',
-              current ? 'bg-accent-soft text-accent' : 'text-ink-2 hover:bg-soft hover:text-ink',
-            )}
-          >
-            <Icon name={item.icon} className="size-[18px]" />
-            {item.label}
-          </Link>
-        );
-      })}
+    <nav aria-label="App" className="grid gap-5">
+      {sections.map((section) => (
+        <div key={section.title} className="grid gap-1">
+          <p className="px-3 text-[11px] font-bold tracking-[0.12em] text-muted uppercase">
+            {section.title}
+          </p>
+          {section.items.map((item) => {
+            const current =
+              item.href === '/app' ? pathname === '/app' : pathname.startsWith(item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={current ? 'page' : undefined}
+                className={cx(
+                  'flex items-center gap-3 rounded-[12px] px-3 py-2 text-[15px] font-semibold transition-colors',
+                  current
+                    ? 'bg-accent-soft text-accent'
+                    : 'text-ink-2 hover:bg-soft hover:text-ink',
+                )}
+              >
+                <Icon name={item.icon} className="size-[18px]" />
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
+      ))}
     </nav>
   );
 
@@ -283,7 +323,8 @@ function Frame({ me, children }: { readonly me: Me; readonly children: ReactNode
               <Logo />
             </Link>
           </div>
-          <div className="grid gap-6 px-4 py-5 lg:flex-1 lg:content-start">
+          {/* Scrolls on short screens so every item stays reachable; the account block stays put. */}
+          <div className="grid gap-6 px-4 py-5 lg:min-h-0 lg:flex-1 lg:content-start lg:overflow-y-auto">
             <div className="rounded-[14px] border border-line p-3.5">{organizationPicker}</div>
             {nav}
           </div>

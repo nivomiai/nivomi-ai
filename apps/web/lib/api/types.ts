@@ -26,7 +26,8 @@ export type Permission =
   | 'telecom.manage'
   | 'consent.manage'
   | 'agents.read'
-  | 'agents.manage';
+  | 'agents.manage'
+  | 'dashboard.read';
 
 export type OrganizationStatus = 'PENDING_APPROVAL' | 'ACTIVE' | 'SUSPENDED' | 'CLOSED';
 
@@ -880,4 +881,55 @@ export interface TestSession {
   outcome: ConversationOutcome | null;
   qualification: 'QUALIFIED' | 'NOT_QUALIFIED' | 'INCOMPLETE';
   expiresAt: string;
+}
+
+// ── Dashboard and call queue ─────────────────────────────────────────────
+
+export interface DashboardSummary {
+  timezone: string;
+  since: string;
+  today: {
+    dialled: number;
+    completed: number;
+    answered: number;
+    connected: number;
+    answerRate: number | null;
+  };
+  funnel: { stage: string; count: number }[];
+  leads: { total: number; qualified: number; appointments: number; doNotCall: number };
+  attention: {
+    code: string;
+    label: string;
+    count: number | null;
+    href: string;
+    severity: 'critical' | 'warning';
+  }[];
+  campaigns: {
+    id: string;
+    name: string;
+    status: CampaignStatus;
+    pauseReason: string | null;
+    budgetMinutes: number;
+    usedSeconds: number;
+    leads: number;
+    settled: number;
+    calls: number;
+  }[];
+}
+
+export interface CallQueueItem {
+  id: string;
+  state: CampaignLeadState;
+  attemptsMade: number;
+  nextAttemptAt: string | null;
+  lastResult: EligibilityResult | null;
+  lastReasons: string[];
+  lastOutcome: CallOutcome | null;
+  campaignId: string;
+  campaignName: string;
+  campaignStatus: CampaignStatus;
+  leadId: string;
+  leadStatus: LeadStatus;
+  fullName: string;
+  phone: string | null;
 }
