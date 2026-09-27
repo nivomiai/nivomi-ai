@@ -4,7 +4,11 @@ import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import {
   CONSENT_LABELS,
+  ELIGIBILITY_LABELS,
   LEAD_STATUSES,
+  OUTCOME_LABELS,
+  reasonLabel,
+  type ConsentLedgers,
   LEAD_STATUS_LABELS,
   SOURCE_LABELS,
   type LeadDetail as Lead,
@@ -106,15 +110,25 @@ export function LeadDetail({ id }: { readonly id: string }) {
                     key={`${entry.at}-${index}`}
                     className="rounded-[12px] border border-line px-4 py-3"
                   >
-                    <p className="text-sm text-ink">
-                      {entry.type === 'status'
-                        ? entry.from
-                          ? `Status ${LEAD_STATUS_LABELS[entry.from as LeadStatus] ?? entry.from} → ${LEAD_STATUS_LABELS[entry.to as LeadStatus] ?? entry.to}`
-                          : `Created as ${LEAD_STATUS_LABELS[entry.to as LeadStatus] ?? entry.to}`
-                        : `${FIELD_LABELS[entry.field ?? ''] ?? entry.field} changed${entry.from ? ` from “${entry.from}”` : ''}${entry.to ? ` to “${entry.to}”` : ''}`}
-                    </p>
+                    <p className="text-sm text-ink">{describeEntry(entry)}</p>
+                    {entry.type === 'eligibility' && entry.reasons?.length ? (
+                      <ul className="mt-1 flex flex-wrap gap-1.5">
+                        {entry.reasons.map((r) => (
+                          <li key={r.code}>
+                            <Badge tone={r.result === 'DEFERRED' ? 'neutral' : 'warn'}>
+                              {reasonLabel(r.code)}
+                            </Badge>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
                     <p className="mt-0.5 text-[13px] text-muted">
-                      {formatDateTime(entry.at)} · {entry.source.toLowerCase().replace(/_/g, ' ')}
+                      {formatDateTime(entry.at)} ·{' '}
+                      {entry.type === 'eligibility'
+                        ? `${entry.campaignName ?? 'campaign'}${entry.ruleSetVersion ? ` · rule set v${entry.ruleSetVersion}` : ''}`
+                        : entry.type === 'call'
+                          ? (entry.campaignName ?? 'campaign')
+                          : entry.source.toLowerCase().replace(/_/g, ' ')}
                       {entry.reason ? ` · ${entry.reason}` : ''}
                     </p>
                   </li>
@@ -144,6 +158,11 @@ export function LeadDetail({ id }: { readonly id: string }) {
               <p className="text-sm text-muted">None recorded.</p>
             )}
           </Panel>
+          <ConsentLedgersPanel
+            leadId={data.id}
+            canManage={can('consent.manage')}
+            onChange={lead.reload}
+          />
           <Panel title="Sources">
             <dl className="grid gap-2 text-sm">
               <Row label="Created from" value={SOURCE_LABELS[data.source]} />
@@ -182,6 +201,119 @@ export function LeadDetail({ id }: { readonly id: string }) {
         </div>
       </div>
     </div>
+  );
+}
+
+function describeEntry(entry: Lead['timeline'][number]): string {
+  switch (entry.type) {
+    case 'status':
+      return entry.from
+        ? `Status ${LEAD_STATUS_LABELS[entry.from as LeadStatus] ?? entry.from} → ${LEAD_STATUS_LABELS[entry.to as LeadStatus] ?? entry.to}`
+        : `Created as ${LEAD_STATUS_LABELS[entry.to as LeadStatus] ?? entry.to}`;
+    case 'field':
+      return `${FIELD_LABELS[entry.field ?? ''] ?? entry.field} changed${entry.from ? ` from “${entry.from}”` : ''}${entry.to ? ` to “${entry.to}”` : ''}`;
+    case 'eligibility':
+      return `Eligibility ${entry.purpose === 'DIAL' ? 'at dial time' : 'before launch'}: ${entry.result ? ELIGIBILITY_LABELS[entry.result] : '—'}`;
+    case 'call':
+      return `Call attempt ${entry.attemptNumber ?? ''}: ${entry.outcome ? OUTCOME_LABELS[entry.outcome] : 'in progress'}${entry.durationSeconds ? ` (${entry.durationSeconds}s)` : ''}`;
+  }
+}
+
+/** FR-52: telecom and DPDP consent, revoked independently. */
+function ConsentLedgersPanel({
+  leadId,
+  canManage,
+  onChange,
+}: {
+  readonly leadId: string;
+  readonly canManage: boolean;
+  readonly onChange: () => void;
+}) {
+  const ledgers = useResource<ConsentLedgers>(`/leads/${leadId}/consents`);
+  const submit = useSubmit();
+  const record = (body: Record<string, unknown>) =>
+    void submit
+      .run(() => api.post(`/leads/${leadId}/consents`, body))
+      .then((ok) => {
+        if (ok) {
+          ledgers.reload();
+          onChange();
+        }
+      });
+  const rows = ledgers.data
+    ? {
+        telecom: ledgers.data.telecom.map((e) => ({
+          id: e.id,
+          kind: e.kind,
+          detail: `${e.basis ? ` · ${CONSENT_LABELS[e.basis]}` : ''}${e.currentNumber ? '' : ' · previous number'}`,
+          source: e.source,
+          createdAt: e.createdAt,
+        })),
+        dpdp: ledgers.data.dpdp.map((e) => ({
+          id: e.id,
+          kind: e.kind,
+          detail: ` · ${e.purpose}`,
+          source: e.source,
+          createdAt: e.createdAt,
+        })),
+      }
+    : null;
+  return (
+    <Panel
+      title="Consent ledgers"
+      description="Telecom consent (to be called) and DPDP consent (to use personal data) are separate."
+    >
+      {!rows ? (
+        ledgers.error ? (
+          <ErrorBlock message={ledgers.error} onRetry={ledgers.reload} />
+        ) : (
+          <LoadingBlock />
+        )
+      ) : (
+        <div className="grid gap-4 text-sm">
+          <FormAlert message={submit.error} />
+          {(['telecom', 'dpdp'] as const).map((ledger) => {
+            const entries = rows[ledger];
+            const latest = entries[0]?.kind;
+            return (
+              <div key={ledger}>
+                <p className="font-semibold text-ink">
+                  {ledger === 'telecom' ? 'Telecom' : 'DPDP'}{' '}
+                  <Badge tone={latest === 'GRANT' ? 'live' : latest ? 'warn' : 'neutral'}>
+                    {latest === 'GRANT' ? 'Granted' : latest ? 'Revoked' : 'None'}
+                  </Badge>
+                </p>
+                <ul className="mt-1.5 grid gap-1 text-[13px] text-muted">
+                  {entries.slice(0, 5).map((e) => (
+                    <li key={e.id}>
+                      {e.kind === 'GRANT' ? 'Granted' : 'Revoked'}
+                      {e.detail} · {e.source.toLowerCase().replace(/_/g, ' ')} ·{' '}
+                      {formatDateTime(e.createdAt)}
+                    </li>
+                  ))}
+                </ul>
+                {canManage && latest === 'GRANT' ? (
+                  <button
+                    type="button"
+                    className="mt-2 text-sm font-semibold text-accent hover:underline"
+                    disabled={submit.pending}
+                    onClick={() =>
+                      record(
+                        ledger === 'telecom'
+                          ? { ledger: 'TELECOM', kind: 'REVOCATION', note: 'Recorded by a member' }
+                          : { ledger: 'DPDP', kind: 'REVOCATION', purpose: 'All processing' },
+                      )
+                    }
+                  >
+                    Record a revocation
+                  </button>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </Panel>
   );
 }
 

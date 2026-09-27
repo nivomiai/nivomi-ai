@@ -16,7 +16,15 @@ export type Permission =
   | 'suppression.manage'
   | 'integrations.read'
   | 'integrations.manage'
-  | 'integrations.sync';
+  | 'integrations.sync'
+  | 'campaigns.read'
+  | 'campaigns.manage'
+  | 'campaigns.emergency_stop'
+  | 'compliance.read'
+  | 'compliance.review'
+  | 'telecom.read'
+  | 'telecom.manage'
+  | 'consent.manage';
 
 export type OrganizationStatus = 'PENDING_APPROVAL' | 'ACTIVE' | 'SUSPENDED' | 'CLOSED';
 
@@ -141,13 +149,23 @@ export interface LeadListItem {
 }
 
 export interface LeadTimelineEntry {
-  type: 'status' | 'field';
+  type: 'status' | 'field' | 'eligibility' | 'call';
   at: string;
-  from: string | null;
-  to: string | null;
+  from?: string | null;
+  to?: string | null;
   source: string;
   reason?: string | null;
   field?: string;
+  /** eligibility */
+  purpose?: 'PRE_LAUNCH' | 'DIAL';
+  result?: EligibilityResult;
+  reasons?: EligibilityReason[];
+  ruleSetVersion?: number | null;
+  campaignName?: string | null;
+  /** call */
+  attemptNumber?: number;
+  outcome?: CallOutcome | null;
+  durationSeconds?: number | null;
 }
 
 export interface LeadDetail {
@@ -333,3 +351,361 @@ export const SOURCE_LABELS: Record<DataSource, string> = {
   MANUAL: 'Manual',
   INBOUND: 'Inbound call',
 };
+
+// ── Eligibility and ComplianceEngine (FR-44–FR-52, ADR-021) ────────────
+
+export type EligibilityResult = 'ELIGIBLE' | 'BLOCKED' | 'DEFERRED' | 'REQUIRES_REVIEW';
+
+export interface EligibilityReason {
+  code: string;
+  result: EligibilityResult;
+  message: string;
+}
+
+export const ELIGIBILITY_LABELS: Record<EligibilityResult, string> = {
+  ELIGIBLE: 'Eligible',
+  BLOCKED: 'Blocked',
+  DEFERRED: 'Deferred',
+  REQUIRES_REVIEW: 'Needs review',
+};
+
+/** Short labels for reason codes; the API also sends a sentence per reason. */
+export const REASON_LABELS: Record<string, string> = {
+  ORGANIZATION_NOT_ACTIVE: 'Organization not approved',
+  EMERGENCY_STOP_ACTIVE: 'Emergency Stop on',
+  COMPLAINT_BREAKER_TRIPPED: 'Complaint breaker tripped',
+  TELECOM_IDENTITY_NOT_VERIFIED: 'Telecom identity not verified',
+  TELECOM_IDENTITY_EXPIRED: 'Self-certification expired',
+  A2P_NOT_DECLARED: 'Automated calling not declared',
+  NO_CALLER_NUMBER: 'No caller number',
+  CALLER_NUMBER_NOT_ACTIVE: 'Caller number paused',
+  UNKNOWN_NUMBER_SERIES: 'Caller number not in a commercial series',
+  NUMBER_SERIES_NOT_PERMITTED: 'Wrong number series for this call type',
+  NO_CONSENT_BASIS: 'No consent basis',
+  CONSENT_REVOKED: 'Consent revoked',
+  RECONSENT_BLOCK_ACTIVE: 'Re-consent blocked (90 days)',
+  CONSENT_BASIS_NOT_PERMITTED: 'Consent basis not valid for this call type',
+  CONSENT_OPERATOR_REFERENCE_MISSING: 'Operator consent reference missing',
+  CONSENT_EXPIRED: 'Consent expired',
+  CONSENT_EVIDENCE_INCOMPLETE: 'Consent date missing',
+  NO_DPDP_CONSENT: 'No DPDP consent',
+  DPDP_CONSENT_REVOKED: 'DPDP consent withdrawn',
+  DND_REGISTERED: 'On the DND registry',
+  PREFERENCE_CATEGORY_UNKNOWN: 'DND category unclear',
+  PREFERENCE_REGISTRY_UNAVAILABLE: 'DND registry unavailable',
+  NO_PHONE_NUMBER: 'No phone number',
+  UNKNOWN_JURISDICTION: 'Country not covered by a rule set',
+  MISSING_RULE: 'No rule for this case',
+  SECTOR_RULES_UNCONFIRMED: 'Sector rules unconfirmed',
+  OUTSIDE_CALLING_HOURS: 'Outside calling hours',
+  SUPPRESSED: 'On the suppression list',
+  LEAD_DO_NOT_CALL: 'Marked Do not call',
+  LEAD_STATUS_EXCLUDED: 'Converted or closed',
+  MAX_ATTEMPTS_REACHED: 'Attempt limit reached',
+  CAMPAIGN_ENDED: 'Campaign ended',
+  CAMPAIGN_NOT_STARTED: 'Campaign not started yet',
+  COOLDOWN_ACTIVE: 'Waiting between attempts',
+  DAILY_ATTEMPT_CAP: 'Daily attempt limit reached',
+  CALL_IN_PROGRESS: 'Already on a call',
+  ALREADY_CONNECTED_TODAY: 'Already spoke today',
+  BUDGET_EXHAUSTED: 'Minute budget used up',
+};
+
+export function reasonLabel(code: string): string {
+  return REASON_LABELS[code] ?? code;
+}
+
+export interface RuleSetSummary {
+  id: string;
+  jurisdiction: string;
+  version: number;
+  status: 'DRAFT' | 'APPROVED' | 'RETIRED';
+  pendingLegalReview: boolean;
+  effectiveFrom: string;
+  effectiveTo: string | null;
+  reviewNote: string | null;
+  sources: { id: string; title: string; reference: string }[];
+  rules: {
+    timezone: string;
+    numberSeries: { id: string; prefix: string; description: string }[];
+    callCategories: Partial<
+      Record<
+        CallCategory,
+        { description: string; callingWindow: { start: string; end: string } | null }
+      >
+    >;
+    consentBases: Partial<Record<ConsentBasis, { validityDays: number | null }>>;
+    optOut: { reConsentBlockDays: number };
+    complaints: { breakerThreshold: number; windowDays: number };
+  };
+}
+
+export interface CallingControls {
+  defaultJurisdiction: string;
+  emergencyStop: { active: boolean; at: string | null; reason: string | null };
+  breaker: {
+    tripped: boolean;
+    at: string | null;
+    reason: string | null;
+    acknowledgedAt: string | null;
+    threshold: { breakerThreshold: number; windowDays: number } | null;
+  };
+}
+
+export interface ComplaintRecord {
+  id: string;
+  kind: 'COMPLAINT' | 'OPERATOR_FLAG';
+  callerNumberId: string | null;
+  callerNumber: string | null;
+  leadId: string | null;
+  receivedAt: string;
+  reference: string | null;
+  note: string | null;
+  createdAt: string;
+}
+
+export interface EligibilityReview {
+  id: string;
+  campaignId: string;
+  campaignName: string;
+  leadId: string;
+  leadName: string;
+  reasons: EligibilityReason[];
+  createdAt: string;
+}
+
+// ── Telecom identity (FR-9–FR-13) ───────────────────────────────────────
+
+export type TelecomIdentityStatus =
+  'UNVERIFIED' | 'PENDING_REVIEW' | 'VERIFIED' | 'EXPIRED' | 'REVOKED';
+
+export const BUSINESS_SECTORS = [
+  'BFSI',
+  'REAL_ESTATE',
+  'EDUCATION',
+  'HEALTH',
+  'CONSUMER_GOODS_AUTOMOBILES',
+  'COMMUNICATION_IT_ENTERTAINMENT',
+  'TOURISM_LEISURE',
+  'FOOD_BEVERAGES',
+  'OTHER',
+] as const;
+export type BusinessSector = (typeof BUSINESS_SECTORS)[number];
+
+export const SECTOR_LABELS: Record<BusinessSector, string> = {
+  BFSI: 'Banking, financial services, insurance',
+  REAL_ESTATE: 'Real estate',
+  EDUCATION: 'Education',
+  HEALTH: 'Health',
+  CONSUMER_GOODS_AUTOMOBILES: 'Consumer goods and automobiles',
+  COMMUNICATION_IT_ENTERTAINMENT: 'Communication, IT, entertainment',
+  TOURISM_LEISURE: 'Tourism and leisure',
+  FOOD_BEVERAGES: 'Food and beverages',
+  OTHER: 'Other',
+};
+
+export interface CallerNumber {
+  id: string;
+  phone: string;
+  series: string;
+  purpose: 'PROMOTIONAL' | 'SERVICE';
+  a2pDeclared: boolean;
+  status: 'ACTIVE' | 'PAUSED' | 'RETIRED';
+  statusReason: string | null;
+  createdAt: string;
+}
+
+export interface TelecomIdentity {
+  status: TelecomIdentityStatus;
+  effectiveStatus: TelecomIdentityStatus;
+  statusReason: string | null;
+  legalName: string | null;
+  dltEntityId: string | null;
+  telemarketerName: string | null;
+  telemarketerRegistrationId: string | null;
+  sector: BusinessSector | null;
+  a2pDeclarationReference: string | null;
+  a2pDeclaredAt: string | null;
+  selfCertifiedAt: string | null;
+  selfCertificationExpiresAt: string | null;
+  expiringSoon: boolean;
+  submittedAt: string | null;
+  reviewedAt: string | null;
+  numbers: CallerNumber[];
+  permittedSeries: { id: string; prefix: string; description: string }[];
+}
+
+// ── Consent ledgers (FR-52) ─────────────────────────────────────────────
+
+export interface ConsentLedgers {
+  telecom: {
+    id: string;
+    kind: 'GRANT' | 'REVOCATION';
+    basis: ConsentBasis | null;
+    validFrom: string | null;
+    source: string;
+    note: string | null;
+    currentNumber: boolean;
+    recipientInitiated: boolean;
+    createdAt: string;
+  }[];
+  dpdp: {
+    id: string;
+    kind: 'GRANT' | 'REVOCATION';
+    purpose: string;
+    validFrom: string | null;
+    source: string;
+    note: string | null;
+    createdAt: string;
+  }[];
+}
+
+// ── Campaigns (FR-35–FR-43) ─────────────────────────────────────────────
+
+export type CallCategory = 'PROMOTIONAL' | 'SERVICE' | 'TRANSACTIONAL';
+export type CampaignStatus =
+  'DRAFT' | 'SCHEDULED' | 'RUNNING' | 'PAUSED' | 'COMPLETED' | 'CANCELLED' | 'STOPPED';
+export type CampaignLeadState =
+  'PENDING' | 'QUEUED' | 'IN_CALL' | 'WAITING' | 'BLOCKED' | 'REVIEW' | 'EXCLUDED' | 'DONE';
+export type CallOutcome =
+  | 'CONNECTED'
+  | 'NO_ANSWER'
+  | 'BUSY'
+  | 'FAILED'
+  | 'PROVIDER_ERROR'
+  | 'OPTED_OUT'
+  | 'NOT_INTERESTED'
+  | 'WRONG_NUMBER';
+
+export const CALL_CATEGORY_LABELS: Record<CallCategory, string> = {
+  PROMOTIONAL: 'Promotional (sales)',
+  SERVICE: 'Service',
+  TRANSACTIONAL: 'Transactional',
+};
+
+export const CAMPAIGN_STATUS_LABELS: Record<CampaignStatus, string> = {
+  DRAFT: 'Draft',
+  SCHEDULED: 'Scheduled',
+  RUNNING: 'Running',
+  PAUSED: 'Paused',
+  COMPLETED: 'Completed',
+  CANCELLED: 'Cancelled',
+  STOPPED: 'Stopped',
+};
+
+export const LEAD_STATE_LABELS: Record<CampaignLeadState, string> = {
+  PENDING: 'Waiting to call',
+  QUEUED: 'Queued',
+  IN_CALL: 'On a call',
+  WAITING: 'Waiting to retry',
+  BLOCKED: 'Blocked',
+  REVIEW: 'Needs review',
+  EXCLUDED: 'Excluded',
+  DONE: 'Done',
+};
+
+export const OUTCOME_LABELS: Record<CallOutcome, string> = {
+  CONNECTED: 'Connected',
+  NO_ANSWER: 'No answer',
+  BUSY: 'Busy',
+  FAILED: 'Failed',
+  PROVIDER_ERROR: 'Provider error',
+  OPTED_OUT: 'Opted out',
+  NOT_INTERESTED: 'Not interested',
+  WRONG_NUMBER: 'Wrong number',
+};
+
+export const PAUSE_REASON_LABELS: Record<string, string> = {
+  MANUAL: 'Paused by a member',
+  EMERGENCY_STOP: 'Emergency Stop',
+  COMPLAINT_BREAKER: 'Complaint breaker tripped',
+  BUDGET_EXHAUSTED: 'Minute budget used up',
+  TELECOM_IDENTITY_INVALID: 'Telecom identity no longer valid',
+  CALLER_NUMBER_UNAVAILABLE: 'Caller number paused or removed',
+  ORGANIZATION_NOT_ACTIVE: 'Organization not active',
+  NO_RULE_SET: 'No rule set for the jurisdiction',
+  ENDED: 'End date reached',
+};
+
+export interface CampaignSelection {
+  kind: 'FILTER' | 'LIST';
+  statuses?: LeadStatus[];
+  sources?: DataSource[];
+  leadIds?: string[];
+}
+
+export interface CampaignListItem {
+  id: string;
+  name: string;
+  status: CampaignStatus;
+  type: 'STATIC' | 'CONTINUOUS';
+  callCategory: CallCategory;
+  pauseReason: string | null;
+  budgetMinutes: number;
+  usedSeconds: number;
+  launchedAt: string | null;
+  createdAt: string;
+}
+
+export interface PrelaunchCheck {
+  status: 'RUNNING' | 'COMPLETED' | 'FAILED';
+  requestedAt: string;
+  completedAt: string | null;
+  total: number;
+  eligible: number;
+  deferred: number;
+  blocked: number;
+  review: number;
+  byReason: Record<string, number>;
+  ruleSetVersion: number | null;
+  stale: boolean;
+}
+
+export interface Campaign extends CampaignListItem {
+  callerNumber: { id: string; phone: string; series: string } | null;
+  selection: CampaignSelection;
+  windowStart: string;
+  windowEnd: string;
+  startsAt: string | null;
+  endsAt: string | null;
+  maxConcurrentCalls: number;
+  maxCallsPerHour: number;
+  maxAttempts: number;
+  retryIntervalMinutes: number;
+  maxAttemptsPerDay: number;
+  prelaunch: PrelaunchCheck | null;
+  completedAt: string | null;
+  progress: {
+    leadsByState: Partial<Record<CampaignLeadState, number>>;
+    liveCalls: number;
+    remaining: number;
+    outcomes: Partial<Record<CallOutcome, number>>;
+    reasons: { state: CampaignLeadState; code: string; count: number }[];
+  };
+}
+
+export interface CallAttempt {
+  id: string;
+  leadId: string;
+  leadName: string;
+  attemptNumber: number;
+  status: 'DIALING' | 'COMPLETED';
+  outcome: CallOutcome | null;
+  durationSeconds: number | null;
+  createdAt: string;
+  endedAt: string | null;
+}
+
+export interface CampaignLead {
+  id: string;
+  leadId: string;
+  fullName: string;
+  phone: string | null;
+  state: CampaignLeadState;
+  attemptsMade: number;
+  nextAttemptAt: string | null;
+  lastResult: EligibilityResult | null;
+  lastReasons: string[];
+  lastOutcome: CallOutcome | null;
+  createdAt: string;
+}

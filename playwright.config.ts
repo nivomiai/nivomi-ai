@@ -7,11 +7,16 @@ const API_URL = 'http://localhost:4000';
 const WEB_URL = 'http://localhost:3000';
 /** The API's development mailbox; e2e tests read verification links from it. */
 const E2E_MAILBOX_DIR = join(tmpdir(), 'nivomi-e2e-mailbox');
+/**
+ * A fresh on-disk PGlite per run: the dev seed (Super Admin, verified telecom identity, demo
+ * leads and campaign) runs into it before the API starts. Never the developer's database.
+ */
+const E2E_PGLITE_DIR = join(tmpdir(), `nivomi-e2e-pglite-${randomBytes(6).toString('hex')}`);
 
 /**
  * End-to-end tests run against the production builds of every app (`npm run build` first).
  * The API runs with NODE_ENV=test: production mode requires RDS and SES, which e2e replaces
- * with in-memory PostgreSQL (PGlite) and the file mailbox. Cookies are therefore not `Secure`
+ * with a throwaway PGlite database and the file mailbox. Cookies are therefore not `Secure`
  * over plain http here.
  */
 export default defineConfig({
@@ -27,7 +32,8 @@ export default defineConfig({
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: [
     {
-      command: 'npm run start -w @nivomi/api',
+      // Seeds the calling demo (campaigns need a verified telecom identity), then starts the API.
+      command: 'node apps/api/dist/dev/seed.main.js && npm run start -w @nivomi/api',
       url: `${API_URL}/api/v1/health`,
       reuseExistingServer: !process.env.CI,
       env: {
@@ -39,7 +45,7 @@ export default defineConfig({
         APP_VERSION: 'e2e',
         // Generated per run; never a committed value.
         AUTH_JWT_SECRET: randomBytes(32).toString('base64url'),
-        DATABASE_PGLITE_DIR: 'memory',
+        DATABASE_PGLITE_DIR: E2E_PGLITE_DIR,
         EMAIL_PROVIDER: 'dev-mailbox',
         EMAIL_DEV_MAILBOX_DIR: E2E_MAILBOX_DIR,
         WORKER_ENABLED: 'true',
