@@ -12,6 +12,7 @@ import { TokenService } from './auth/tokens.js';
 import { AllExceptionsFilter } from './common/all-exceptions.filter.js';
 import { ConfigModule } from './config/config.module.js';
 import type { ApiEnv } from './config/env.js';
+import { DashboardModule } from './dashboard/dashboard.module.js';
 import { DatabaseModule } from './database/database.module.js';
 import { CrmModule } from './crm/crm.module.js';
 import { HealthModule } from './health/health.module.js';
@@ -40,6 +41,7 @@ export class AppModule {
         ComplianceModule,
         AgentsModule,
         CampaignsModule,
+        DashboardModule,
       ],
       controllers: [AuthController, MeController, OrganizationsController],
       providers: [

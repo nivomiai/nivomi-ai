@@ -29,10 +29,12 @@ export type Permission =
   | 'telecom.manage'
   | 'consent.manage'
   | 'agents.read'
-  | 'agents.manage';
+  | 'agents.manage'
+  | 'dashboard.read';
 
 const ADMINISTRATION: readonly Permission[] = [
   'organization.read',
+  'dashboard.read',
   'members.read',
   'members.invite',
   'members.update_role',
@@ -87,28 +89,32 @@ const ROLE_PERMISSIONS: Record<OrganizationRole, ReadonlySet<Permission>> = {
   // Campaigns ✓ and Emergency Stop ✓; Telecom Identity R; no review queue or complaints.
   MANAGER: new Set<Permission>([
     'organization.read',
+    'dashboard.read',
     'members.read',
     ...DATA_MANAGEMENT,
     ...CAMPAIGNS,
     'telecom.read',
   ]),
   // Leads: own records only. No campaigns.
-  AGENT: new Set<Permission>(['organization.read', 'leads.read', 'leads.write']),
+  // Dashboards: own leads only (PRD §8.1).
+  AGENT: new Set<Permission>(['organization.read', 'dashboard.read', 'leads.read', 'leads.write']),
   // Leads and campaigns: read-only.
   // AI Agents R (PRD §8.1).
   ANALYST: new Set<Permission>([
     'organization.read',
+    'dashboard.read',
     'leads.read',
     'agents.read',
     'campaigns.read',
     'compliance.read',
   ]),
-  VIEWER: new Set<Permission>(['organization.read']),
+  // Dashboards (aggregates) only.
+  VIEWER: new Set<Permission>(['organization.read', 'dashboard.read']),
 };
 
 /** Permissions a role holds only for records assigned to the Member ("own" in the matrix). */
 const OWN_SCOPED: Partial<Record<OrganizationRole, ReadonlySet<Permission>>> = {
-  AGENT: new Set<Permission>(['leads.read', 'leads.write']),
+  AGENT: new Set<Permission>(['leads.read', 'leads.write', 'dashboard.read']),
 };
 
 export function roleHasPermission(role: OrganizationRole, permission: Permission): boolean {

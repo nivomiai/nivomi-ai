@@ -33,7 +33,7 @@ describe('permission matrix (PRD §8.1)', () => {
   it('makes ANALYST read-only and gives VIEWER no lead access', () => {
     expect(roleHasPermission('ANALYST', 'leads.read')).toBe(true);
     expect(roleHasPermission('ANALYST', 'leads.write')).toBe(false);
-    expect(permissionsFor('VIEWER')).toEqual(['organization.read']);
+    expect(permissionsFor('VIEWER')).toEqual(['organization.read', 'dashboard.read']);
   });
 
   it('maps campaigns, Emergency Stop, reviews and telecom identity to the matrix', () => {
