@@ -275,3 +275,10 @@ qualification: { mode: ALL|ANY, rules }, workflow: { nodes, edges } }`. Node typ
 `agent` (`instructions`, `maxTurns`), `handoff`, `end` (`outcome`: INTERESTED|NOT_INTERESTED|
 CALLBACK_REQUESTED|COMPLETED). Edge conditions: `always`, `answer` (`key`, `op`: eq|neq|gt|gte|lt|lte|in,
 `value`) and `intent` (affirm|deny|not_interested|callback); the first matching exit wins.
+
+### Dashboard and call queue
+
+| Method | Path          | Permission       | Body → Response                                                                                                                                                                                                                                          |
+| ------ | ------------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/dashboard`  | `dashboard.read` | → `{ timezone, since, today: { dialled, completed, answered, connected, answerRate }, funnel, leads, attention, campaigns }`; "today" is the calendar day in the organization's rule-set time zone; AGENTs see only their own leads and no campaign data |
+| GET    | `/call-queue` | `campaigns.read` | `?filter=upcoming\|review\|blocked\|all` → `{ items, truncated }`: leads in running, scheduled or paused campaigns, ordered by what happens soonest, each with its last eligibility result, reasons and next attempt (first 200)                         |
