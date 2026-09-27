@@ -19,7 +19,15 @@ export type Permission =
   | 'suppression.manage'
   | 'integrations.read'
   | 'integrations.manage'
-  | 'integrations.sync';
+  | 'integrations.sync'
+  | 'campaigns.read'
+  | 'campaigns.manage'
+  | 'campaigns.emergency_stop'
+  | 'compliance.read'
+  | 'compliance.review'
+  | 'telecom.read'
+  | 'telecom.manage'
+  | 'consent.manage';
 
 const ADMINISTRATION: readonly Permission[] = [
   'organization.read',
@@ -39,16 +47,56 @@ const DATA_MANAGEMENT: readonly Permission[] = [
   'integrations.sync',
 ];
 
+/** Campaigns: create, start, pause; Emergency Stop (PRD §8.1). */
+const CAMPAIGNS: readonly Permission[] = [
+  'campaigns.read',
+  'campaigns.manage',
+  'campaigns.emergency_stop',
+  'compliance.read',
+  'consent.manage',
+];
+
+/** Telecom Identity ✓; resolve REQUIRES_REVIEW and Complaint Records ✓ (OWNER, ADMIN only). */
+const COMPLIANCE_ADMINISTRATION: readonly Permission[] = [
+  'telecom.read',
+  'telecom.manage',
+  'compliance.review',
+];
+
 /** Role → permissions, from the PRD §8.1 permission matrix. Central; never checked ad hoc. */
 const ROLE_PERMISSIONS: Record<OrganizationRole, ReadonlySet<Permission>> = {
-  OWNER: new Set<Permission>([...ADMINISTRATION, ...DATA_MANAGEMENT, 'integrations.manage']),
-  ADMIN: new Set<Permission>([...ADMINISTRATION, ...DATA_MANAGEMENT, 'integrations.manage']),
+  OWNER: new Set<Permission>([
+    ...ADMINISTRATION,
+    ...DATA_MANAGEMENT,
+    'integrations.manage',
+    ...CAMPAIGNS,
+    ...COMPLIANCE_ADMINISTRATION,
+  ]),
+  ADMIN: new Set<Permission>([
+    ...ADMINISTRATION,
+    ...DATA_MANAGEMENT,
+    'integrations.manage',
+    ...CAMPAIGNS,
+    ...COMPLIANCE_ADMINISTRATION,
+  ]),
   // Leads: import, edit, Suppression List ✓; HubSpot R (plus running an ingest, FR-19).
-  MANAGER: new Set<Permission>(['organization.read', 'members.read', ...DATA_MANAGEMENT]),
-  // Leads: own records only.
+  // Campaigns ✓ and Emergency Stop ✓; Telecom Identity R; no review queue or complaints.
+  MANAGER: new Set<Permission>([
+    'organization.read',
+    'members.read',
+    ...DATA_MANAGEMENT,
+    ...CAMPAIGNS,
+    'telecom.read',
+  ]),
+  // Leads: own records only. No campaigns.
   AGENT: new Set<Permission>(['organization.read', 'leads.read', 'leads.write']),
-  // Leads: read-only.
-  ANALYST: new Set<Permission>(['organization.read', 'leads.read']),
+  // Leads and campaigns: read-only.
+  ANALYST: new Set<Permission>([
+    'organization.read',
+    'leads.read',
+    'campaigns.read',
+    'compliance.read',
+  ]),
   VIEWER: new Set<Permission>(['organization.read']),
 };
 

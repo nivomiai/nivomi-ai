@@ -13,6 +13,7 @@ import {
   ALLOW_UNVERIFIED,
   IS_PUBLIC,
   REQUIRED_PERMISSION,
+  REQUIRE_SUPER_ADMIN,
   type AuthenticatedRequest,
   type Principal,
 } from './principal.js';
@@ -88,6 +89,12 @@ export class AuthGuard implements CanActivate {
       !this.reflector.getAllAndOverride<boolean>(ALLOW_UNVERIFIED, targets)
     ) {
       throw new AppError('EMAIL_NOT_VERIFIED', 'Please verify your email address first.');
+    }
+    if (
+      this.reflector.getAllAndOverride<boolean>(REQUIRE_SUPER_ADMIN, targets) &&
+      !principal.isSuperAdmin
+    ) {
+      throw new AppError('AUTHORIZATION_ERROR', 'You do not have permission to do this.');
     }
     const permission = this.reflector.getAllAndOverride<Permission | undefined>(
       REQUIRED_PERMISSION,

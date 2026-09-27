@@ -1,7 +1,10 @@
 import {
+  callerNumbers,
+  campaigns,
   organizationInvitations,
   organizationMembers,
   organizations,
+  telecomIdentities,
   users,
   type Database,
 } from '@nivomi/database';
@@ -9,10 +12,13 @@ import { and, eq, isNull } from 'drizzle-orm';
 import { AuditService } from '../audit/audit.service.js';
 import { hashPassword } from '../auth/password.js';
 import { hashToken } from '../auth/tokens.js';
+import { classifyNumberSeries } from '../compliance/compliance-engine.js';
+import { INDIA_RULE_SET_V1 } from '../compliance/rule-sets/india-v1.js';
 import { IngestionEngine, lockOrganizationIngestion } from '../leads/ingestion.js';
-import { DEV_LEADS, DEV_ORGANIZATIONS, DEV_PASSWORD, DEV_USERS } from './seed-data.js';
+import { DEV_CALLING, DEV_LEADS, DEV_ORGANIZATIONS, DEV_PASSWORD, DEV_USERS } from './seed-data.js';
 
 const INVITATION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const DAY_MS = 86_400_000;
 
 export interface DevSeedResult {
   /** Seeded user id by email. */
@@ -21,17 +27,137 @@ export interface DevSeedResult {
   readonly organizationIds: ReadonlyMap<string, string>;
   /** Leads created on this run (0 when they all existed already). */
   readonly leadsCreated: number;
+  /** Demo campaigns created on this run. */
+  readonly campaignsCreated: number;
 }
 
 /**
  * Brings the development dataset to its declared state: accounts (password, verification,
- * lockout, Super Admin), organization status, memberships, open invitations and demo leads. Rows
- * it does not declare are left alone. Safe to run on every start.
+ * lockout, Super Admin), organization status, memberships, open invitations, demo leads and the
+ * calling demo. Rows it does not declare are left alone. Safe to run on every start.
  */
 export async function seedDevData(db: Database): Promise<DevSeedResult> {
   const accounts = await seedAccounts(db);
   const leadsCreated = await seedLeads(db, accounts.userIds, accounts.organizationIds);
-  return { ...accounts, leadsCreated };
+  const campaignsCreated = await seedCalling(db, accounts.userIds, accounts.organizationIds);
+  return { ...accounts, leadsCreated, campaignsCreated };
+}
+
+/**
+ * Calling demo: a verified telecom identity, a 140-series caller number and a DRAFT campaign.
+ * Each is created once; edits made in the app are never overwritten.
+ */
+async function seedCalling(
+  db: Database,
+  userIds: ReadonlyMap<string, string>,
+  organizationIds: ReadonlyMap<string, string>,
+): Promise<number> {
+  const superAdminId = userIds.get(DEV_USERS.find((u) => u.superAdmin)?.email ?? '') ?? null;
+  const audit = new AuditService(db);
+  let created = 0;
+  for (const [slug, spec] of Object.entries(DEV_CALLING)) {
+    const organizationId = organizationIds.get(slug);
+    if (!organizationId) throw new Error(`seed calling references unknown organization ${slug}`);
+    await db.transaction(async (tx) => {
+      const now = new Date();
+      const [identity] = await tx
+        .insert(telecomIdentities)
+        .values({
+          organizationId,
+          status: 'VERIFIED',
+          ...spec.telecom,
+          a2pDeclaredAt: new Date(now.getTime() - 30 * DAY_MS),
+          selfCertifiedAt: new Date(now.getTime() - 30 * DAY_MS),
+          submittedAt: now,
+          reviewedAt: now,
+          reviewedByUserId: superAdminId,
+        })
+        .onConflictDoNothing({ target: telecomIdentities.organizationId })
+        .returning({ id: telecomIdentities.id });
+      if (identity) {
+        await audit.record(
+          {
+            action: 'telecom.identity_verified',
+            organizationId,
+            actorUserId: superAdminId,
+            resourceType: 'telecom_identity',
+            resourceId: identity.id,
+            metadata: { source: 'dev-seed' },
+          },
+          undefined,
+          tx,
+        );
+      }
+
+      await tx
+        .insert(callerNumbers)
+        .values({
+          organizationId,
+          phoneE164: spec.callerNumber,
+          series: classifyNumberSeries(INDIA_RULE_SET_V1.rules, spec.callerNumber) ?? 'unknown',
+          purpose: 'PROMOTIONAL',
+          a2pDeclared: true,
+        })
+        .onConflictDoNothing({ target: callerNumbers.phoneE164 });
+      const [number] = await tx
+        .select({ id: callerNumbers.id })
+        .from(callerNumbers)
+        .where(
+          and(
+            eq(callerNumbers.organizationId, organizationId),
+            eq(callerNumbers.phoneE164, spec.callerNumber),
+          ),
+        );
+      if (!number) throw new Error(`seed caller number ${spec.callerNumber} belongs elsewhere`);
+
+      const [existing] = await tx
+        .select({ id: campaigns.id })
+        .from(campaigns)
+        .where(
+          and(eq(campaigns.organizationId, organizationId), eq(campaigns.name, spec.campaign.name)),
+        );
+      if (existing) return;
+      const ownerEmail = DEV_ORGANIZATIONS.find((o) => o.slug === slug)?.members.find(
+        (m) => m.role === 'OWNER',
+      )?.email;
+      const ownerId = ownerEmail ? (userIds.get(ownerEmail) ?? null) : null;
+      const [campaign] = await tx
+        .insert(campaigns)
+        .values({
+          organizationId,
+          name: spec.campaign.name,
+          type: 'STATIC',
+          callCategory: 'PROMOTIONAL',
+          callerNumberId: number.id,
+          selection: { kind: 'FILTER' },
+          windowStart: spec.campaign.windowStart,
+          windowEnd: spec.campaign.windowEnd,
+          maxConcurrentCalls: 2,
+          maxCallsPerHour: 60,
+          maxAttempts: 3,
+          retryIntervalMinutes: 240,
+          maxAttemptsPerDay: 2,
+          budgetMinutes: spec.campaign.budgetMinutes,
+          createdByUserId: ownerId,
+        })
+        .returning({ id: campaigns.id });
+      if (!campaign) throw new Error('seed campaign insert returned no row');
+      created += 1;
+      await audit.record(
+        {
+          action: 'campaign.created',
+          organizationId,
+          actorUserId: ownerId,
+          resourceType: 'campaign',
+          resourceId: campaign.id,
+          metadata: { name: spec.campaign.name, source: 'dev-seed' },
+        },
+        undefined,
+        tx,
+      );
+    });
+  }
+  return created;
 }
 
 /**
@@ -60,6 +186,7 @@ async function seedLeads(
             city: lead.city ?? null,
             leadStatus: lead.status,
             consentStatus: lead.consent ?? null,
+            consentReference: lead.consentReference ?? null,
             sourceLabel: lead.consentSource ?? null,
           },
           {
@@ -80,7 +207,9 @@ async function seedLeads(
   return created;
 }
 
-async function seedAccounts(db: Database): Promise<Omit<DevSeedResult, 'leadsCreated'>> {
+async function seedAccounts(
+  db: Database,
+): Promise<Omit<DevSeedResult, 'leadsCreated' | 'campaignsCreated'>> {
   // One hash for the shared password keeps every start fast (Argon2id is deliberately slow).
   const passwordHash = await hashPassword(DEV_PASSWORD);
   const audit = new AuditService(db);

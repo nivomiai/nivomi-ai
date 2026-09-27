@@ -1,7 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
+  callAttempts,
+  campaigns,
   companies,
   contacts,
+  eligibilityDecisions,
   crmConnections,
   externalRecordLinks,
   ingestionReviewItems,
@@ -250,7 +253,68 @@ export class LeadsService {
       .orderBy(desc(recordHistory.createdAt))
       .limit(200);
 
+    // FR-21, FR-48: eligibility decisions and calls join the timeline.
+    const decisions = await this.db
+      .select({
+        id: eligibilityDecisions.id,
+        at: eligibilityDecisions.evaluatedAt,
+        purpose: eligibilityDecisions.purpose,
+        result: eligibilityDecisions.result,
+        reasons: eligibilityDecisions.reasons,
+        ruleSetVersion: eligibilityDecisions.ruleSetVersion,
+        jurisdiction: eligibilityDecisions.jurisdiction,
+        campaignId: eligibilityDecisions.campaignId,
+        campaignName: campaigns.name,
+      })
+      .from(eligibilityDecisions)
+      .leftJoin(campaigns, eq(campaigns.id, eligibilityDecisions.campaignId))
+      .where(
+        and(
+          eq(eligibilityDecisions.organizationId, orgId),
+          eq(eligibilityDecisions.leadId, leadId),
+        ),
+      )
+      .orderBy(desc(eligibilityDecisions.createdAt))
+      .limit(100);
+    const calls = await this.db
+      .select({
+        at: callAttempts.createdAt,
+        attemptNumber: callAttempts.attemptNumber,
+        status: callAttempts.status,
+        outcome: callAttempts.outcome,
+        durationSeconds: callAttempts.durationSeconds,
+        campaignName: campaigns.name,
+      })
+      .from(callAttempts)
+      .innerJoin(campaigns, eq(campaigns.id, callAttempts.campaignId))
+      .where(and(eq(callAttempts.organizationId, orgId), eq(callAttempts.leadId, leadId)))
+      .orderBy(desc(callAttempts.createdAt))
+      .limit(100);
+
     const timeline = [
+      ...decisions.map((d) => ({
+        type: 'eligibility' as const,
+        at: d.at,
+        decisionId: d.id,
+        purpose: d.purpose,
+        result: d.result,
+        reasons: d.reasons,
+        ruleSetVersion: d.ruleSetVersion,
+        jurisdiction: d.jurisdiction,
+        campaignId: d.campaignId,
+        campaignName: d.campaignName,
+        source: 'SYSTEM',
+      })),
+      ...calls.map((c) => ({
+        type: 'call' as const,
+        at: c.at,
+        attemptNumber: c.attemptNumber,
+        status: c.status,
+        outcome: c.outcome,
+        durationSeconds: c.durationSeconds,
+        campaignName: c.campaignName,
+        source: 'AI_CALL',
+      })),
       ...statusEvents.map((e) => ({
         type: 'status' as const,
         at: e.createdAt,

@@ -15,6 +15,7 @@ import {
   type statusChangeSources,
 } from '@nivomi/database';
 import { and, desc, eq, inArray, notInArray, sql } from 'drizzle-orm';
+import { recordTelecomConsent } from '../compliance/consent-ledger.js';
 import {
   DEFAULT_COUNTRY,
   cleanText,
@@ -568,6 +569,18 @@ export class IngestionEngine {
           leadChanges.consentBasis = record.consent.basis;
           leadChanges.consentEvidence = record.consent.evidence;
           await this.history('lead', lead.id, 'consentBasis', null, record.consent.basis, ctx);
+          await recordTelecomConsent(this.db, {
+            organizationId: ctx.organizationId,
+            contactId,
+            leadId: lead.id,
+            phoneE164: record.phoneE164,
+            kind: 'GRANT',
+            basis: record.consent.basis,
+            evidence: record.consent.evidence,
+            source: ctx.source,
+            recordedByUserId: ctx.actorUserId,
+            eventKey: `lead:${lead.id}:basis:${ctx.source}:${ctx.sourceReference ?? 'direct'}`,
+          });
         } else if (lead.consentBasis !== record.consent.basis) {
           notes.push(`Kept existing consent basis ${lead.consentBasis}.`);
         }
@@ -630,6 +643,21 @@ export class IngestionEngine {
       })
       .returning({ id: leads.id });
     if (!lead) throw new Error('lead insert returned no row');
+    if (record.consent) {
+      // The telecom consent ledger is the record eligibility reads (FR-52, ADR-021).
+      await recordTelecomConsent(this.db, {
+        organizationId: ctx.organizationId,
+        contactId,
+        leadId: lead.id,
+        phoneE164: record.phoneE164,
+        kind: 'GRANT',
+        basis: record.consent.basis,
+        evidence: record.consent.evidence,
+        source: ctx.source,
+        recordedByUserId: ctx.actorUserId,
+        eventKey: `lead:${lead.id}:created`,
+      });
+    }
     await this.db.insert(leadStatusChanges).values({
       organizationId: ctx.organizationId,
       leadId: lead.id,
@@ -689,7 +717,21 @@ export class IngestionEngine {
         })
         .onConflictDoNothing()
         .returning({ id: suppressionEntries.id });
-      if (suppressed.length > 0) added = true;
+      if (suppressed.length > 0) {
+        added = true;
+        // An opt-out at the source also revokes telecom consent (FR-51; DPDP is separate).
+        await recordTelecomConsent(this.db, {
+          organizationId: ctx.organizationId,
+          contactId,
+          leadId: null,
+          phoneE164: record.phoneE164,
+          kind: 'REVOCATION',
+          source: ctx.source,
+          note: 'Opt-out recorded at the source',
+          recordedByUserId: ctx.actorUserId,
+          eventKey: `opt-out:${record.phoneE164}:${ctx.source}:${ctx.sourceReference ?? 'direct'}`,
+        });
+      }
     }
     return added;
   }

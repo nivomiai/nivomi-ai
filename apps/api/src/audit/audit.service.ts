@@ -42,7 +42,31 @@ export type AuditAction =
   | 'crm.disconnected'
   | 'crm.settings_updated'
   | 'crm.sync_requested'
-  | 'crm.token_invalid';
+  | 'crm.token_invalid'
+  | 'campaign.created'
+  | 'campaign.updated'
+  | 'campaign.prelaunch_requested'
+  | 'campaign.launched'
+  | 'campaign.paused'
+  | 'campaign.auto_paused'
+  | 'campaign.resumed'
+  | 'campaign.stopped'
+  | 'campaign.cancelled'
+  | 'campaign.completed'
+  | 'calling.emergency_stop_activated'
+  | 'calling.emergency_stop_released'
+  | 'telecom.identity_updated'
+  | 'telecom.identity_submitted'
+  | 'telecom.identity_verified'
+  | 'telecom.identity_rejected'
+  | 'telecom.number_added'
+  | 'telecom.number_removed'
+  | 'consent.recorded'
+  | 'compliance.complaint_recorded'
+  | 'compliance.breaker_tripped'
+  | 'compliance.breaker_acknowledged'
+  | 'compliance.breaker_cleared'
+  | 'compliance.review_resolved';
 
 export interface AuditEntry {
   readonly action: AuditAction;

@@ -2,6 +2,8 @@ import { Module, type DynamicModule } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
 import { AuthController } from './auth/auth.controller.js';
+import { CampaignsModule } from './campaigns/campaigns.module.js';
+import { ComplianceModule } from './compliance/compliance.module.js';
 import { AuthEmailJobs } from './auth/auth.jobs.js';
 import { AuthService } from './auth/auth.service.js';
 import { ApiRateLimitGuard, AuthGuard, OriginGuard } from './auth/guards.js';
@@ -34,6 +36,8 @@ export class AppModule {
         LeadsModule,
         ImportsModule.forRoot(env),
         CrmModule,
+        ComplianceModule,
+        CampaignsModule,
       ],
       controllers: [AuthController, MeController, OrganizationsController],
       providers: [

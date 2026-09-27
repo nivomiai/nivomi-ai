@@ -180,6 +180,8 @@ export interface DevLead {
   /** A Consent Basis, `DND` for an opt-out, or omitted for "no basis, not callable". */
   readonly consent?: string;
   readonly consentSource?: string;
+  /** Operator consent reference, required for REGISTERED_CONSENT. */
+  readonly consentReference?: string;
   readonly source: 'MANUAL' | 'FILE_IMPORT';
   /** Assigned Human Agent; AGENTs see only their own leads. */
   readonly ownerEmail?: string;
@@ -306,6 +308,47 @@ export const DEV_LEADS: Readonly<Record<string, readonly DevLead[]>> = {
       source: 'MANUAL',
       ownerEmail: 'priya.agent@example.com',
     },
+    // Calling demo (Phase 3): each shows one eligibility outcome in the demo campaign.
+    {
+      fullName: 'Ritu Kapoor',
+      phone: '9847000115',
+      email: 'ritu.kapoor@example.com',
+      city: 'Delhi',
+      status: 'NEW',
+      consent: 'REGISTERED_CONSENT',
+      consentReference: 'DCA-DEMO-0115',
+      consentSource: 'Operator consent (DCA)',
+      source: 'MANUAL',
+    },
+    {
+      fullName: 'Arun Pillai',
+      phone: '9847000116',
+      city: 'Kochi',
+      status: 'NEW',
+      consent: 'EXISTING_CUSTOMER',
+      consentSource: 'Existing customer list',
+      source: 'FILE_IMPORT',
+    },
+    {
+      // On the simulated preference registry as BLOCK PROMO.
+      fullName: 'Neha Gupta',
+      phone: '9847000113',
+      city: 'Jaipur',
+      status: 'NEW',
+      consent: 'EXISTING_CUSTOMER',
+      consentSource: 'Existing customer list',
+      source: 'FILE_IMPORT',
+    },
+    {
+      // On the simulated preference registry, blocking the real-estate category.
+      fullName: 'Suresh Kumar',
+      phone: '9847000114',
+      city: 'Chennai',
+      status: 'NEW',
+      consent: 'EXISTING_CUSTOMER',
+      consentSource: 'Existing customer list',
+      source: 'FILE_IMPORT',
+    },
   ],
   'lotus-realty': [
     {
@@ -368,4 +411,49 @@ export const DEV_LEADS: Readonly<Record<string, readonly DevLead[]>> = {
       ownerEmail: 'sneha.agent@example.com',
     },
   ],
+};
+
+export interface DevCalling {
+  /** Telecom Identity recorded as VERIFIED by the seed (stands in for Super Admin review). */
+  readonly telecom: {
+    readonly legalName: string;
+    readonly dltEntityId: string;
+    readonly telemarketerName: string;
+    readonly telemarketerRegistrationId: string;
+    readonly sector: 'REAL_ESTATE';
+    readonly a2pDeclarationReference: string;
+  };
+  /** A fictitious 140-series number; the dialer is simulated. */
+  readonly callerNumber: string;
+  /** A DRAFT campaign over every lead, ready for its pre-launch check. */
+  readonly campaign: {
+    readonly name: string;
+    readonly windowStart: string;
+    readonly windowEnd: string;
+    readonly budgetMinutes: number;
+  };
+}
+
+/**
+ * Calling demo per organization slug. Lotus Realty has none on purpose: its campaigns show the
+ * "telecom identity not verified" block.
+ */
+export const DEV_CALLING: Readonly<Record<string, DevCalling>> = {
+  'nivomi-demo': {
+    telecom: {
+      legalName: 'Nivomi Demo Private Limited',
+      dltEntityId: 'DEMO-DLT-1101',
+      telemarketerName: 'Demo Telemarketer (simulated)',
+      telemarketerRegistrationId: 'DEMO-TM-01',
+      sector: 'REAL_ESTATE',
+      a2pDeclarationReference: 'DEMO-A2P-01',
+    },
+    callerNumber: '+911400000001',
+    campaign: {
+      name: 'Site-visit follow-up (demo)',
+      windowStart: '10:00',
+      windowEnd: '19:00',
+      budgetMinutes: 60,
+    },
+  },
 };
