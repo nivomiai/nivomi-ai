@@ -246,3 +246,32 @@ reverse order) with reason codes. BLOCKED: `ORGANIZATION_NOT_ACTIVE`, `EMERGENCY
 | ------ | ----------------------------------------------------- | ----------------------------------------------------------------------------- |
 | POST   | `/platform/organizations/:id/telecom-identity/review` | `{ approve, reason? }` → `201`; `PENDING_REVIEW` → `VERIFIED` or `UNVERIFIED` |
 | POST   | `/platform/organizations/:id/complaint-breaker/clear` | → `204`; `409` until an organization admin has acknowledged                   |
+
+### AI Agents (FR-26–FR-32, ADR-022)
+
+MANAGER and above build agents (`agents.manage`); ANALYST reads (`agents.read`). The draft may be
+saved unfinished (its `problems` are returned); publishing needs a valid workflow and creates an
+immutable version. Campaigns take an `agentVersionId` (same call category) and cannot launch
+without one; every call attempt records it.
+
+| Method | Path                                         | Permission      | Body → Response                                                                                                                    |
+| ------ | -------------------------------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/agents`                                    | `agents.read`   | → `{ items }` with status, call category, latest version and its id, languages, tools                                              |
+| GET    | `/agents/tools`                              | `agents.read`   | → the platform tool registry (name, label, description, side effect, audited)                                                      |
+| POST   | `/agents`                                    | `agents.manage` | `{ name, callCategory: PROMOTIONAL\|SERVICE, purpose? }` → `201 { id }` with a valid starter workflow                              |
+| GET    | `/agents/:id`                                | `agents.read`   | → `{ definition, problems, unpublishedChanges, versions, … }`                                                                      |
+| PUT    | `/agents/:id`                                | `agents.manage` | `{ name?, callCategory?, definition? }` → the agent; `400` with details when the definition's shape is invalid                     |
+| POST   | `/agents/:id/publish`                        | `agents.manage` | → `201 { id, version }`; `400` listing workflow problems; `409` when nothing changed                                               |
+| POST   | `/agents/:id/archive`                        | `agents.manage` | → `204`; versions stay usable by campaigns already pinned to them                                                                  |
+| GET    | `/agents/:id/versions/:versionId`            | `agents.read`   | → the frozen definition                                                                                                            |
+| POST   | `/agents/:id/test-sessions`                  | `agents.manage` | `{ versionId? }` (omit to test the saved draft) → `201` session with the opening transcript                                        |
+| GET    | `/agents/:id/test-sessions/:sessionId`       | `agents.manage` | → the session                                                                                                                      |
+| POST   | `/agents/:id/test-sessions/:sessionId/turns` | `agents.manage` | `{ turn, text }` → `200` session; replaying an earlier `turn` returns it unchanged; `409` out of order or ended; `502` model error |
+
+The definition is `{ personaName, companyName, purpose, primaryLanguage, otherLanguages, voice,
+callLimits, recordingEnabled, escalation, knowledge (≤ 20,000), objectionGuidance, tools,
+qualification: { mode: ALL|ANY, rules }, workflow: { nodes, edges } }`. Node types: `start`,
+`question` (`key`, `prompt`, `answerType`: yes_no|single_choice|number|date|free_text, `options`),
+`agent` (`instructions`, `maxTurns`), `handoff`, `end` (`outcome`: INTERESTED|NOT_INTERESTED|
+CALLBACK_REQUESTED|COMPLETED). Edge conditions: `always`, `answer` (`key`, `op`: eq|neq|gt|gte|lt|lte|in,
+`value`) and `intent` (affirm|deny|not_interested|callback); the first matching exit wins.
