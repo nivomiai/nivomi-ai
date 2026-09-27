@@ -1,3 +1,5 @@
+export * from './campaigns.js';
+export * from './compliance.js';
 export * from './crm.js';
 export * from './identity.js';
 export * from './imports.js';
