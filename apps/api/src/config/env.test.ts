@@ -64,6 +64,7 @@ describe('loadApiEnv', () => {
       /VOICE_PROVIDER[\s\S]*simulated is not allowed in production/,
     );
     expect(() => loadApiEnv(productionBase)).toThrow(/PREFERENCE_REGISTRY/);
+    expect(() => loadApiEnv(productionBase)).toThrow(/LLM_PROVIDER/);
   });
 
   it('fails fast on providers that are not implemented yet', () => {

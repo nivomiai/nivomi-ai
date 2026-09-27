@@ -66,7 +66,12 @@ export type AuditAction =
   | 'compliance.breaker_tripped'
   | 'compliance.breaker_acknowledged'
   | 'compliance.breaker_cleared'
-  | 'compliance.review_resolved';
+  | 'compliance.review_resolved'
+  | 'agent.created'
+  | 'agent.updated'
+  | 'agent.published'
+  | 'agent.archived'
+  | 'agent.test_started';
 
 export interface AuditEntry {
   readonly action: AuditAction;

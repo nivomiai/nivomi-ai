@@ -76,6 +76,23 @@ export interface CallingOrg {
   organizationId: string;
   callerNumberId: string;
   callerNumber: string;
+  /** A published promotional agent version, pinned by `createCampaign`. */
+  agentVersionId: string;
+}
+
+/** Creates and publishes the starter agent; returns the version id. */
+export async function publishedAgent(
+  client: Browser,
+  callCategory: 'PROMOTIONAL' | 'SERVICE' = 'PROMOTIONAL',
+): Promise<string> {
+  const created = await client
+    .post('/api/v1/agents')
+    .send({ name: `${callCategory.toLowerCase()} agent`, callCategory })
+    .expect(201);
+  const published = await client
+    .post(`/api/v1/agents/${(created.body as { id: string }).id}/publish`)
+    .expect(201);
+  return (published.body as { id: string }).id;
 }
 
 /**
@@ -119,7 +136,8 @@ export async function callingOrg(
       .send({ approve: true })
       .expect(201);
   }
-  return { ...o, callerNumberId, callerNumber: `+91${number}` };
+  const agentVersionId = await publishedAgent(o.client);
+  return { ...o, callerNumberId, callerNumber: `+91${number}`, agentVersionId };
 }
 
 export async function addLead(
@@ -142,16 +160,16 @@ export async function addLead(
 }
 
 export async function createCampaign(
-  client: Browser,
-  callerNumberId: string | null,
+  org: Pick<CallingOrg, 'client' | 'callerNumberId' | 'agentVersionId'>,
   overrides: Record<string, unknown> = {},
 ): Promise<string> {
-  const res = await client
+  const res = await org.client
     .post('/api/v1/campaigns')
     .send({
       name: 'October follow-up',
       callCategory: 'PROMOTIONAL',
-      callerNumberId,
+      callerNumberId: org.callerNumberId,
+      agentVersionId: org.agentVersionId,
       selection: { kind: 'FILTER' },
       windowStart: '10:00',
       windowEnd: '21:00',

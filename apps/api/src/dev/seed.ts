@@ -1,4 +1,6 @@
 import {
+  agentVersions,
+  aiAgents,
   callerNumbers,
   campaigns,
   organizationInvitations,
@@ -12,6 +14,7 @@ import { and, eq, isNull } from 'drizzle-orm';
 import { AuditService } from '../audit/audit.service.js';
 import { hashPassword } from '../auth/password.js';
 import { hashToken } from '../auth/tokens.js';
+import { definitionChecksum, starterDefinition } from '../agents/agent-definition.js';
 import { classifyNumberSeries } from '../compliance/compliance-engine.js';
 import { INDIA_RULE_SET_V1 } from '../compliance/rule-sets/india-v1.js';
 import { IngestionEngine, lockOrganizationIngestion } from '../leads/ingestion.js';
@@ -110,17 +113,72 @@ async function seedCalling(
         );
       if (!number) throw new Error(`seed caller number ${spec.callerNumber} belongs elsewhere`);
 
-      const [existing] = await tx
-        .select({ id: campaigns.id })
-        .from(campaigns)
-        .where(
-          and(eq(campaigns.organizationId, organizationId), eq(campaigns.name, spec.campaign.name)),
-        );
-      if (existing) return;
       const ownerEmail = DEV_ORGANIZATIONS.find((o) => o.slug === slug)?.members.find(
         (m) => m.role === 'OWNER',
       )?.email;
       const ownerId = ownerEmail ? (userIds.get(ownerEmail) ?? null) : null;
+
+      // The demo agent, published once as version 1 (FR-32).
+      let [agent] = await tx
+        .select({ id: aiAgents.id })
+        .from(aiAgents)
+        .where(
+          and(eq(aiAgents.organizationId, organizationId), eq(aiAgents.name, spec.agent.name)),
+        );
+      if (!agent) {
+        const [organization] = await tx
+          .select({ name: organizations.name })
+          .from(organizations)
+          .where(eq(organizations.id, organizationId));
+        const definition = starterDefinition({
+          companyName: organization?.name ?? slug,
+          personaName: spec.agent.personaName,
+          purpose: spec.agent.purpose,
+        });
+        [agent] = await tx
+          .insert(aiAgents)
+          .values({
+            organizationId,
+            name: spec.agent.name,
+            status: 'ACTIVE',
+            callCategory: 'PROMOTIONAL',
+            definition,
+            latestVersion: 1,
+            createdByUserId: ownerId,
+          })
+          .returning({ id: aiAgents.id });
+        if (!agent) throw new Error('seed agent insert returned no row');
+        await tx.insert(agentVersions).values({
+          organizationId,
+          agentId: agent.id,
+          version: 1,
+          callCategory: 'PROMOTIONAL',
+          definition,
+          checksum: definitionChecksum(definition),
+          publishedByUserId: ownerId,
+        });
+      }
+      const [version] = await tx
+        .select({ id: agentVersions.id })
+        .from(agentVersions)
+        .where(and(eq(agentVersions.agentId, agent.id), eq(agentVersions.version, 1)));
+
+      const [existing] = await tx
+        .select({ id: campaigns.id, agentVersionId: campaigns.agentVersionId })
+        .from(campaigns)
+        .where(
+          and(eq(campaigns.organizationId, organizationId), eq(campaigns.name, spec.campaign.name)),
+        );
+      if (existing) {
+        // Campaigns seeded before agents existed get the demo agent; a Member's choice is kept.
+        if (!existing.agentVersionId && version) {
+          await tx
+            .update(campaigns)
+            .set({ agentVersionId: version.id })
+            .where(eq(campaigns.id, existing.id));
+        }
+        return;
+      }
       const [campaign] = await tx
         .insert(campaigns)
         .values({
@@ -129,6 +187,7 @@ async function seedCalling(
           type: 'STATIC',
           callCategory: 'PROMOTIONAL',
           callerNumberId: number.id,
+          agentVersionId: version?.id ?? null,
           selection: { kind: 'FILTER' },
           windowStart: spec.campaign.windowStart,
           windowEnd: spec.campaign.windowEnd,

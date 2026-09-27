@@ -38,6 +38,7 @@ interface PlaceTarget {
   readonly from: string;
   readonly to: string;
   readonly obligations: ComplianceObligations | null;
+  readonly agentVersionId: string | null;
 }
 
 export const CAMPAIGN_JOBS = {
@@ -551,6 +552,7 @@ export class CampaignRunner implements OnModuleInit {
               attemptNumber: runState.attemptsMade + 1,
               decisionId: decision.decisionId,
               callerNumberId: campaign.callerNumberId,
+              agentVersionId: campaign.agentVersionId,
               toPhoneE164: decision.phoneE164,
               provider: this.voice.name,
               dialRequestedAt: now,
@@ -574,6 +576,7 @@ export class CampaignRunner implements OnModuleInit {
             from: caller.phone,
             to: decision.phoneE164,
             obligations: decision.outcome.obligations,
+            agentVersionId: campaign.agentVersionId,
           };
           return;
         }
@@ -625,6 +628,7 @@ export class CampaignRunner implements OnModuleInit {
         from: placing.from,
         to: placing.to,
         obligations: placing.obligations,
+        agentVersionId: placing.agentVersionId,
       });
       await this.db
         .update(callAttempts)

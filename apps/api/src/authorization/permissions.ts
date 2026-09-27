@@ -27,7 +27,9 @@ export type Permission =
   | 'compliance.review'
   | 'telecom.read'
   | 'telecom.manage'
-  | 'consent.manage';
+  | 'consent.manage'
+  | 'agents.read'
+  | 'agents.manage';
 
 const ADMINISTRATION: readonly Permission[] = [
   'organization.read',
@@ -49,6 +51,8 @@ const DATA_MANAGEMENT: readonly Permission[] = [
 
 /** Campaigns: create, start, pause; Emergency Stop (PRD §8.1). */
 const CAMPAIGNS: readonly Permission[] = [
+  'agents.read',
+  'agents.manage',
   'campaigns.read',
   'campaigns.manage',
   'campaigns.emergency_stop',
@@ -91,9 +95,11 @@ const ROLE_PERMISSIONS: Record<OrganizationRole, ReadonlySet<Permission>> = {
   // Leads: own records only. No campaigns.
   AGENT: new Set<Permission>(['organization.read', 'leads.read', 'leads.write']),
   // Leads and campaigns: read-only.
+  // AI Agents R (PRD §8.1).
   ANALYST: new Set<Permission>([
     'organization.read',
     'leads.read',
+    'agents.read',
     'campaigns.read',
     'compliance.read',
   ]),

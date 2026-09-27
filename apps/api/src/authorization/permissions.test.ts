@@ -56,6 +56,17 @@ describe('permission matrix (PRD §8.1)', () => {
     }
   });
 
+  it('lets MANAGER and above build agents and ANALYST read them (PRD §8.1)', () => {
+    for (const role of ['OWNER', 'ADMIN', 'MANAGER'] as const) {
+      expect(roleHasPermission(role, 'agents.manage')).toBe(true);
+    }
+    expect(roleHasPermission('ANALYST', 'agents.read')).toBe(true);
+    expect(roleHasPermission('ANALYST', 'agents.manage')).toBe(false);
+    for (const role of ['AGENT', 'VIEWER'] as const) {
+      expect(roleHasPermission(role, 'agents.read')).toBe(false);
+    }
+  });
+
   it('treats only OWNER and ADMIN as privileged', () => {
     expect(isPrivilegedRole('OWNER')).toBe(true);
     expect(isPrivilegedRole('ADMIN')).toBe(true);
