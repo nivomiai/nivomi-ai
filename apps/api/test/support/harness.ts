@@ -108,16 +108,14 @@ export function uniqueEmail(label = 'user'): string {
 }
 
 /**
- * Registers, verifies and signs in a user; returns the signed-in client. The verification
- * token is pulled from the dev mailbox and redeemed before login so the resulting session
- * passes the AuthGuard's email-verified check on tenant-scoped endpoints.
+ * Registers and signs in a user; returns the signed-in client. Email verification is disabled
+ * for the current MVP phase (see auth.service.ts), so new accounts are already verified at
+ * registration and no verify-email step is needed here.
  */
 export async function signedInUser(t: TestApp, label = 'user', name = 'Test User') {
   const email = uniqueEmail(label);
   const client = browser(t);
   await client.post('/api/v1/auth/register').send({ name, email, password: PASSWORD }).expect(202);
-  const verificationToken = await tokenFromEmail(t, email, 'verify-email');
-  await client.post('/api/v1/auth/verify-email').send({ token: verificationToken }).expect(204);
   await client.post('/api/v1/auth/login').send({ email, password: PASSWORD }).expect(204);
   return { client, email };
 }
