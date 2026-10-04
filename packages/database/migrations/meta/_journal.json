@@ -43,6 +43,13 @@
       "when": 1791123697781,
       "tag": "0005_appointments",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791124553797,
+      "tag": "0006_crm_writeback",
+      "breakpoints": true
     }
   ]
 }

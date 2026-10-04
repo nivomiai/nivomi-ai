@@ -4,6 +4,7 @@ export * from './calls.js';
 export * from './campaigns.js';
 export * from './compliance.js';
 export * from './crm.js';
+export * from './crm-writeback.js';
 export * from './identity.js';
 export * from './imports.js';
 export * from './leads.js';

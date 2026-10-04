@@ -6,18 +6,25 @@ import { CrmSyncJobs } from './crm-sync.jobs.js';
 import { CrmController } from './crm.controller.js';
 import { CrmService } from './crm.service.js';
 import { HubSpotAdapter } from './hubspot.adapter.js';
+import { HubspotWebhookController } from './webhooks.controller.js';
+import { CrmWritebackService } from './writeback.service.js';
 
-/** CRM connection and CRM → Nivomi ingestion (PRD FR-19, FR-84–FR-86, FR-137; ADR-012). */
+/**
+ * CRM connection, CRM → Nivomi ingestion (ADR-012, ADR-020) and Nivomi → CRM write-back
+ * (ADR-026, Phase 7).
+ */
 @Module({
-  controllers: [CrmController],
+  controllers: [CrmController, HubspotWebhookController],
   providers: [
     CrmService,
     CrmSyncJobs,
+    CrmWritebackService,
     {
       provide: CRM_PROVIDER,
       inject: [API_ENV],
       useFactory: (env: ApiEnv) => new HubSpotAdapter(env),
     },
   ],
+  exports: [CrmWritebackService],
 })
 export class CrmModule {}
