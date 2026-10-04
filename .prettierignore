@@ -11,6 +11,9 @@ next-env.d.ts
 _bmad
 .claude/skills
 
+# Sub-agent worktrees (transient; each is a separate copy of the repo)
+.claude/worktrees
+
 # Generated research briefings (rendered from research.md)
 **/research-briefing.html
 
@@ -20,3 +23,6 @@ _bmad
 
 # Generated SQL migrations and drizzle-kit snapshots (committed, never hand-formatted)
 packages/database/migrations
+
+# Public homepage, kept as authored in the nivomiai/website repo so it stays diffable against it
+apps/web/public/site/home.html

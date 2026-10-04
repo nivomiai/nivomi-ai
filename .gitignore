@@ -94,3 +94,6 @@ CLAUDE.local.md
 
 # Local development data (embedded PostgreSQL, dev mailbox)
 .data/
+
+# Local scratch scripts (debugging drivers, parse experiments)
+tmp-drive/
