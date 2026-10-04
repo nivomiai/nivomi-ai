@@ -2,9 +2,12 @@ import { Module, type DynamicModule } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
 import { AgentsModule } from './agents/agents.module.js';
+import { AnalyticsModule } from './analytics/analytics.module.js';
 import { AppointmentsModule } from './appointments/appointments.module.js';
 import { AuthController } from './auth/auth.controller.js';
+import { MfaService } from './auth/mfa.service.js';
 import { BillingModule } from './billing/billing.module.js';
+import { NotificationsModule } from './notifications/notifications.module.js';
 import { CallsModule } from './calls/calls.module.js';
 import { CampaignsModule } from './campaigns/campaigns.module.js';
 import { ComplianceModule } from './compliance/compliance.module.js';
@@ -48,12 +51,14 @@ export class AppModule {
         CrmModule,
         ComplianceModule,
         AgentsModule,
+        AnalyticsModule,
         AppointmentsModule,
         BillingModule,
         CampaignsModule,
         CallsModule,
         DashboardModule,
         DemoModule,
+        NotificationsModule,
       ],
       controllers: [
         AuthController,
@@ -70,6 +75,7 @@ export class AppModule {
         { provide: APP_GUARD, useClass: AuthGuard },
         TokenService,
         AuthService,
+        MfaService,
         AuthEmailJobs,
         OrganizationsService,
         OrganizationJobs,

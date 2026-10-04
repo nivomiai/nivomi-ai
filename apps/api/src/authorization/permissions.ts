@@ -33,7 +33,8 @@ export type Permission =
   | 'calls.read'
   | 'appointments.read'
   | 'appointments.manage'
-  | 'billing.read';
+  | 'billing.read'
+  | 'analytics.read';
 
 /** Everything a tenant can see or do on its own data. All multi-member roles get this set. */
 const FULL_TENANT: readonly Permission[] = [
@@ -50,6 +51,7 @@ const FULL_TENANT: readonly Permission[] = [
   'integrations.sync',
   'agents.read',
   'agents.manage',
+  'analytics.read',
   'appointments.read',
   'appointments.manage',
   'billing.read',

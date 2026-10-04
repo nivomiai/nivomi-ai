@@ -64,6 +64,6 @@ export class SimulatedCalendarProvider implements CalendarProvider {
   }
 
   freeBusy(): Promise<Map<string, Array<{ from: Date; to: Date }>>> {
-    return Promise.resolve(new Map());
+    return Promise.resolve(new Map<string, Array<{ from: Date; to: Date }>>());
   }
 }

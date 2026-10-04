@@ -1,7 +1,6 @@
 import {
   bigint,
   index,
-  integer,
   jsonb,
   pgEnum,
   pgTable,

@@ -54,10 +54,11 @@ const hashOf = (p: Record<string, unknown>) =>
 function sortKeys(v: unknown): unknown {
   if (Array.isArray(v)) return v.map(sortKeys);
   if (v && typeof v === 'object') {
-    return Object.keys(v as Record<string, unknown>)
+    const obj = v as Record<string, unknown>;
+    return Object.keys(obj)
       .sort()
       .reduce<Record<string, unknown>>((acc, k) => {
-        acc[k] = sortKeys((v as Record<string, unknown>)[k]);
+        acc[k] = sortKeys(obj[k]);
         return acc;
       }, {});
   }
@@ -74,11 +75,12 @@ export class CrmWritebackService {
   ): Promise<{ id: string; created: boolean }> {
     const payloadRecord = { ...projection.payload } as unknown as Record<string, unknown>;
     const projectionHash = hashOf(payloadRecord);
+    const kind: CrmSyncJobKind = projection.kind;
     const [inserted] = await this.db
       .insert(crmSyncJobs)
       .values({
         organizationId,
-        kind: projection.kind as CrmSyncJobKind,
+        kind,
         entityId: projection.entityId,
         projectionHash,
         payload: payloadRecord,
@@ -93,7 +95,7 @@ export class CrmWritebackService {
       .where(
         and(
           eq(crmSyncJobs.organizationId, organizationId),
-          eq(crmSyncJobs.kind, projection.kind as CrmSyncJobKind),
+          eq(crmSyncJobs.kind, kind),
           eq(crmSyncJobs.entityId, projection.entityId),
           eq(crmSyncJobs.projectionHash, projectionHash),
         ),

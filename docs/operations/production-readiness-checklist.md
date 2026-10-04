@@ -11,7 +11,7 @@ Status: ✅ done · 🟡 partial · ⬜ not started · ⛔ blocked (external dep
 | ------------------------------------------------------------------------------ | ------ | ----------------------------------------------------------------------------------------------- |
 | Nivomi-owned auth: Argon2id, rotating refresh tokens, reuse detection, lockout | ✅     | `it/auth.test.ts`                                                                               |
 | Email verification and password reset                                          | ✅     | `it/auth.test.ts`, `tests/e2e/app.spec.ts`                                                      |
-| MFA for owner, admin and Super Admin (PRD FR-5)                                | ⬜     | TECH_DEBT                                                                                       |
+| MFA for owner, admin and Super Admin (PRD FR-5)                                | 🟡     | TOTP enrol / verify / disenrol service landed in Phase 9 (`src/auth/mfa.service.ts`); step-up enforcement in login flow is TECH_DEBT |
 | RBAC from the central permission map                                           | ✅     | `it/organizations.test.ts`                                                                      |
 | Cross-tenant isolation tests for every data-touching feature                   | 🟡     | Organizations, members, invitations and audit are covered; every later feature must add its own |
 | Audit log for security and admin actions                                       | 🟡     | Auth and organization events; Super Admin events pending                                        |

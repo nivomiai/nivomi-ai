@@ -1,0 +1,82 @@
+name: Deploy
+
+# Skeleton (Phase 11, ADR-030). Runs only when the AWS hold is lifted and the
+# NIVOMI_DEPLOY_ENABLED repo variable is set to "true"; otherwise exits as a no-op.
+# The actual deployment steps apply Terraform and roll ECS tasks (blue/green).
+
+on:
+  push:
+    branches: [main]
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'staging | production'
+        required: true
+        default: 'staging'
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy gate
+        run: |
+          if [ "${{ vars.NIVOMI_DEPLOY_ENABLED }}" != "true" ]; then
+            echo "::notice::NIVOMI_DEPLOY_ENABLED is not true; this skeleton exits as a no-op."
+            exit 0
+          fi
+          echo "Deploy enabled — proceeding."
+
+  terraform:
+    needs: gate
+    if: vars.NIVOMI_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event.release.tag_name && 'production' || github.event.inputs.environment || 'staging' }}
+    permissions:
+      id-token: write
+      contents: read
+    defaults:
+      run:
+        working-directory: infra
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ap-south-1
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+      - name: terraform init
+        run: terraform init -backend-config=backend/${{ github.event.inputs.environment || 'staging' }}.hcl
+      - name: terraform plan
+        run: terraform plan -var-file=env/${{ github.event.inputs.environment || 'staging' }}.tfvars -out tf.plan
+      - name: terraform apply
+        if: github.event.release.tag_name != '' || github.ref == 'refs/heads/main'
+        run: terraform apply -input=false tf.plan
+
+  deploy_ecs:
+    needs: terraform
+    if: vars.NIVOMI_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ap-south-1
+      - name: Build and push images
+        run: echo "docker buildx build --push … (skeleton)"
+      - name: Roll ECS services (blue/green)
+        run: echo "aws ecs update-service … api / worker / voice-worker (skeleton)"

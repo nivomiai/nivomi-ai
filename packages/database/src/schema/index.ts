@@ -9,5 +9,6 @@ export * from './crm-writeback.js';
 export * from './identity.js';
 export * from './imports.js';
 export * from './leads.js';
+export * from './notifications.js';
 export * from './organizations.js';
 export * from './platform.js';
