@@ -16,7 +16,6 @@ import { z } from 'zod';
 import { AuditService } from '../audit/audit.service.js';
 import { emailSchema } from '../auth/auth.controller.js';
 import {
-  AllowUnverified,
   CurrentPrincipal,
   CurrentTenant,
   RequirePermission,
@@ -43,7 +42,6 @@ const auditQuerySchema = z.object({
 export class MeController {
   constructor(private readonly organizations: OrganizationsService) {}
 
-  @AllowUnverified()
   @Get()
   async me(@CurrentPrincipal() principal: Principal) {
     return {
@@ -61,9 +59,7 @@ export class MeController {
             permissions: permissionsFor(principal.membership.role),
           }
         : null,
-      organizations: principal.emailVerified
-        ? await this.organizations.listForUser(principal.userId)
-        : [],
+      organizations: await this.organizations.listForUser(principal.userId),
     };
   }
 

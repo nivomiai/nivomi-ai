@@ -30,14 +30,11 @@ export interface AuthenticatedRequest extends Request {
 }
 
 export const IS_PUBLIC = 'nivomi:isPublic';
-export const ALLOW_UNVERIFIED = 'nivomi:allowUnverified';
 export const REQUIRED_PERMISSION = 'nivomi:requiredPermission';
 export const REQUIRE_SUPER_ADMIN = 'nivomi:requireSuperAdmin';
 
 /** No authentication required. */
 export const Public = (): CustomDecorator => SetMetadata(IS_PUBLIC, true);
-/** Signed-in users who have not verified their email may call this. */
-export const AllowUnverified = (): CustomDecorator => SetMetadata(ALLOW_UNVERIFIED, true);
 /** Requires an active organization membership whose role grants `permission`. */
 export const RequirePermission = (permission: Permission): CustomDecorator =>
   SetMetadata(REQUIRED_PERMISSION, permission);

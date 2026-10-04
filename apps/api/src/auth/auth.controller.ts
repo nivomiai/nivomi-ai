@@ -22,7 +22,6 @@ import type { ApiEnv } from '../config/env.js';
 import { AuthService } from './auth.service.js';
 import { REFRESH_COOKIE, clearAuthCookies, readCookie, setAuthCookies } from './cookies.js';
 import {
-  AllowUnverified,
   CurrentPrincipal,
   Public,
   type AuthenticatedRequest,
@@ -58,21 +57,6 @@ export class AuthController {
   @HttpCode(HttpStatus.ACCEPTED)
   async register(@Body() body: unknown, @Req() request: AuthenticatedRequest) {
     await this.auth.register(validate(registerSchema, body), clientContext(request));
-    return ACCEPTED;
-  }
-
-  @Public()
-  @Post('verify-email')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async verifyEmail(@Body() body: unknown, @Req() request: AuthenticatedRequest): Promise<void> {
-    await this.auth.verifyEmail(validate(tokenSchema, body).token, clientContext(request));
-  }
-
-  @AllowUnverified()
-  @Post('resend-verification')
-  @HttpCode(HttpStatus.ACCEPTED)
-  async resendVerification(@CurrentPrincipal() principal: Principal) {
-    await this.auth.resendVerification(principal);
     return ACCEPTED;
   }
 
@@ -157,13 +141,11 @@ export class AuthController {
     await this.auth.changePassword(principal, validate(changeSchema, body), clientContext(request));
   }
 
-  @AllowUnverified()
   @Get('sessions')
   async sessions(@CurrentPrincipal() principal: Principal) {
     return { items: await this.auth.listSessions(principal) };
   }
 
-  @AllowUnverified()
   @Delete('sessions/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async revokeSession(

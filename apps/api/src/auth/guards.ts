@@ -10,7 +10,6 @@ import { DATABASE } from '../database/database.module.js';
 import { RATE_LIMITS, RateLimiter } from '../security/rate-limit.js';
 import { ACCESS_COOKIE, REFRESH_COOKIE, readCookie } from './cookies.js';
 import {
-  ALLOW_UNVERIFIED,
   IS_PUBLIC,
   REQUIRED_PERMISSION,
   REQUIRE_SUPER_ADMIN,
@@ -83,12 +82,6 @@ export class AuthGuard implements CanActivate {
     const principal = request.principal;
     if (!principal) {
       throw new AppError('AUTHENTICATION_ERROR', 'Please sign in.');
-    }
-    if (
-      !principal.emailVerified &&
-      !this.reflector.getAllAndOverride<boolean>(ALLOW_UNVERIFIED, targets)
-    ) {
-      throw new AppError('EMAIL_NOT_VERIFIED', 'Please verify your email address first.');
     }
     if (
       this.reflector.getAllAndOverride<boolean>(REQUIRE_SUPER_ADMIN, targets) &&

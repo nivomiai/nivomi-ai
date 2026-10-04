@@ -8,7 +8,7 @@ import { api } from '@/lib/app/api';
 import { useResource } from '@/lib/app/use-resource';
 import { useSubmit } from '@/lib/app/use-submit';
 
-/** Accepting requires a signed-in, verified account whose email matches the invitation. */
+/** Accepting requires a signed-in account whose email matches the invitation. */
 export function AcceptInvitation({ token }: { readonly token: string | null }) {
   const me = useResource<Me>(token ? '/me' : null);
   const submit = useSubmit();
@@ -45,19 +45,6 @@ export function AcceptInvitation({ token }: { readonly token: string | null }) {
             Create an account
           </Link>
         </div>
-      </AuthCard>
-    );
-  }
-
-  if (!me.data.user.emailVerified) {
-    return (
-      <AuthCard
-        title="Verify your email first"
-        intro={`We sent a verification link to ${me.data.user.email}. Verify it, then open this invitation again.`}
-      >
-        <Link href="/app" className="btn btn-secondary w-full">
-          Go to Nivomi
-        </Link>
       </AuthCard>
     );
   }

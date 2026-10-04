@@ -28,7 +28,6 @@ export function Overview() {
   const status = STATUS_COPY[organization.status];
 
   const steps = [
-    { done: true, label: 'Verify your email' },
     { done: true, label: `Create ${organization.name}` },
     ...(can('imports.manage')
       ? [{ done: false, label: 'Bring in your leads', href: '/app/data-sources' }]

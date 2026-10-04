@@ -13,7 +13,6 @@ import { ThemeToggle } from '@/components/marketing/ThemeToggle';
 import { Icon, Logo } from '@/components/marketing/primitives';
 import type { Me, Permission, Role } from '@/lib/api/types';
 import { errorMessage } from '@/lib/api/client';
-import { api } from '@/lib/app/api';
 import { SessionProvider, useSession } from '@/lib/app/session';
 import { useSubmit } from '@/lib/app/use-submit';
 import type { IconName } from '@/lib/site/icons';
@@ -25,7 +24,6 @@ import {
   ErrorBlock,
   FormAlert,
   LoadingBlock,
-  Notice,
   PageHeader,
   RoleBadge,
   selectClass,
@@ -125,12 +123,12 @@ export function AppShell({ children }: { readonly children: ReactNode }) {
   );
 }
 
-/** Decides what a signed-in person may see: verification, organization setup, then the app. */
+/** Decides what a signed-in person may see: organization setup, then the app. */
 function Gate({ children }: { readonly children: ReactNode }) {
   const { me, loading, error, refresh } = useSession();
   const pathname = usePathname();
   const router = useRouter();
-  const needsOrganization = me?.user.emailVerified === true && me.activeOrganization === null;
+  const needsOrganization = me?.activeOrganization === null;
   const noOrganizations = needsOrganization && me.organizations.length === 0;
 
   useEffect(() => {
@@ -157,50 +155,12 @@ function Gate({ children }: { readonly children: ReactNode }) {
   }
   if (!me) return null; // session expired: the API client is redirecting to sign-in
 
-  if (!me.user.emailVerified) return <VerifyEmailGate me={me} />;
   if (needsOrganization) {
     if (pathname === ONBOARDING) return <AuthFrame>{children}</AuthFrame>;
     if (!noOrganizations) return <ChooseOrganization me={me} />;
     return null; // redirecting to onboarding
   }
   return <Frame me={me}>{children}</Frame>;
-}
-
-function VerifyEmailGate({ me }: { readonly me: Me }) {
-  const { signOut } = useSession();
-  const submit = useSubmit();
-  const [sent, setSent] = useState(false);
-  return (
-    <AuthFrame>
-      <AuthCard
-        title="Verify your email"
-        intro={
-          <>
-            We sent a verification link to <strong className="text-ink">{me.user.email}</strong>.
-            Open it to continue — it expires in 24 hours.
-          </>
-        }
-      >
-        <div className="grid gap-4">
-          {sent ? <Notice tone="success">A new link is on its way.</Notice> : null}
-          <FormAlert message={submit.error} />
-          <button
-            type="button"
-            className="btn btn-primary w-full"
-            disabled={submit.pending}
-            onClick={() =>
-              void submit.run(() => api.post('/auth/resend-verification')).then((ok) => setSent(ok))
-            }
-          >
-            {submit.pending ? 'Sending…' : 'Resend verification email'}
-          </button>
-          <button type="button" className="btn btn-secondary w-full" onClick={() => void signOut()}>
-            Sign out
-          </button>
-        </div>
-      </AuthCard>
-    </AuthFrame>
-  );
 }
 
 function ChooseOrganization({ me }: { readonly me: Me }) {

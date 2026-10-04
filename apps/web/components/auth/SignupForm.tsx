@@ -1,9 +1,9 @@
 'use client';
 
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { AuthCard, Field, FormAlert, SubmitButton, TextLink } from '@/components/app/ui';
-import { api } from '@/lib/app/api';
+import { api, safeNext } from '@/lib/app/api';
 import { useSubmit } from '@/lib/app/use-submit';
 
 const MIN_PASSWORD = 10;
@@ -19,8 +19,8 @@ export function SignupForm({
   const [email, setEmail] = useState(defaultEmail);
   const [password, setPassword] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [sentTo, setSentTo] = useState<string | null>(null);
   const submit = useSubmit();
+  const router = useRouter();
 
   const validate = () => {
     const errors: Record<string, string> = {};
@@ -35,46 +35,14 @@ export function SignupForm({
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
     if (!validate()) return;
-    const ok = await submit.run(() => api.post('/auth/register', { name, email, password }));
-    if (ok) setSentTo(email.trim());
+    const ok = await submit.run(async () => {
+      await api.post('/auth/register', { name, email, password });
+      await api.post('/auth/login', { email, password });
+    });
+    if (ok) router.replace(safeNext(next));
   };
 
   const loginHref = next ? `/login?next=${encodeURIComponent(next)}` : '/login';
-
-  if (sentTo) {
-    return (
-      <AuthCard
-        title="Account ready"
-        intro={
-          <>
-            Your account <strong className="text-ink">{sentTo}</strong> is set up. Sign in to
-            continue.
-          </>
-        }
-      >
-        <div className="grid gap-3">
-          <Link href={loginHref} className="btn btn-primary w-full">
-            Continue to sign in
-          </Link>
-          <p className="text-center text-sm text-muted">
-            Already have an account with this email? Just sign in.
-          </p>
-        </div>
-      </AuthCard>
-    );
-    // Email verification disabled for now — original "Check your email" copy preserved below.
-    // return (
-    //   <AuthCard
-    //     title="Check your email"
-    //     intro={
-    //       <>
-    //         If <strong className="text-ink">{sentTo}</strong> can be registered, we have sent a
-    //         verification link to it. The link expires in 24 hours.
-    //       </>
-    //     }
-    //   >…</AuthCard>
-    // );
-  }
 
   return (
     <AuthCard
