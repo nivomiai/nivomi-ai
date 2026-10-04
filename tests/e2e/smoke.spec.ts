@@ -15,7 +15,7 @@ test.describe('smoke', () => {
 
     expect(res?.status()).toBe(200);
     await expect(
-      page.getByRole('heading', { level: 1, name: 'AI voice automation for sales teams.' }),
+      page.getByRole('heading', { level: 1, name: 'AI Managers for Your Business' }),
     ).toBeVisible();
 
     const headers = res?.headers() ?? {};

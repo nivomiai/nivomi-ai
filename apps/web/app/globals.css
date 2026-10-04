@@ -155,11 +155,13 @@
 }
 
 @layer components {
+  /* Same box as the homepage's `.container`: 1240px of content plus the side gutters. */
   .container-nv {
+    --nv-gutter: clamp(16px, 4vw, 32px);
     width: 100%;
-    max-width: 1240px;
+    max-width: calc(1240px + var(--nv-gutter) * 2);
     margin-inline: auto;
-    padding-inline: clamp(16px, 4vw, 32px);
+    padding-inline: var(--nv-gutter);
   }
   .section-nv {
     padding-block: clamp(72px, 10vw, 120px);
@@ -244,6 +246,14 @@
   }
   .btn-secondary:hover {
     border-color: var(--nv-line-hover);
+    transform: translateY(-1px);
+  }
+  .btn-wa {
+    background: #25d366;
+    color: #fff;
+    box-shadow: 0 10px 24px rgba(37, 211, 102, 0.28);
+  }
+  .btn-wa:hover {
     transform: translateY(-1px);
   }
   .card-nv {
