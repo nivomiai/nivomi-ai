@@ -58,6 +58,14 @@ export const AGENT_TOOLS = {
     audited: true,
     timeoutMs: 5_000,
   },
+  'appointment.book': {
+    label: 'Book an appointment',
+    description:
+      'Create a SCHEDULED appointment for the called lead against a Member’s availability.',
+    sideEffect: 'writes an appointments row (idempotent per call session)',
+    audited: true,
+    timeoutMs: 3_000,
+  },
 } as const;
 export type AgentTool = keyof typeof AGENT_TOOLS;
 const toolNames = Object.keys(AGENT_TOOLS) as [AgentTool, ...AgentTool[]];

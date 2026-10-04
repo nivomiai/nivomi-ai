@@ -36,6 +36,13 @@
       "when": 1791123040164,
       "tag": "0004_call_sessions",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791123697781,
+      "tag": "0005_appointments",
+      "breakpoints": true
     }
   ]
 }

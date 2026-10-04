@@ -2,6 +2,7 @@ import { Module, type DynamicModule } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
 import { AgentsModule } from './agents/agents.module.js';
+import { AppointmentsModule } from './appointments/appointments.module.js';
 import { AuthController } from './auth/auth.controller.js';
 import { CallsModule } from './calls/calls.module.js';
 import { CampaignsModule } from './campaigns/campaigns.module.js';
@@ -46,6 +47,7 @@ export class AppModule {
         CrmModule,
         ComplianceModule,
         AgentsModule,
+        AppointmentsModule,
         CampaignsModule,
         CallsModule,
         DashboardModule,
