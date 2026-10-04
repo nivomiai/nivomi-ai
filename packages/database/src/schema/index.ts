@@ -1,5 +1,6 @@
 export * from './agents.js';
 export * from './appointments.js';
+export * from './billing.js';
 export * from './calls.js';
 export * from './campaigns.js';
 export * from './compliance.js';

@@ -50,6 +50,13 @@
       "when": 1791124553797,
       "tag": "0006_crm_writeback",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791124842675,
+      "tag": "0007_billing",
+      "breakpoints": true
     }
   ]
 }
