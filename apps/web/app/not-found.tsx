@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { SiteShell } from '@/components/marketing/SiteShell';
 
 export const metadata: Metadata = {
@@ -20,9 +19,10 @@ export default function NotFound() {
             <p className="lede mx-auto mt-4 max-w-md">
               The link may be out of date. Head back to the homepage to explore Nivomi.
             </p>
-            <Link href="/" className="btn btn-primary mt-8">
+            {/* The homepage is a static page, not a Next.js route: a full page load. */}
+            <a href="/" className="btn btn-primary mt-8">
               Go to the homepage
-            </Link>
+            </a>
           </div>
         </div>
       </section>

@@ -1,7 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
+  callAttempts,
+  campaigns,
   companies,
   contacts,
+  eligibilityDecisions,
   crmConnections,
   externalRecordLinks,
   ingestionReviewItems,
@@ -29,7 +32,6 @@ import {
 import { randomUUID } from 'node:crypto';
 import { AuditService } from '../audit/audit.service.js';
 import type { TenantPrincipal } from '../auth/principal.js';
-import { isOwnScoped } from '../authorization/permissions.js';
 import { AppError } from '../common/errors.js';
 import { decodeCursor, toPage } from '../common/pagination.js';
 import type { ClientContext } from '../common/request-context.js';
@@ -91,12 +93,9 @@ export class LeadsService {
     private readonly audit: AuditService,
   ) {}
 
-  /** AGENTs see only Leads assigned to them (PRD §8.1 "own"). */
-  private scope(tenant: TenantPrincipal, permission: 'leads.read' | 'leads.write'): SQL {
-    const inTenant = eq(leads.organizationId, tenant.membership.organizationId);
-    return isOwnScoped(tenant.membership.role, permission)
-      ? (and(inTenant, eq(leads.ownerUserId, tenant.userId)) as SQL)
-      : inTenant;
+  /** Every member of a tenant sees every lead; own-scoping was retired with the AGENT sub-role. */
+  private scope(tenant: TenantPrincipal, _permission: 'leads.read' | 'leads.write'): SQL {
+    return eq(leads.organizationId, tenant.membership.organizationId);
   }
 
   /** PRD FR-20: searchable, filterable, keyset-paginated. */
@@ -250,7 +249,68 @@ export class LeadsService {
       .orderBy(desc(recordHistory.createdAt))
       .limit(200);
 
+    // FR-21, FR-48: eligibility decisions and calls join the timeline.
+    const decisions = await this.db
+      .select({
+        id: eligibilityDecisions.id,
+        at: eligibilityDecisions.evaluatedAt,
+        purpose: eligibilityDecisions.purpose,
+        result: eligibilityDecisions.result,
+        reasons: eligibilityDecisions.reasons,
+        ruleSetVersion: eligibilityDecisions.ruleSetVersion,
+        jurisdiction: eligibilityDecisions.jurisdiction,
+        campaignId: eligibilityDecisions.campaignId,
+        campaignName: campaigns.name,
+      })
+      .from(eligibilityDecisions)
+      .leftJoin(campaigns, eq(campaigns.id, eligibilityDecisions.campaignId))
+      .where(
+        and(
+          eq(eligibilityDecisions.organizationId, orgId),
+          eq(eligibilityDecisions.leadId, leadId),
+        ),
+      )
+      .orderBy(desc(eligibilityDecisions.createdAt))
+      .limit(100);
+    const calls = await this.db
+      .select({
+        at: callAttempts.createdAt,
+        attemptNumber: callAttempts.attemptNumber,
+        status: callAttempts.status,
+        outcome: callAttempts.outcome,
+        durationSeconds: callAttempts.durationSeconds,
+        campaignName: campaigns.name,
+      })
+      .from(callAttempts)
+      .innerJoin(campaigns, eq(campaigns.id, callAttempts.campaignId))
+      .where(and(eq(callAttempts.organizationId, orgId), eq(callAttempts.leadId, leadId)))
+      .orderBy(desc(callAttempts.createdAt))
+      .limit(100);
+
     const timeline = [
+      ...decisions.map((d) => ({
+        type: 'eligibility' as const,
+        at: d.at,
+        decisionId: d.id,
+        purpose: d.purpose,
+        result: d.result,
+        reasons: d.reasons,
+        ruleSetVersion: d.ruleSetVersion,
+        jurisdiction: d.jurisdiction,
+        campaignId: d.campaignId,
+        campaignName: d.campaignName,
+        source: 'SYSTEM',
+      })),
+      ...calls.map((c) => ({
+        type: 'call' as const,
+        at: c.at,
+        attemptNumber: c.attemptNumber,
+        status: c.status,
+        outcome: c.outcome,
+        durationSeconds: c.durationSeconds,
+        campaignName: c.campaignName,
+        source: 'AI_CALL',
+      })),
       ...statusEvents.map((e) => ({
         type: 'status' as const,
         at: e.createdAt,
@@ -463,9 +523,6 @@ export class LeadsService {
       }
 
       if (input.ownerUserId !== undefined && input.ownerUserId !== row.lead.ownerUserId) {
-        if (isOwnScoped(tenant.membership.role, 'leads.write')) {
-          throw new AppError('AUTHORIZATION_ERROR', 'You cannot reassign leads.');
-        }
         const ownerUserId = await this.resolveOwner(tenant, input.ownerUserId, tx);
         await tx.update(leads).set({ ownerUserId }).where(eq(leads.id, leadId));
         history.push({
@@ -785,13 +842,12 @@ export class LeadsService {
     });
   }
 
-  /** An owner must be a member of the same Organization; AGENTs always own what they create. */
+  /** An owner must be a member of the same Organization. */
   private async resolveOwner(
     tenant: TenantPrincipal,
     requested: string | null | undefined,
     db: Database = this.db,
   ): Promise<string | null> {
-    if (isOwnScoped(tenant.membership.role, 'leads.write')) return tenant.userId;
     if (!requested) return null;
     const [member] = await db
       .select({ userId: organizationMembers.userId })

@@ -3,15 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { errorMessage } from '@/lib/api/client';
-import {
-  ROLES,
-  ROLE_DESCRIPTIONS,
-  ROLE_LABELS,
-  type Invitation,
-  type Member,
-  type Page,
-  type Role,
-} from '@/lib/api/types';
+import { ROLE_LABELS, type Invitation, type Member, type Page } from '@/lib/api/types';
 import { api } from '@/lib/app/api';
 import { formatDateTime } from '@/lib/app/format';
 import { useSession } from '@/lib/app/session';
@@ -27,7 +19,6 @@ import {
   PageHeader,
   Panel,
   RoleBadge,
-  selectClass,
 } from '../ui';
 
 export function Team() {
@@ -36,17 +27,19 @@ export function Team() {
   const invitations = useResource<Page<Invitation>>(
     can('members.invite') ? '/organizations/current/invitations' : null,
   );
-  const isOwner = me?.activeOrganization?.role === 'OWNER';
+  const activeRole = me?.activeOrganization?.role ?? null;
 
   return (
     <div className="grid gap-8">
       <PageHeader
         title="Team"
-        description="People who can access this organization and what they can do."
+        description={
+          activeRole === 'INDV_USER'
+            ? 'This is a solo workspace. Contact support to upgrade to a team account.'
+            : `People who can access this ${activeRole ? ROLE_LABELS[activeRole].toLowerCase() : ''} account.`
+        }
       />
-      {can('members.invite') ? (
-        <InviteForm allowPrivileged={isOwner} onInvited={invitations.reload} />
-      ) : null}
+      {can('members.invite') ? <InviteForm onInvited={invitations.reload} /> : null}
       <Panel title="Members">
         {members.loading && !members.data ? <LoadingBlock /> : null}
         {members.error ? <ErrorBlock message={members.error} onRetry={members.reload} /> : null}
@@ -54,9 +47,7 @@ export function Team() {
           <MemberList
             members={members.data.items}
             currentUserId={me?.user.id ?? ''}
-            canEditRoles={can('members.update_role')}
             canRemove={can('members.remove')}
-            isOwner={isOwner}
             onChanged={members.reload}
           />
         ) : null}
@@ -77,16 +68,8 @@ export function Team() {
   );
 }
 
-function InviteForm({
-  allowPrivileged,
-  onInvited,
-}: {
-  readonly allowPrivileged: boolean;
-  readonly onInvited: () => void;
-}) {
-  const roles = ROLES.filter((r) => allowPrivileged || (r !== 'OWNER' && r !== 'ADMIN'));
+function InviteForm({ onInvited }: { readonly onInvited: () => void }) {
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<Role>('AGENT');
   const [sentTo, setSentTo] = useState<string | null>(null);
   const submit = useSubmit();
 
@@ -95,7 +78,7 @@ function InviteForm({
     setSentTo(null);
     const invited = email.trim();
     const ok = await submit.run(() =>
-      api.post('/organizations/current/invitations', { email: invited, role }),
+      api.post('/organizations/current/invitations', { email: invited }),
     );
     if (ok) {
       setSentTo(invited);
@@ -105,11 +88,14 @@ function InviteForm({
   };
 
   return (
-    <Panel title="Invite a teammate" description="They will get an email with a link to join.">
+    <Panel
+      title="Invite a teammate"
+      description="They will get an email with a link to join this account."
+    >
       <form noValidate onSubmit={(e) => void onSubmit(e)} className="grid gap-4">
         {sentTo ? <Notice tone="success">Invitation sent to {sentTo}.</Notice> : null}
         <FormAlert message={submit.error} />
-        <div className="grid gap-4 sm:grid-cols-[1fr_200px_auto] sm:items-end">
+        <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
           <Field
             id="invite-email"
             label="Email"
@@ -119,28 +105,10 @@ function InviteForm({
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-          <div>
-            <label htmlFor="invite-role" className="text-sm font-semibold text-ink">
-              Role
-            </label>
-            <select
-              id="invite-role"
-              className={selectClass}
-              value={role}
-              onChange={(e) => setRole(e.target.value as Role)}
-            >
-              {roles.map((r) => (
-                <option key={r} value={r}>
-                  {ROLE_LABELS[r]}
-                </option>
-              ))}
-            </select>
-          </div>
           <button type="submit" disabled={submit.pending} className="btn btn-primary">
             {submit.pending ? 'Sending…' : 'Send invite'}
           </button>
         </div>
-        <p className="text-[13px] text-muted">{ROLE_DESCRIPTIONS[role]}</p>
       </form>
     </Panel>
   );
@@ -149,16 +117,12 @@ function InviteForm({
 function MemberList({
   members,
   currentUserId,
-  canEditRoles,
   canRemove,
-  isOwner,
   onChanged,
 }: {
   readonly members: Member[];
   readonly currentUserId: string;
-  readonly canEditRoles: boolean;
   readonly canRemove: boolean;
-  readonly isOwner: boolean;
   readonly onChanged: () => void;
 }) {
   const [error, setError] = useState<string | null>(null);
@@ -177,12 +141,6 @@ function MemberList({
     }
   };
 
-  /** Mirrors the server rule: only owners manage owners and admins. */
-  const manageable = (member: Member) =>
-    member.userId !== currentUserId &&
-    (isOwner || (member.role !== 'OWNER' && member.role !== 'ADMIN'));
-  const assignable = ROLES.filter((r) => isOwner || (r !== 'OWNER' && r !== 'ADMIN'));
-
   return (
     <div className="grid gap-3">
       <FormAlert message={error} />
@@ -198,36 +156,14 @@ function MemberList({
               </p>
               <p className="truncate text-sm text-muted">{member.email}</p>
             </div>
-            {canEditRoles && manageable(member) ? (
-              <select
-                aria-label={`Role for ${member.name}`}
-                className={`${selectClass} mt-0 w-auto py-2`}
-                value={member.role}
-                disabled={busy === member.id}
-                onChange={(e) =>
-                  void act(member.id, () =>
-                    api.put(`/organizations/current/members/${member.id}/role`, {
-                      role: e.target.value,
-                    }),
-                  )
-                }
-              >
-                {assignable.map((r) => (
-                  <option key={r} value={r}>
-                    {ROLE_LABELS[r]}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <RoleBadge role={member.role} />
-            )}
-            {canRemove && manageable(member) ? (
+            <RoleBadge role={member.role} />
+            {canRemove && member.userId !== currentUserId ? (
               <button
                 type="button"
                 disabled={busy === member.id}
                 className="btn btn-secondary btn-sm"
                 onClick={() => {
-                  if (window.confirm(`Remove ${member.name} from this organization?`)) {
+                  if (window.confirm(`Remove ${member.name} from this account?`)) {
                     void act(member.id, () =>
                       api.del(`/organizations/current/members/${member.id}`),
                     );
@@ -291,7 +227,7 @@ function LeaveOrganization() {
   const submit = useSubmit();
   return (
     <Panel
-      title="Leave organization"
+      title="Leave account"
       description="You will lose access until someone invites you again."
     >
       <div className="grid gap-3 sm:justify-start">
@@ -301,7 +237,7 @@ function LeaveOrganization() {
           className="btn btn-secondary btn-sm"
           disabled={submit.pending}
           onClick={() => {
-            if (!window.confirm('Leave this organization?')) return;
+            if (!window.confirm('Leave this account?')) return;
             void submit
               .run(async () => {
                 await api.post('/organizations/current/leave');
@@ -310,7 +246,7 @@ function LeaveOrganization() {
               .then((ok) => ok && router.replace('/app'));
           }}
         >
-          Leave organization
+          Leave account
         </button>
       </div>
     </Panel>

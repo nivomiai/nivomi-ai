@@ -7,12 +7,12 @@ import {
   users,
   type Database,
 } from '@nivomi/database';
-import { and, asc, count, desc, eq, gt, isNull } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, isNull } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
 import { AuditService } from '../audit/audit.service.js';
 import type { Principal, TenantPrincipal } from '../auth/principal.js';
 import { hashToken } from '../auth/tokens.js';
-import { isPrivilegedRole, type OrganizationRole } from '../authorization/permissions.js';
+import { isMultiMemberRole, type OrganizationRole } from '../authorization/permissions.js';
 import { AppError } from '../common/errors.js';
 import type { ClientContext } from '../common/request-context.js';
 import { DATABASE } from '../database/database.module.js';
@@ -51,7 +51,11 @@ export class OrganizationsService {
     private readonly limiter: RateLimiter,
   ) {}
 
-  /** Creates an organization, makes the caller its OWNER and switches the session to it. */
+  /**
+   * Creates the caller's own solo workspace. Public /signup → one INDV_USER workspace per user.
+   * Multi-member accounts (ORGANIZATION, CUSTOM_PLAN) are provisioned by a Super Admin and come
+   * through {@link PlatformOrganizationsService} instead.
+   */
   async create(
     principal: Principal,
     name: string,
@@ -73,7 +77,7 @@ export class OrganizationsService {
       if (!organization) throw new Error('organization insert returned no row');
       await tx
         .insert(organizationMembers)
-        .values({ organizationId: organization.id, userId: principal.userId, role: 'OWNER' });
+        .values({ organizationId: organization.id, userId: principal.userId, role: 'INDV_USER' });
       await tx
         .update(sessions)
         .set({ activeOrganizationId: organization.id })
@@ -85,6 +89,7 @@ export class OrganizationsService {
           actorUserId: principal.userId,
           resourceType: 'organization',
           resourceId: organization.id,
+          metadata: { role: 'INDV_USER' },
         },
         context,
         tx,
@@ -94,7 +99,7 @@ export class OrganizationsService {
         name: organization.name,
         slug: organization.slug,
         status: organization.status,
-        role: 'OWNER',
+        role: 'INDV_USER',
       };
     });
   }
@@ -184,40 +189,10 @@ export class OrganizationsService {
       .limit(500);
   }
 
-  /** PRD FR-2: only an OWNER grants OWNER/ADMIN; the last OWNER cannot be demoted. */
-  async changeMemberRole(
-    tenant: TenantPrincipal,
-    memberId: string,
-    role: OrganizationRole,
-    context: ClientContext,
-  ): Promise<void> {
-    await this.assertInTenant(tenant, 'member', memberId, context);
-    await this.db.transaction(async (tx) => {
-      const member = await this.lockMember(tx, tenant.membership.organizationId, memberId);
-      this.assertCanManage(tenant, member.role, role);
-      if (member.role === 'OWNER' && role !== 'OWNER') {
-        await this.assertAnotherOwner(tx, tenant.membership.organizationId);
-      }
-      await tx
-        .update(organizationMembers)
-        .set({ role })
-        .where(eq(organizationMembers.id, member.id));
-      await this.audit.record(
-        {
-          action: 'organization.member_role_changed',
-          organizationId: tenant.membership.organizationId,
-          actorUserId: tenant.userId,
-          resourceType: 'member',
-          resourceId: member.id,
-          metadata: { from: member.role, to: role, userId: member.userId },
-        },
-        context,
-        tx,
-      );
-    });
-  }
-
-  /** Removes a member (or lets a member leave). The last OWNER cannot be removed. */
+  /**
+   * Removes a member (or lets a member leave). An account must keep at least one member; the
+   * last one cannot be removed. There are no sub-roles to switch between in the new model.
+   */
   async removeMember(
     tenant: TenantPrincipal,
     memberId: string,
@@ -227,9 +202,7 @@ export class OrganizationsService {
     await this.db.transaction(async (tx) => {
       const member = await this.lockMember(tx, tenant.membership.organizationId, memberId);
       const leaving = member.userId === tenant.userId;
-      if (!leaving) this.assertCanManage(tenant, member.role, member.role);
-      if (member.role === 'OWNER')
-        await this.assertAnotherOwner(tx, tenant.membership.organizationId);
+      await this.assertAnotherMember(tx, tenant.membership.organizationId);
       await tx.delete(organizationMembers).where(eq(organizationMembers.id, member.id));
       await tx
         .update(sessions)
@@ -270,15 +243,24 @@ export class OrganizationsService {
     await this.removeMember(tenant, own.id, context);
   }
 
+  /**
+   * Invites someone to this tenant. New members always inherit the tenant's own role
+   * (ORGANIZATION or CUSTOM_PLAN); solo INDV_USER accounts cannot invite. There is no
+   * per-invitation role picker anymore.
+   */
   async invite(
     tenant: TenantPrincipal,
-    input: { email: string; role: OrganizationRole },
+    input: { email: string },
     context: ClientContext,
   ): Promise<{ id: string; email: string; role: OrganizationRole; expiresAt: Date }> {
     const organizationId = tenant.membership.organizationId;
-    if (isPrivilegedRole(input.role) && tenant.membership.role !== 'OWNER') {
-      throw new AppError('AUTHORIZATION_ERROR', 'Only an owner can invite owners or admins.');
+    if (!isMultiMemberRole(tenant.membership.role)) {
+      throw new AppError(
+        'AUTHORIZATION_ERROR',
+        'This account cannot invite members. Contact support to upgrade your plan.',
+      );
     }
+    const role: OrganizationRole = tenant.membership.role;
     await this.limiter.consume(RATE_LIMITS.invitationsPerOrganization, organizationId);
 
     const [alreadyMember] = await this.db
@@ -300,7 +282,7 @@ export class OrganizationsService {
         .values({
           organizationId,
           email: input.email,
-          role: input.role,
+          role,
           tokenHash: placeholderHash,
           invitedByUserId: tenant.userId,
           expiresAt,
@@ -326,12 +308,12 @@ export class OrganizationsService {
           actorUserId: tenant.userId,
           resourceType: 'invitation',
           resourceId: invitation.id,
-          metadata: { role: input.role },
+          metadata: { role },
         },
         context,
         tx,
       );
-      return { id: invitation.id, email: input.email, role: input.role, expiresAt };
+      return { id: invitation.id, email: input.email, role, expiresAt };
     });
   }
 
@@ -531,30 +513,15 @@ export class OrganizationsService {
     return member;
   }
 
-  private assertCanManage(
-    tenant: TenantPrincipal,
-    currentRole: OrganizationRole,
-    newRole: OrganizationRole,
-  ) {
-    if (tenant.membership.role === 'OWNER') return;
-    // ADMIN: may not touch OWNERs or grant privileged roles.
-    if (currentRole === 'OWNER' || isPrivilegedRole(newRole) || currentRole === 'ADMIN') {
-      throw new AppError('AUTHORIZATION_ERROR', 'Only an owner can change owners or admins.');
-    }
-  }
-
-  private async assertAnotherOwner(tx: Database, organizationId: string): Promise<void> {
-    const [owners] = await tx
-      .select({ value: count() })
+  /** Account must keep at least one member; the caller performs the delete after this check. */
+  private async assertAnotherMember(tx: Database, organizationId: string): Promise<void> {
+    const rows = await tx
+      .select({ id: organizationMembers.id })
       .from(organizationMembers)
-      .where(
-        and(
-          eq(organizationMembers.organizationId, organizationId),
-          eq(organizationMembers.role, 'OWNER'),
-        ),
-      );
-    if ((owners?.value ?? 0) <= 1) {
-      throw new AppError('CONFLICT', 'An organization must keep at least one owner.');
+      .where(eq(organizationMembers.organizationId, organizationId))
+      .limit(2);
+    if (rows.length < 2) {
+      throw new AppError('CONFLICT', 'An account must keep at least one member.');
     }
   }
 }

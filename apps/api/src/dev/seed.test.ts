@@ -1,9 +1,13 @@
 import {
   auditLogs,
+  callerNumbers,
+  campaigns,
   contacts,
   createDatabase,
   leads,
   suppressionEntries,
+  telecomConsentEntries,
+  telecomIdentities,
   organizationInvitations,
   organizationMembers,
   organizations,
@@ -87,7 +91,7 @@ describe('seedDevData', () => {
       .where(eq(users.id, adminId));
     await handle.db
       .update(organizationMembers)
-      .set({ role: 'VIEWER' })
+      .set({ role: 'INDV_USER' })
       .where(
         and(
           eq(organizationMembers.userId, adminId),
@@ -117,7 +121,7 @@ describe('seedDevData', () => {
           eq(organizationMembers.organizationId, demoId),
         ),
       );
-    expect(membership?.role).toBe('OWNER');
+    expect(membership?.role).toBe('ORGANIZATION');
     const [demo] = await handle.db.select().from(organizations).where(eq(organizations.id, demoId));
     expect(demo?.status).toBe('ACTIVE');
 
@@ -177,5 +181,37 @@ describe('seedDevData', () => {
     expect(rows.some((r) => r.lead.consentBasis === null)).toBe(true);
     const suppressed = await handle.db.select().from(suppressionEntries);
     expect(suppressed.map((e) => e.phoneE164)).toContain('+919847000110');
+    // Every seeded consent basis is also in the telecom consent ledger (FR-52).
+    const grants = await handle.db.select().from(telecomConsentEntries);
+    expect(grants.filter((g) => g.kind === 'GRANT')).toHaveLength(
+      rows.filter((r) => r.lead.consentBasis !== null).length,
+    );
+  });
+
+  it('seeds a verified telecom identity, a 140-series number and one draft demo campaign', async () => {
+    const again = await seedDevData(handle.db);
+    expect(again.campaignsCreated).toBe(0);
+    const demoId = again.organizationIds.get('nivomi-demo') ?? '';
+    const [identity] = await handle.db
+      .select()
+      .from(telecomIdentities)
+      .where(eq(telecomIdentities.organizationId, demoId));
+    expect(identity).toMatchObject({ status: 'VERIFIED', sector: 'REAL_ESTATE' });
+    const numbers = await handle.db
+      .select()
+      .from(callerNumbers)
+      .where(eq(callerNumbers.organizationId, demoId));
+    expect(numbers).toEqual([expect.objectContaining({ series: '140', a2pDeclared: true })]);
+    const demoCampaigns = await handle.db
+      .select()
+      .from(campaigns)
+      .where(eq(campaigns.organizationId, demoId));
+    expect(demoCampaigns).toEqual([
+      expect.objectContaining({
+        status: 'DRAFT',
+        callCategory: 'PROMOTIONAL',
+        callerNumberId: numbers[0]?.id,
+      }),
+    ]);
   });
 });

@@ -1,4 +1,4 @@
-CREATE TYPE "public"."organization_role" AS ENUM('OWNER', 'ADMIN', 'MANAGER', 'AGENT', 'ANALYST', 'VIEWER');--> statement-breakpoint
+CREATE TYPE "public"."organization_role" AS ENUM('INDV_USER', 'ORGANIZATION', 'CUSTOM_PLAN');--> statement-breakpoint
 CREATE TYPE "public"."organization_status" AS ENUM('PENDING_APPROVAL', 'ACTIVE', 'SUSPENDED', 'CLOSED');--> statement-breakpoint
 CREATE TYPE "public"."job_status" AS ENUM('PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'RETRYING', 'CANCELLED');--> statement-breakpoint
 CREATE TABLE "email_verification_tokens" (

@@ -2,6 +2,8 @@ import { Module, type DynamicModule } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
 import { AuthController } from './auth/auth.controller.js';
+import { CampaignsModule } from './campaigns/campaigns.module.js';
+import { ComplianceModule } from './compliance/compliance.module.js';
 import { AuthEmailJobs } from './auth/auth.jobs.js';
 import { AuthService } from './auth/auth.service.js';
 import { ApiRateLimitGuard, AuthGuard, OriginGuard } from './auth/guards.js';
@@ -10,6 +12,7 @@ import { AllExceptionsFilter } from './common/all-exceptions.filter.js';
 import { ConfigModule } from './config/config.module.js';
 import type { ApiEnv } from './config/env.js';
 import { DatabaseModule } from './database/database.module.js';
+import { DemoModule } from './demo/demo.module.js';
 import { CrmModule } from './crm/crm.module.js';
 import { HealthModule } from './health/health.module.js';
 import { ImportsModule } from './imports/imports.module.js';
@@ -19,6 +22,10 @@ import { MeController, OrganizationsController } from './organizations/organizat
 import { OrganizationJobs } from './organizations/organizations.jobs.js';
 import { OrganizationsService } from './organizations/organizations.service.js';
 import { PlatformModule } from './platform/platform.module.js';
+import { PlatformOrganizationsController } from './platform/platform-organizations.controller.js';
+import { PlatformOrganizationsService } from './platform/platform-organizations.service.js';
+import { PlatformUsersController } from './platform/platform-users.controller.js';
+import { PlatformUsersService } from './platform/platform-users.service.js';
 
 @Module({})
 export class AppModule {
@@ -34,8 +41,17 @@ export class AppModule {
         LeadsModule,
         ImportsModule.forRoot(env),
         CrmModule,
+        ComplianceModule,
+        CampaignsModule,
+        DemoModule,
       ],
-      controllers: [AuthController, MeController, OrganizationsController],
+      controllers: [
+        AuthController,
+        MeController,
+        OrganizationsController,
+        PlatformOrganizationsController,
+        PlatformUsersController,
+      ],
       providers: [
         { provide: APP_FILTER, useClass: AllExceptionsFilter },
         // Order matters: throttle first, then CSRF, then authentication/authorization.
@@ -47,6 +63,8 @@ export class AppModule {
         AuthEmailJobs,
         OrganizationsService,
         OrganizationJobs,
+        PlatformOrganizationsService,
+        PlatformUsersService,
       ],
     };
   }

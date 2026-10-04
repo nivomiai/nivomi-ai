@@ -37,3 +37,13 @@ export function isDatabaseUnavailable(error: unknown): boolean {
   }
   return false;
 }
+
+/** True when `error` (or its `cause` chain) is a unique-constraint violation (SQLSTATE 23505). */
+export function isUniqueViolation(error: unknown): boolean {
+  let current: unknown = error;
+  for (let depth = 0; depth < 5 && current instanceof Error; depth += 1) {
+    if ((current as { code?: unknown }).code === '23505') return true;
+    current = current.cause;
+  }
+  return false;
+}

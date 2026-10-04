@@ -20,12 +20,18 @@ export type AuditAction =
   | 'auth.session_revoked'
   | 'organization.created'
   | 'organization.switched'
-  | 'organization.member_role_changed'
   | 'organization.member_removed'
   | 'organization.invitation_created'
   | 'organization.invitation_revoked'
   | 'organization.invitation_accepted'
   | 'platform.dev_seed_applied'
+  | 'platform.organization_provisioned'
+  | 'platform.organization_approved'
+  | 'platform.organization_suspended'
+  | 'platform.organization_reactivated'
+  | 'platform.organization_closed'
+  | 'platform.user_promoted'
+  | 'platform.user_demoted'
   | 'security.cross_tenant_access_denied'
   | 'lead.created'
   | 'lead.updated'
@@ -42,7 +48,31 @@ export type AuditAction =
   | 'crm.disconnected'
   | 'crm.settings_updated'
   | 'crm.sync_requested'
-  | 'crm.token_invalid';
+  | 'crm.token_invalid'
+  | 'campaign.created'
+  | 'campaign.updated'
+  | 'campaign.prelaunch_requested'
+  | 'campaign.launched'
+  | 'campaign.paused'
+  | 'campaign.auto_paused'
+  | 'campaign.resumed'
+  | 'campaign.stopped'
+  | 'campaign.cancelled'
+  | 'campaign.completed'
+  | 'calling.emergency_stop_activated'
+  | 'calling.emergency_stop_released'
+  | 'telecom.identity_updated'
+  | 'telecom.identity_submitted'
+  | 'telecom.identity_verified'
+  | 'telecom.identity_rejected'
+  | 'telecom.number_added'
+  | 'telecom.number_removed'
+  | 'consent.recorded'
+  | 'compliance.complaint_recorded'
+  | 'compliance.breaker_tripped'
+  | 'compliance.breaker_acknowledged'
+  | 'compliance.breaker_cleared'
+  | 'compliance.review_resolved';
 
 export interface AuditEntry {
   readonly action: AuditAction;
@@ -52,6 +82,24 @@ export interface AuditEntry {
   readonly resourceId?: string;
   /** Never include secrets, tokens or passwords. */
   readonly metadata?: Record<string, unknown>;
+}
+
+export interface PlatformAuditItem {
+  id: string;
+  action: string;
+  organizationId: string | null;
+  actorUserId: string | null;
+  resourceType: string | null;
+  resourceId: string | null;
+  metadata: Record<string, unknown> | null;
+  ipAddress: string | null;
+  requestId: string | null;
+  createdAt: Date;
+}
+
+export interface PlatformAuditPage {
+  readonly items: readonly PlatformAuditItem[];
+  readonly nextCursor: string | null;
 }
 
 export interface AuditPage {
@@ -116,6 +164,50 @@ export class AuditService {
               )
             : undefined,
         ),
+      )
+      .orderBy(desc(auditLogs.createdAt), desc(auditLogs.id))
+      .limit(options.limit + 1);
+
+    const items = rows.slice(0, options.limit);
+    const last = items.at(-1);
+    return {
+      items,
+      nextCursor:
+        rows.length > options.limit && last ? encodeCursor(last.createdAt, last.id) : null,
+    };
+  }
+
+  /**
+   * Platform-wide audit for the Super Admin console (FR-120). Never called from a tenant
+   * endpoint. Returns platform events (`organizationId` null) and tenant events together, so
+   * the console reads as one timeline.
+   */
+  async listPlatform(options: {
+    limit: number;
+    cursor?: string | undefined;
+  }): Promise<PlatformAuditPage> {
+    const after = decodeCursor(options.cursor);
+    const rows = await this.db
+      .select({
+        id: auditLogs.id,
+        action: auditLogs.action,
+        organizationId: auditLogs.organizationId,
+        actorUserId: auditLogs.actorUserId,
+        resourceType: auditLogs.resourceType,
+        resourceId: auditLogs.resourceId,
+        metadata: auditLogs.metadata,
+        ipAddress: auditLogs.ipAddress,
+        requestId: auditLogs.requestId,
+        createdAt: auditLogs.createdAt,
+      })
+      .from(auditLogs)
+      .where(
+        after
+          ? or(
+              lt(auditLogs.createdAt, after.createdAt),
+              and(eq(auditLogs.createdAt, after.createdAt), lt(auditLogs.id, after.id)),
+            )
+          : undefined,
       )
       .orderBy(desc(auditLogs.createdAt), desc(auditLogs.id))
       .limit(options.limit + 1);

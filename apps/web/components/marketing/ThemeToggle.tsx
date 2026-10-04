@@ -34,16 +34,17 @@ export function ThemeToggle({ className }: { readonly className?: string }) {
         theme === null
           ? 'Toggle colour theme'
           : theme === 'dark'
-            ? 'Switch to light theme'
-            : 'Switch to dark theme'
+            ? 'Switch to light mode'
+            : 'Switch to dark mode'
       }
       className={
         className ??
         'inline-grid size-10 place-items-center rounded-[10px] border border-line bg-card text-ink-2 transition-colors hover:border-line-hover hover:text-accent'
       }
     >
-      <Icon name="i-sun" className="hidden size-[18px] dark:block" />
-      <Icon name="i-moon" className="size-[18px] dark:hidden" />
+      {/* Shows the current theme, like the homepage: moon in dark, sun in light. */}
+      <Icon name="i-moon" className="hidden size-[18px] dark:block" />
+      <Icon name="i-sun" className="size-[18px] dark:hidden" />
     </button>
   );
 }

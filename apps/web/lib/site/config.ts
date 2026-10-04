@@ -1,7 +1,4 @@
-/**
- * Public-site configuration: one place for contact channels, the canonical URL and the
- * status label shown on MVP capabilities.
- */
+/** Public-site configuration: one place for contact channels and the canonical URL. */
 export const siteConfig = {
   name: 'Nivomi AI',
   legalName: 'NIVOMI AI LLP',
@@ -20,9 +17,4 @@ export const siteConfig = {
       'Kozhikode, Kerala, India 673004',
     ],
   },
-  /**
-   * Badge text on MVP capabilities. The platform is in early access (design-partner pilot);
-   * switch to "Available now" at general availability.
-   */
-  mvpStatusLabel: 'Early access',
 } as const;

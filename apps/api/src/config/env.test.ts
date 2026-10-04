@@ -59,6 +59,13 @@ describe('loadApiEnv', () => {
     expect(() => loadApiEnv(productionBase)).toThrow(/dev-mailbox is not allowed in production/);
   });
 
+  it('refuses the simulated dialer and preference registry in production', () => {
+    expect(() => loadApiEnv(productionBase)).toThrow(
+      /VOICE_PROVIDER[\s\S]*simulated is not allowed in production/,
+    );
+    expect(() => loadApiEnv(productionBase)).toThrow(/PREFERENCE_REGISTRY/);
+  });
+
   it('fails fast on providers that are not implemented yet', () => {
     expect(() => loadApiEnv({ ...productionBase, EMAIL_PROVIDER: 'ses' })).toThrow(
       /ses is not implemented yet/,

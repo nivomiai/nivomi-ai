@@ -2,15 +2,17 @@ import { sql } from 'drizzle-orm';
 import { index, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 import { users } from './identity.js';
 
-/** Tenant roles (PRD §8.1). Platform Super Admin is `users.is_super_admin`, never a tenant role. */
-export const organizationRoles = [
-  'OWNER',
-  'ADMIN',
-  'MANAGER',
-  'AGENT',
-  'ANALYST',
-  'VIEWER',
-] as const;
+/**
+ * Account/tenant role. Platform Super Admin is `users.is_super_admin`, never a tenant role.
+ *
+ * - INDV_USER: solo workspace from the public /signup flow. One member, no invites.
+ * - ORGANIZATION: multi-user team account provisioned by a Super Admin.
+ * - CUSTOM_PLAN: enterprise/bespoke account provisioned by a Super Admin.
+ *
+ * Within a tenant every member shares the tenant's role, so permissions depend on the role
+ * alone (no OWNER/ADMIN/MANAGER sub-hierarchy anymore).
+ */
+export const organizationRoles = ['INDV_USER', 'ORGANIZATION', 'CUSTOM_PLAN'] as const;
 export const organizationRole = pgEnum('organization_role', organizationRoles);
 
 /** PRD FR-7: new organizations wait for approval before they can place calls. */

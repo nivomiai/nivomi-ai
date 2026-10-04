@@ -5,7 +5,6 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import {
   ALLOWED_ORIGIN,
   createTestApp,
-  joinAs,
   owner,
   type Browser,
   type TestApp,
@@ -285,12 +284,9 @@ describe('file import (FR-14, FR-125–FR-128)', () => {
     expect(forged.body).toMatchObject({ error: { code: 'AUTHORIZATION_ERROR' } });
   });
 
-  it('is limited to MANAGER and above and isolated per tenant', async () => {
+  it('is isolated per tenant', async () => {
     const a = await owner(t, 'Import Tenant A');
     const b = await owner(t, 'Import Tenant B');
-    const agent = await joinAs(t, a.client, 'AGENT');
-    await agent.client.get('/api/v1/imports').expect(403);
-    await agent.client.post('/api/v1/imports').send({ fileName: 'x.csv', fileSize: 5 }).expect(403);
 
     const analyzed = await upload(
       a.client,

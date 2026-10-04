@@ -82,7 +82,7 @@ export interface ApiClientOptions {
 
 /** Paths that must never trigger a refresh-and-retry (they are the auth flow itself). */
 const NO_REFRESH =
-  /^\/auth\/(login|register|refresh|logout|verify-email|forgot-password|reset-password)$/;
+  /^\/auth\/(login|register|refresh|logout|forgot-password|reset-password)$/;
 
 export function createApiClient(options: ApiClientOptions = {}) {
   const doFetch: Fetch = options.fetch ?? ((...args) => fetch(...args));

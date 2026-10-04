@@ -80,7 +80,13 @@ describe('authentication', () => {
       expect(JSON.stringify(res.body)).not.toContain('short"');
     });
 
-    it('lets an unverified user sign in but gates product endpoints', async () => {
+    // Email verification is intentionally disabled for the current MVP phase (owner decision,
+    // 2026-10-04). Register marks new accounts as verified at creation and does not queue the
+    // verify-email job, so the gating / token / resend behaviours below cannot fire. The
+    // /auth/verify-email endpoint is still functional for later re-enablement; the tests
+    // below return when verification is re-enabled under ADR-024 in Phase 0.
+
+    it.skip('lets an unverified user sign in but gates product endpoints', async () => {
       const email = uniqueEmail();
       const client = browser(t);
       await client.post('/api/v1/auth/register').send({ name: 'Una', email, password: PASSWORD });
@@ -93,7 +99,7 @@ describe('authentication', () => {
       expect(blocked.body).toMatchObject({ error: { code: 'EMAIL_NOT_VERIFIED' } });
     });
 
-    it('verifies with the emailed link, once', async () => {
+    it.skip('verifies with the emailed link, once', async () => {
       const email = uniqueEmail();
       const client = browser(t);
       await client.post('/api/v1/auth/register').send({ name: 'Vee', email, password: PASSWORD });
@@ -108,7 +114,7 @@ describe('authentication', () => {
       expect(me.body).toMatchObject({ user: { emailVerified: true } });
     });
 
-    it('invalidates older verification links when a new one is sent', async () => {
+    it.skip('invalidates older verification links when a new one is sent', async () => {
       const email = uniqueEmail();
       const client = browser(t);
       await client.post('/api/v1/auth/register').send({ name: 'Old', email, password: PASSWORD });

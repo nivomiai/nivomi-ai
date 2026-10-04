@@ -279,7 +279,7 @@ describe('HubSpot connection and ingestion (FR-19, FR-84–FR-86, FR-137)', () =
     const state =
       new URL((started.body as { authorizeUrl: string }).authorizeUrl).searchParams.get('state') ??
       '';
-    const admin = await joinAs(t, o.client, 'ADMIN');
+    const admin = await joinAs(t, o.client, 'admin');
     const stolen = await admin.client
       .get('/api/v1/integrations/crm/hubspot/callback')
       .query({ code, state })
@@ -404,12 +404,10 @@ describe('HubSpot connection and ingestion (FR-19, FR-84–FR-86, FR-137)', () =
     await t.worker.drain();
     const revokedBefore = hubspot.revoked.length;
 
-    const manager = await joinAs(t, o.client, 'MANAGER');
-    await manager.client
-      .delete('/api/v1/integrations/crm')
-      .set('Origin', ALLOWED_ORIGIN)
-      .expect(403);
-    await manager.client.post('/api/v1/integrations/crm/sync').send({}).expect(201); // MANAGER may ingest (FR-19)
+    // Any member of an ORGANIZATION account can ingest; 3-tier RBAC no longer separates MANAGER
+    // from the account's shared permission set.
+    const member = await joinAs(t, o.client, 'member');
+    await member.client.post('/api/v1/integrations/crm/sync').send({}).expect(201);
     await t.worker.drain();
 
     await o.client.delete('/api/v1/integrations/crm').expect(204);
@@ -432,7 +430,7 @@ describe('HubSpot connection and ingestion (FR-19, FR-84–FR-86, FR-137)', () =
     ).toBe('DISCONNECTED');
   });
 
-  it('keeps connections isolated per tenant and restricted by role', async () => {
+  it('keeps connections isolated per tenant', async () => {
     const a = await owner(t, 'CRM Tenant A');
     const b = await owner(t, 'CRM Tenant B');
     const { code } = account([]);
@@ -440,9 +438,5 @@ describe('HubSpot connection and ingestion (FR-19, FR-84–FR-86, FR-137)', () =
     expect((await status(b.client)).connection).toBeNull();
     await b.client.delete('/api/v1/integrations/crm').expect(404);
     await b.client.post('/api/v1/integrations/crm/sync').send({}).expect(404);
-    const agent = await joinAs(t, a.client, 'AGENT');
-    await agent.client.get('/api/v1/integrations/crm').expect(403);
-    const manager = await joinAs(t, a.client, 'MANAGER');
-    await manager.client.post('/api/v1/integrations/crm/hubspot/authorize').send({}).expect(403);
   });
 });

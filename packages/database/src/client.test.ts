@@ -40,7 +40,7 @@ describe('database (PGlite + committed migrations)', () => {
     const invite = {
       organizationId: org!.id,
       email: 'b@example.in',
-      role: 'VIEWER' as const,
+      role: 'ORGANIZATION' as const,
       expiresAt: new Date(Date.now() + 60_000),
     };
     await handle.db.insert(organizationInvitations).values({ ...invite, tokenHash: 'h1' });

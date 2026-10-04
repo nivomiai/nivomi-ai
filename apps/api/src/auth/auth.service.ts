@@ -78,12 +78,16 @@ export class AuthService {
       .where(eq(users.email, input.email))
       .limit(1);
     if (existing) {
-      if (!existing.verified) {
-        await this.jobs.enqueue({
-          type: AUTH_JOBS.sendVerificationEmail,
-          payload: { userId: existing.id },
-        });
-      }
+      // Email verification is intentionally disabled for the current MVP phase (owner decision,
+      // 2026-10-04). The /verify-email endpoint is still functional for later re-enablement;
+      // registration simply marks accounts as verified at creation and skips the email job.
+      // Re-enable alongside ADR-024 in Phase 0 before the first production tenant.
+      //   if (!existing.verified) {
+      //     await this.jobs.enqueue({
+      //       type: AUTH_JOBS.sendVerificationEmail,
+      //       payload: { userId: existing.id },
+      //     });
+      //   }
       return;
     }
 
@@ -91,15 +95,22 @@ export class AuthService {
     await this.db.transaction(async (tx) => {
       const inserted = await tx
         .insert(users)
-        .values({ email: input.email, name: input.name, passwordHash })
+        .values({
+          email: input.email,
+          name: input.name,
+          passwordHash,
+          // Email verification disabled for the MVP; see comment above.
+          emailVerifiedAt: new Date(),
+        })
         .onConflictDoNothing()
         .returning({ id: users.id });
       const user = inserted[0];
       if (!user) return; // concurrent registration of the same email: same generic response
-      await this.jobs.enqueue(
-        { type: AUTH_JOBS.sendVerificationEmail, payload: { userId: user.id } },
-        tx,
-      );
+      // Email verification disabled for the MVP — no verify-email job enqueued at signup.
+      //   await this.jobs.enqueue(
+      //     { type: AUTH_JOBS.sendVerificationEmail, payload: { userId: user.id } },
+      //     tx,
+      //   );
       await this.audit.record(
         {
           action: 'auth.registered',

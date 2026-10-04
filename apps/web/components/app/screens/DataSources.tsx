@@ -78,7 +78,14 @@ export function DataSources() {
     <div className="grid gap-8">
       <PageHeader
         title="Data sources"
-        description="Bring leads in from files or HubSpot. Every source goes through the same checks, and nothing is called without a consent basis."
+        description="Add leads by hand, import a file, or connect an outside CRM — whatever fits how you already work. Every source goes through the same checks, and nothing is called without a consent basis."
+        actions={
+          can('leads.write') ? (
+            <Link href="/app/leads/new" className="btn btn-primary btn-sm">
+              Add a lead
+            </Link>
+          ) : undefined
+        }
       />
       {message ? <Notice tone={message.tone}>{message.text}</Notice> : null}
       <div className="grid gap-6 lg:grid-cols-2">
@@ -185,8 +192,8 @@ function CrmCard() {
 
   return (
     <Panel
-      title="HubSpot"
-      description="Optional. Contacts, their companies and HubSpot leads come into Nivomi; Nivomi stays the source of truth."
+      title="Connect a CRM (optional)"
+      description="HubSpot today; more CRMs come behind the same connector. Contacts, their companies and leads come into Nivomi; Nivomi stays the source of truth. Skip this if you don’t need it — manual entry and file imports work on their own."
     >
       <div className="grid gap-4">
         <FormAlert message={action.error} />

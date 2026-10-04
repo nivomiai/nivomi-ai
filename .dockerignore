@@ -1,0 +1,90 @@
+# Keep the build context small and never ship secrets or local state.
+# Every path here is relative to the build context (the repo root).
+
+# ─── Dependencies (installed fresh in the image) ─────────────────────────
+**/node_modules
+.npm
+.pnp
+.pnp.js
+
+# ─── Build output (rebuilt in the image) ─────────────────────────────────
+**/dist
+**/.next
+**/build
+**/out
+**/*.tsbuildinfo
+next-env.d.ts
+
+# ─── Secrets and environment ─────────────────────────────────────────────
+# Only .env.example may enter the image; real secrets come from the runtime.
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+credentials*.json
+service-account*.json
+secrets/
+.secrets/
+
+# ─── Local runtime data ──────────────────────────────────────────────────
+.data
+**/.data
+**/data-exports
+**/exports
+**/uploads
+**/recordings
+**/transcripts
+*.sqlite
+*.sqlite3
+*.db
+
+# ─── Tests & coverage (not needed at runtime) ────────────────────────────
+coverage
+playwright-report
+test-results
+blob-report
+.vitest
+tests/e2e
+apps/*/test
+**/*.test.ts
+**/*.spec.ts
+
+# ─── Version control ─────────────────────────────────────────────────────
+.git
+.gitignore
+.gitattributes
+.github
+
+# ─── Editors & OS ────────────────────────────────────────────────────────
+.vscode
+.idea
+.history
+*.swp
+.DS_Store
+Thumbs.db
+
+# ─── Tooling / logs ──────────────────────────────────────────────────────
+logs
+*.log
+npm-debug.log*
+pids
+*.pid
+.turbo
+
+# ─── Docs and planning (not needed inside the image) ─────────────────────
+docs
+*.md
+!package.json
+!apps/*/package.json
+!packages/*/package.json
+
+# ─── BMAD vendored install and Claude Code state ─────────────────────────
+_bmad
+.claude

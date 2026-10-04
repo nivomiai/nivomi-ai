@@ -2,10 +2,10 @@
 
 import Link from 'next/link';
 import { Icon } from '@/components/marketing/primitives';
-import type { OrganizationStatus } from '@/lib/api/types';
+import { ROLE_DESCRIPTIONS, type OrganizationStatus } from '@/lib/api/types';
+import { PERMISSION_LABELS } from '@/lib/app/access';
 import { useSession } from '@/lib/app/session';
-import type { IconName } from '@/lib/site/icons';
-import { Notice, PageHeader, Panel } from '../ui';
+import { Notice, PageHeader, Panel, RoleBadge } from '../ui';
 
 const STATUS_COPY: Record<OrganizationStatus, { tone: 'info' | 'success' | 'warn'; text: string }> =
   {
@@ -21,27 +21,6 @@ const STATUS_COPY: Record<OrganizationStatus, { tone: 'info' | 'success' | 'warn
     CLOSED: { tone: 'warn', text: 'This organization is closed.' },
   };
 
-/** Modules on the MVP roadmap that are not built yet — shown honestly as upcoming. */
-const UPCOMING: readonly { icon: IconName; title: string; text: string }[] = [
-  {
-    icon: 'i-target',
-    title: 'Campaigns',
-    text: 'Eligibility-checked outbound calling within permitted hours.',
-  },
-  {
-    icon: 'i-phone',
-    title: 'AI calls & call history',
-    text: 'Recordings, transcripts and AI summaries per call.',
-  },
-  { icon: 'i-cal', title: 'Appointments', text: 'Qualified leads booked straight from the call.' },
-  {
-    icon: 'i-link',
-    title: 'CRM write-back',
-    text: 'Call outcomes, notes and meetings sent back to HubSpot.',
-  },
-  { icon: 'i-chart', title: 'Usage & billing', text: 'Metered minutes and invoices.' },
-];
-
 export function Overview() {
   const { me, can } = useSession();
   const organization = me?.organizations.find((o) => o.id === me.activeOrganization?.id);
@@ -49,13 +28,15 @@ export function Overview() {
   const status = STATUS_COPY[organization.status];
 
   const steps = [
-    { done: true, label: 'Verify your email' },
     { done: true, label: `Create ${organization.name}` },
     ...(can('imports.manage')
-      ? [{ done: false, label: 'Bring in your leads (file or HubSpot)', href: '/app/data-sources' }]
+      ? [{ done: false, label: 'Bring in your leads', href: '/app/data-sources' }]
       : []),
     ...(can('members.invite')
       ? [{ done: false, label: 'Invite your team', href: '/app/team' }]
+      : []),
+    ...(can('telecom.manage')
+      ? [{ done: false, label: 'Verify your telecom identity', href: '/app/telecom' }]
       : []),
     { done: false, label: 'Review your security settings', href: '/app/security' },
   ];
@@ -67,6 +48,26 @@ export function Overview() {
         description={`You are working in ${organization.name}.`}
       />
       <Notice tone={status.tone}>{status.text}</Notice>
+
+      <Panel title="Your access" description={ROLE_DESCRIPTIONS[organization.role]}>
+        <div className="flex flex-wrap items-center gap-2">
+          <RoleBadge role={organization.role} />
+          {(me.activeOrganization?.permissions ?? []).map((permission) => (
+            <span
+              key={permission}
+              className="rounded-[8px] border border-line bg-soft px-2.5 py-1 text-xs font-semibold text-ink-2"
+            >
+              {PERMISSION_LABELS[permission].label}
+            </span>
+          ))}
+        </div>
+        <Link
+          href="/app/roles"
+          className="mt-4 inline-block text-sm font-semibold text-accent hover:underline"
+        >
+          Compare all roles
+        </Link>
+      </Panel>
 
       <Panel title="Get set up" description="A few steps before your first campaign.">
         <ol className="grid gap-2">
@@ -98,30 +99,6 @@ export function Overview() {
             </li>
           ))}
         </ol>
-      </Panel>
-
-      <Panel
-        title="Coming to your workspace"
-        description="These parts of the MVP are in development and will appear here as they ship."
-      >
-        <ul className="grid gap-3 sm:grid-cols-2">
-          {UPCOMING.map((item) => (
-            <li key={item.title} className="flex gap-3 rounded-[14px] border border-line p-4">
-              <span className="icon-tile shrink-0">
-                <Icon name={item.icon} />
-              </span>
-              <span>
-                <span className="flex flex-wrap items-center gap-2 font-semibold text-ink">
-                  {item.title}
-                  <span className="rounded-full border border-soon/25 bg-soon-soft px-2 py-0.5 text-[11px] font-bold text-soon">
-                    In development
-                  </span>
-                </span>
-                <span className="mt-1 block text-sm text-muted">{item.text}</span>
-              </span>
-            </li>
-          ))}
-        </ul>
       </Panel>
     </div>
   );

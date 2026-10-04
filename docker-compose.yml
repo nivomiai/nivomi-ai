@@ -1,0 +1,135 @@
+# Nivomi — production-shaped local stack.
+#
+# Runs the same containers a production deploy would run, wired to real
+# PostgreSQL and Redis rather than PGlite and the memory rate-limit store,
+# so integration issues surface here before AWS. See docs/operations/docker.md
+# for build, run, upgrade and troubleshooting.
+#
+# Usage:
+#   cp .env.docker.example .env.docker  # first time
+#   docker compose --env-file .env.docker up --build
+#
+# The compose CLI honours the profile keys; `dev` starts the mailbox viewer.
+# `docker compose --profile dev up` to include it.
+
+name: nivomi
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-nivomi}
+      POSTGRES_USER: ${POSTGRES_USER:-nivomi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - '127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-nivomi} -d ${POSTGRES_DB:-nivomi}']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    # Phase 11 RateLimitStore (ADR-019). Not required by dev today but the
+    # API will pick it up as soon as we swap the memory store.
+    image: redis:7-alpine
+    restart: unless-stopped
+    command:
+      [
+        'redis-server',
+        '--appendonly',
+        'yes',
+        '--maxmemory',
+        '128mb',
+        '--maxmemory-policy',
+        'allkeys-lru',
+      ]
+    volumes:
+      - redis-data:/data
+    ports:
+      - '127.0.0.1:${REDIS_HOST_PORT:-6379}:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      # This local stack runs in `development` mode against real Postgres and
+      # Redis. Production would require SES, S3 and the real voice adapters —
+      # tracked in production-readiness-plan.md phases 4c, 9a and 11c.
+      NODE_ENV: ${NODE_ENV:-development}
+      HOST: 0.0.0.0
+      PORT: 4000
+      APP_VERSION: ${APP_VERSION:-docker}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      # PGlite is not used in the container — we point at the real Postgres.
+      DATABASE_URL: postgres://${POSTGRES_USER:-nivomi}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-nivomi}
+      REDIS_URL: redis://redis:6379
+      # HttpOnly session cookies need the web origin so CORS is exact.
+      CORS_ALLOWED_ORIGINS: ${APP_WEB_URL:-http://localhost:3000}
+      APP_WEB_URL: ${APP_WEB_URL:-http://localhost:3000}
+      # Fail-closed secrets: production refuses to start without these
+      # (see apps/api/src/config/env.ts).
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:?AUTH_JWT_SECRET is required}
+      CREDENTIALS_ENCRYPTION_KEY: ${CREDENTIALS_ENCRYPTION_KEY:?CREDENTIALS_ENCRYPTION_KEY is required}
+      # Providers stay local until Phase 9/11 delivers SES + S3.
+      EMAIL_PROVIDER: dev-mailbox
+      EMAIL_DEV_MAILBOX_DIR: /data/mailbox
+      STORAGE_PROVIDER: local
+      STORAGE_LOCAL_DIR: /data/uploads
+      WORKER_ENABLED: 'true'
+    volumes:
+      - api-data:/data
+    ports:
+      - '127.0.0.1:${API_HOST_PORT:-4000}:4000'
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_started
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+      # Stands in for the production ALB rule that routes /api/v1 to the API.
+      NIVOMI_API_ORIGIN: http://api:4000
+    ports:
+      - '127.0.0.1:${WEB_HOST_PORT:-3000}:3000'
+
+  mailbox-viewer:
+    # Convenience: a static file listing of the dev mailbox so verification
+    # links are one click away when running locally. Profile so it never
+    # starts in CI or a production shape.
+    profiles: ['dev']
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_started
+    volumes:
+      - api-data:/usr/share/nginx/html:ro
+    ports:
+      - '127.0.0.1:${MAILBOX_HOST_PORT:-8025}:80'
+
+volumes:
+  postgres-data:
+  redis-data:
+  api-data:

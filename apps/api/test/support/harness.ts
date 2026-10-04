@@ -68,13 +68,17 @@ interface StoredEmail {
   category: string;
 }
 
-/** Runs pending jobs, then returns the token from the newest email of `category` sent to `to`. */
+/**
+ * Runs pending jobs, then returns the token from the newest email of `category` sent to `to`.
+ * Email addresses compare case-insensitively because the API stores them normalized.
+ */
 export async function tokenFromEmail(t: TestApp, to: string, category: string): Promise<string> {
   await t.worker.drain();
+  const normalized = to.toLowerCase();
   const emails = readdirSync(t.mailbox)
     .sort()
     .map((file) => JSON.parse(readFileSync(join(t.mailbox, file), 'utf8')) as StoredEmail)
-    .filter((email) => email.to === to && email.category === category);
+    .filter((email) => email.to.toLowerCase() === normalized && email.category === category);
   const latest = emails.at(-1);
   const token = latest?.text.match(/token=([A-Za-z0-9_-]+)/)?.[1];
   if (!token) throw new Error(`no ${category} email for ${to}`);
@@ -103,25 +107,43 @@ export function uniqueEmail(label = 'user'): string {
   return `${label}-${emailCounter}-${Date.now()}@example.com`;
 }
 
-/** Registers, verifies and signs in a user; returns the signed-in client. */
+/**
+ * Registers and signs in a user; returns the signed-in client. Email verification is disabled
+ * for the current MVP phase (see auth.service.ts), so new accounts are already verified at
+ * registration and no verify-email step is needed here.
+ */
 export async function signedInUser(t: TestApp, label = 'user', name = 'Test User') {
   const email = uniqueEmail(label);
   const client = browser(t);
   await client.post('/api/v1/auth/register').send({ name, email, password: PASSWORD }).expect(202);
-  const token = await tokenFromEmail(t, email, 'verify-email');
-  await client.post('/api/v1/auth/verify-email').send({ token }).expect(204);
   await client.post('/api/v1/auth/login').send({ email, password: PASSWORD }).expect(204);
   return { client, email };
 }
 
-/** A signed-in user who owns a new organization. */
-export async function owner(t: TestApp, organizationName = 'Acme Realty') {
+/**
+ * A signed-in user with a tenant. Public /signup creates INDV_USER accounts; `role` promotes
+ * the tenant to ORGANIZATION (default) or CUSTOM_PLAN so the tests can invite teammates.
+ */
+export async function owner(
+  t: TestApp,
+  organizationName = 'Acme Realty',
+  role: 'INDV_USER' | 'ORGANIZATION' | 'CUSTOM_PLAN' = 'ORGANIZATION',
+) {
   const user = await signedInUser(t, 'owner', 'Olivia Owner');
   const res = await user.client
     .post('/api/v1/organizations')
     .send({ name: organizationName })
     .expect(201);
-  return { ...user, organizationId: (res.body as { id: string }).id };
+  const organizationId = (res.body as { id: string }).id;
+  if (role !== 'INDV_USER') {
+    const { organizationMembers } = await import('@nivomi/database');
+    const { eq } = await import('drizzle-orm');
+    await t.db
+      .update(organizationMembers)
+      .set({ role })
+      .where(eq(organizationMembers.organizationId, organizationId));
+  }
+  return { ...user, organizationId };
 }
 
 /** The response shapes the tests read, so assertions stay type-checked. */
@@ -144,17 +166,16 @@ export interface ApiBody {
 
 export const body = (res: { body: unknown }): ApiBody => res.body as ApiBody;
 
-/** Invites a new verified user into the owner's active organization with `role`. */
-export async function joinAs(
-  t: TestApp,
-  ownerClient: Browser,
-  role: string,
-  label = role.toLowerCase(),
-) {
-  const member = await signedInUser(t, label, `${role} Person`);
+/**
+ * Invites a new user into the owner's active tenant. There are no sub-roles anymore: the
+ * invitee inherits the tenant's role (ORGANIZATION or CUSTOM_PLAN) automatically. The
+ * optional `label` argument is kept for test readability.
+ */
+export async function joinAs(t: TestApp, ownerClient: Browser, label = 'member') {
+  const member = await signedInUser(t, label, `${label} Person`);
   await ownerClient
     .post('/api/v1/organizations/current/invitations')
-    .send({ email: member.email, role })
+    .send({ email: member.email })
     .expect(201);
   const token = await tokenFromEmail(t, member.email, 'invitation');
   await member.client.post('/api/v1/organizations/invitations/accept').send({ token }).expect(201);

@@ -64,6 +64,27 @@ export const apiEnvSchema = z
     /** The previous key during a rotation; still used to decrypt. */
     CREDENTIALS_ENCRYPTION_PREVIOUS_KEY: z.string().optional(),
 
+    /**
+     * Outbound dialer (VoiceProvider, ADR-021). Only the simulated dialer exists until the Exotel
+     * adapter (Phase 4); it is refused in production.
+     */
+    VOICE_PROVIDER: z.enum(['simulated']).default('simulated'),
+    /** How long a simulated call lasts before its outcome arrives. */
+    VOICE_SIMULATED_CALL_MS: z.coerce.number().int().min(0).max(600_000).default(2_000),
+    /** Preference registry (NCPR/DND) lookups. Simulated only; refused in production. */
+    PREFERENCE_REGISTRY: z.enum(['simulated']).default('simulated'),
+
+    /**
+     * Sarvam AI subscription key. Powers the browser voice demo at /demo/voice (STT + TTS + LLM).
+     * Unset = demo falls back to a canned transcript and the browser Web Speech API.
+     */
+    SARVAM_API_KEY: z.string().optional(),
+    /**
+     * Chat model id used by the voice demo. Defaults to `sarvam-m`; swap to `sarvam-2b` or any
+     * other id the account can call if `sarvam-m` returns a model-not-found error.
+     */
+    SARVAM_CHAT_MODEL: z.string().default('sarvam-m'),
+
     /** HubSpot app credentials (ADR-012). Both or neither; unset = "Connect HubSpot" unavailable. */
     HUBSPOT_CLIENT_ID: z.string().optional(),
     HUBSPOT_CLIENT_SECRET: z.string().optional(),
@@ -125,6 +146,15 @@ export const apiEnvSchema = z
         path: ['CREDENTIALS_ENCRYPTION_KEY'],
         message: 'is required when HubSpot is configured',
       });
+    }
+    for (const key of ['VOICE_PROVIDER', 'PREFERENCE_REGISTRY'] as const) {
+      if (env.NODE_ENV === 'production' && env[key] === 'simulated') {
+        ctx.addIssue({
+          code: 'custom',
+          path: [key],
+          message: 'simulated is not allowed in production (real adapters arrive in phase 4)',
+        });
+      }
     }
     if (env.EMAIL_PROVIDER === 'ses') {
       // Fail fast rather than pretend: the SES adapter lands with the notifications phase.
