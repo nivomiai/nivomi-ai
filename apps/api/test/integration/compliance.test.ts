@@ -21,7 +21,7 @@ import {
   runJobs,
   superAdmin,
 } from '../support/calling.js';
-import { createTestApp, joinAs, owner, type Browser, type TestApp } from '../support/harness.js';
+import { createTestApp, owner, type Browser, type TestApp } from '../support/harness.js';
 
 describe('ComplianceEngine, eligibility, telecom identity and consent (Phase 3)', () => {
   let t: TestApp;
@@ -126,14 +126,9 @@ describe('ComplianceEngine, eligibility, telecom identity and consent (Phase 3)'
       expect(JSON.stringify(res.body)).toContain('Missing DLT entity ID');
     });
 
-    it('lets MANAGER read but not change it, and hides it from AGENT', async () => {
-      const o = await callingOrg(t, null, 'Roles Co');
-      const manager = await joinAs(t, o.client, 'manager');
-      const agent = await joinAs(t, o.client, 'agent');
-      await manager.client.get('/api/v1/telecom-identity').expect(200);
-      await manager.client.put('/api/v1/telecom-identity').send({ legalName: 'X' }).expect(403);
-      await agent.client.get('/api/v1/telecom-identity').expect(403);
-    });
+    // Within-tenant MANAGER/AGENT split is gone under the 3-tier RBAC model; every member of an
+    // ORGANIZATION account can read and change the telecom identity. The identity is still gated
+    // against cross-tenant access, which the tenant-isolation suite below covers.
   });
 
   describe('pre-launch check and decision records (FR-36, FR-44–FR-48)', () => {
@@ -348,9 +343,8 @@ describe('ComplianceEngine, eligibility, telecom identity and consent (Phase 3)'
   });
 
   describe('REQUIRES_REVIEW queue (FR-50)', () => {
-    it('queues ambiguous consent at dial time and lets OWNER/ADMIN resolve it', async () => {
+    it('queues ambiguous consent at dial time and lets members resolve it', async () => {
       const o = await callingOrg(t, admin, 'Review Co');
-      const manager = await joinAs(t, o.client, 'manager');
       const undated = await addLead(o.client, { fullName: 'Undated', consentBasis: 'INQUIRY' });
       const excluded = await addLead(o.client, {
         fullName: 'To Exclude',
@@ -362,7 +356,6 @@ describe('ComplianceEngine, eligibility, telecom identity and consent (Phase 3)'
       await o.client.post(`/api/v1/campaigns/${id}/launch`).expect(204);
       await runJobs(t, 4);
 
-      await manager.client.get('/api/v1/compliance/reviews').expect(403);
       const queue = await o.client.get('/api/v1/compliance/reviews').expect(200);
       const items = (
         queue.body as { items: { id: string; leadId: string; reasons: { code: string }[] }[] }
@@ -371,10 +364,7 @@ describe('ComplianceEngine, eligibility, telecom identity and consent (Phase 3)'
       expect(items[0]?.reasons.map((r) => r.code)).toEqual(['CONSENT_EVIDENCE_INCOMPLETE']);
 
       const byLead = (leadId: string) => items.find((i) => i.leadId === leadId)!;
-      await manager.client
-        .post(`/api/v1/compliance/reviews/${byLead(undated.id).id}/resolve`)
-        .send({ action: 'EXCLUDE' })
-        .expect(403);
+      // Every member of an ORGANIZATION account holds compliance.review in 3-tier RBAC.
       await o.client
         .post(`/api/v1/compliance/reviews/${byLead(excluded.id).id}/resolve`)
         .send({ action: 'EXCLUDE', note: 'No application on file' })
@@ -401,18 +391,14 @@ describe('ComplianceEngine, eligibility, telecom identity and consent (Phase 3)'
   });
 
   describe('complaint breaker (FR-49, FR-13)', () => {
-    it('trips at two complaints, pauses the number and campaigns, and needs ADMIN + Super Admin to clear', async () => {
+    it('trips at two complaints, pauses the number and campaigns, and needs a Super Admin to clear', async () => {
       const o = await callingOrg(t, admin, 'Breaker Co');
-      const manager = await joinAs(t, o.client, 'manager');
       await addLead(o.client, { fullName: 'Ready', consentBasis: 'EXISTING_CUSTOMER' });
       const id = await createCampaign(o.client, o.callerNumberId, { callCategory: 'PROMOTIONAL' });
       await prelaunch(t, o.client, id);
       await o.client.post(`/api/v1/campaigns/${id}/launch`).expect(204);
 
-      await manager.client
-        .post('/api/v1/compliance/complaints')
-        .send({ kind: 'COMPLAINT' })
-        .expect(403);
+      // Any member of an ORGANIZATION account can record a complaint under 3-tier RBAC.
       const first = await o.client
         .post('/api/v1/compliance/complaints')
         .send({ kind: 'COMPLAINT', reference: 'TRAI-1' })
@@ -507,16 +493,8 @@ describe('ComplianceEngine, eligibility, telecom identity and consent (Phase 3)'
       expect((reviewsB.body as { items: unknown[] }).items).toEqual([]);
     });
 
-    it('scopes campaign permissions by role (PRD §8.1)', async () => {
-      const o = await callingOrg(t, admin, 'Perms Co');
-      const analyst = await joinAs(t, o.client, 'analyst');
-      const agent = await joinAs(t, o.client, 'agent');
-      const id = await createCampaign(o.client, o.callerNumberId);
-      await analyst.client.get(`/api/v1/campaigns/${id}`).expect(200);
-      await analyst.client.post(`/api/v1/campaigns/${id}/prelaunch-check`).expect(403);
-      await analyst.client.post('/api/v1/campaigns/emergency-stop').send({}).expect(403);
-      await agent.client.get('/api/v1/campaigns').expect(403);
-      await agent.client.post(`/api/v1/campaigns/${id}/cancel`).expect(403);
-    });
+    // Within-tenant ANALYST/AGENT permission scoping no longer exists under the 3-tier RBAC model.
+    // Any member of an ORGANIZATION or CUSTOM_PLAN account can read, launch, pause and stop
+    // campaigns in that tenant. Cross-tenant access is covered by the test above.
   });
 });

@@ -68,13 +68,17 @@ interface StoredEmail {
   category: string;
 }
 
-/** Runs pending jobs, then returns the token from the newest email of `category` sent to `to`. */
+/**
+ * Runs pending jobs, then returns the token from the newest email of `category` sent to `to`.
+ * Email addresses compare case-insensitively because the API stores them normalized.
+ */
 export async function tokenFromEmail(t: TestApp, to: string, category: string): Promise<string> {
   await t.worker.drain();
+  const normalized = to.toLowerCase();
   const emails = readdirSync(t.mailbox)
     .sort()
     .map((file) => JSON.parse(readFileSync(join(t.mailbox, file), 'utf8')) as StoredEmail)
-    .filter((email) => email.to === to && email.category === category);
+    .filter((email) => email.to.toLowerCase() === normalized && email.category === category);
   const latest = emails.at(-1);
   const token = latest?.text.match(/token=([A-Za-z0-9_-]+)/)?.[1];
   if (!token) throw new Error(`no ${category} email for ${to}`);
@@ -104,14 +108,16 @@ export function uniqueEmail(label = 'user'): string {
 }
 
 /**
- * Registers and signs in a user; returns the signed-in client. New accounts are already
- * verified by the register endpoint (email verification is disabled), so no extra step is
- * needed here.
+ * Registers, verifies and signs in a user; returns the signed-in client. The verification
+ * token is pulled from the dev mailbox and redeemed before login so the resulting session
+ * passes the AuthGuard's email-verified check on tenant-scoped endpoints.
  */
 export async function signedInUser(t: TestApp, label = 'user', name = 'Test User') {
   const email = uniqueEmail(label);
   const client = browser(t);
   await client.post('/api/v1/auth/register').send({ name, email, password: PASSWORD }).expect(202);
+  const verificationToken = await tokenFromEmail(t, email, 'verify-email');
+  await client.post('/api/v1/auth/verify-email').send({ token: verificationToken }).expect(204);
   await client.post('/api/v1/auth/login').send({ email, password: PASSWORD }).expect(204);
   return { client, email };
 }

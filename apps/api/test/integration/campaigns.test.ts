@@ -446,15 +446,15 @@ describe('campaigns against the simulated dialer (FR-35–FR-43)', () => {
 
   it('pauses on Emergency Stop, refuses to resume until released, and audits both (FR-43)', async () => {
     const o = await callingOrg(t, admin, 'Stop Co');
-    const analyst = await joinAs(t, o.client, 'analyst');
-    const manager = await joinAs(t, o.client, 'manager');
+    const member = await joinAs(t, o.client, 'member');
     for (let i = 0; i < 3; i += 1) {
       await addLead(o.client, { fullName: `Lead ${i}`, consentBasis: 'EXISTING_CUSTOMER' });
     }
     const id = await launched(o, { maxConcurrentCalls: 1 });
 
-    await analyst.client.post('/api/v1/campaigns/emergency-stop').send({}).expect(403);
-    const stopped = await manager.client
+    // Every member of an ORGANIZATION account holds the campaigns.emergency_stop permission
+    // in the 3-tier RBAC model; the former ANALYST/MANAGER split no longer exists.
+    const stopped = await member.client
       .post('/api/v1/campaigns/emergency-stop')
       .send({ reason: 'Complaint escalation' })
       .expect(201);

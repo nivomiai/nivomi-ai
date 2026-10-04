@@ -2,7 +2,7 @@ import { leadStatusChanges } from '@nivomi/database';
 import { eq } from 'drizzle-orm';
 import type { Response } from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { createTestApp, joinAs, owner, type Browser, type TestApp } from '../support/harness.js';
+import { createTestApp, owner, type Browser, type TestApp } from '../support/harness.js';
 
 interface LeadItem {
   id: string;
@@ -167,36 +167,9 @@ describe('leads, suppression and review queue', () => {
     });
   });
 
-  describe('role-based access (PRD §8.1)', () => {
-    it('limits AGENTs to their own leads and ANALYSTs to reading', async () => {
-      const o = await owner(t);
-      const agent = await joinAs(t, o.client, 'agent');
-      const analyst = await joinAs(t, o.client, 'analyst');
-      const viewer = await joinAs(t, o.client, 'viewer');
-
-      const ownersLead = await createLead(o.client, {
-        fullName: 'Owner Lead',
-        phone: phone(),
-      }).expect(201);
-      const agentsLead = await createLead(agent.client, {
-        fullName: 'Agent Lead',
-        phone: phone(),
-      }).expect(201);
-
-      const agentView = items(await agent.client.get('/api/v1/leads').expect(200));
-      expect(agentView.map((l) => l.fullName)).toEqual(['Agent Lead']);
-      await agent.client.get(`/api/v1/leads/${(ownersLead.body as { id: string }).id}`).expect(404);
-      await agent.client
-        .patch(`/api/v1/leads/${(agentsLead.body as { id: string }).id}`)
-        .send({ ownerUserId: null })
-        .expect(403);
-
-      expect(items(await analyst.client.get('/api/v1/leads').expect(200))).toHaveLength(2);
-      await createLead(analyst.client, { fullName: 'Nope', phone: phone() }).expect(403);
-      await viewer.client.get('/api/v1/leads').expect(403);
-      await analyst.client.post('/api/v1/suppression').send({ phone: phone() }).expect(403);
-    });
-  });
+  // Within-tenant role granularity (AGENT/ANALYST/VIEWER with per-member scoping) no longer
+  // exists under the 3-tier RBAC model. Every member of an ORGANIZATION or CUSTOM_PLAN account
+  // sees the whole tenant's leads. Cross-tenant isolation is covered elsewhere in this file.
 
   describe('suppression list (FR-22)', () => {
     it('adds, flags leads, and only removes manual entries', async () => {
