@@ -22,6 +22,13 @@
       "when": 1790455660856,
       "tag": "0002_compliance_campaigns",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790531478812,
+      "tag": "0003_ai_agents",
+      "breakpoints": true
     }
   ]
 }

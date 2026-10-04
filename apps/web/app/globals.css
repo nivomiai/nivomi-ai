@@ -30,6 +30,8 @@
   --nv-line-hover: #e7c4d8;
   --nv-accent: #cc007e;
   --nv-accent-soft: #fff2f9;
+  /* Single-series chart mark; validated for contrast and lightness on the light surface. */
+  --nv-chart-1: #cc007e;
   --nv-accent-tint: #fbe3f0;
   --nv-header: rgba(255, 255, 255, 0.78);
   --nv-soon: #6d4bd8;
@@ -57,6 +59,8 @@
   --nv-line-hover: #5a2449;
   --nv-accent: #ff5cb4;
   --nv-accent-soft: #2b0e24;
+  /* Its own dark step (not the text accent), validated against the dark card surface. */
+  --nv-chart-1: #f03c9f;
   --nv-accent-tint: #3a1030;
   --nv-header: rgba(14, 5, 12, 0.72);
   --nv-soon: #b9a5ff;
@@ -95,6 +99,7 @@
   --color-line-hover: var(--nv-line-hover);
   --color-accent: var(--nv-accent);
   --color-accent-soft: var(--nv-accent-soft);
+  --color-chart-1: var(--nv-chart-1);
   --color-accent-tint: var(--nv-accent-tint);
   --color-soon: var(--nv-soon);
   --color-soon-soft: var(--nv-soon-soft);

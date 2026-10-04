@@ -26,11 +26,15 @@ export type Permission =
   | 'compliance.review'
   | 'telecom.read'
   | 'telecom.manage'
-  | 'consent.manage';
+  | 'consent.manage'
+  | 'agents.read'
+  | 'agents.manage'
+  | 'dashboard.read';
 
 /** Everything a tenant can see or do on its own data. All multi-member roles get this set. */
 const FULL_TENANT: readonly Permission[] = [
   'organization.read',
+  'dashboard.read',
   'members.read',
   'audit.read',
   'leads.read',
@@ -40,6 +44,8 @@ const FULL_TENANT: readonly Permission[] = [
   'integrations.read',
   'integrations.manage',
   'integrations.sync',
+  'agents.read',
+  'agents.manage',
   'campaigns.read',
   'campaigns.manage',
   'campaigns.emergency_stop',

@@ -19,6 +19,14 @@ describe('authorization/permissions', () => {
     }
   });
 
+  it('every account role can see the dashboard and build agents', () => {
+    for (const role of ['INDV_USER', 'ORGANIZATION', 'CUSTOM_PLAN'] as const) {
+      expect(roleHasPermission(role, 'dashboard.read')).toBe(true);
+      expect(roleHasPermission(role, 'agents.read')).toBe(true);
+      expect(roleHasPermission(role, 'agents.manage')).toBe(true);
+    }
+  });
+
   it('solo INDV_USER accounts cannot invite or remove members', () => {
     expect(roleHasPermission('INDV_USER', 'members.invite')).toBe(false);
     expect(roleHasPermission('INDV_USER', 'members.remove')).toBe(false);

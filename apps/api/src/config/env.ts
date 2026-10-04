@@ -73,6 +73,8 @@ export const apiEnvSchema = z
     VOICE_SIMULATED_CALL_MS: z.coerce.number().int().min(0).max(600_000).default(2_000),
     /** Preference registry (NCPR/DND) lookups. Simulated only; refused in production. */
     PREFERENCE_REGISTRY: z.enum(['simulated']).default('simulated'),
+    /** Language model behind `LLMProvider` (ADR-022). Simulated until a vendor is chosen. */
+    LLM_PROVIDER: z.enum(['simulated']).default('simulated'),
 
     /**
      * Sarvam AI subscription key. Powers the browser voice demo at /demo/voice (STT + TTS + LLM).
@@ -147,7 +149,7 @@ export const apiEnvSchema = z
         message: 'is required when HubSpot is configured',
       });
     }
-    for (const key of ['VOICE_PROVIDER', 'PREFERENCE_REGISTRY'] as const) {
+    for (const key of ['VOICE_PROVIDER', 'PREFERENCE_REGISTRY', 'LLM_PROVIDER'] as const) {
       if (env.NODE_ENV === 'production' && env[key] === 'simulated') {
         ctx.addIssue({
           code: 'custom',

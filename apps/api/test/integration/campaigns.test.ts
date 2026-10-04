@@ -69,7 +69,7 @@ describe('campaigns against the simulated dialer (FR-35–FR-43)', () => {
     ((await client.get(`/api/v1/leads/${leadId}`).expect(200)).body as { status: string }).status;
 
   async function launched(o: CallingOrg, overrides: Record<string, unknown> = {}) {
-    const id = await createCampaign(o.client, o.callerNumberId, overrides);
+    const id = await createCampaign(o, overrides);
     const view = await prelaunch(t, o.client, id);
     expect(view.prelaunch?.status).toBe('COMPLETED');
     await o.client.post(`/api/v1/campaigns/${id}/launch`).expect(204);
@@ -212,7 +212,7 @@ describe('campaigns against the simulated dialer (FR-35–FR-43)', () => {
     expect(ledger).toContainEqual({ kind: 'REVOCATION', source: 'IN_CALL_OPT_OUT' });
 
     // A later campaign never reaches the number.
-    const again = await createCampaign(o.client, o.callerNumberId, { name: 'Again' });
+    const again = await createCampaign(o, { name: 'Again' });
     const view = await prelaunch(t, o.client, again);
     expect(view.prelaunch?.byReason).toMatchObject({
       SUPPRESSED: 1,
@@ -520,7 +520,7 @@ describe('campaigns against the simulated dialer (FR-35–FR-43)', () => {
     expect((await campaign(o.client, id)).status).toMatch(/RUNNING|COMPLETED/);
     expect(await attemptsFor(id)).toHaveLength(1);
 
-    const draft = await createCampaign(o.client, o.callerNumberId, { name: 'Never' });
+    const draft = await createCampaign(o, { name: 'Never' });
     await o.client.post(`/api/v1/campaigns/${draft}/cancel`).expect(204);
     await o.client.post(`/api/v1/campaigns/${draft}/prelaunch-check`).expect(409);
   });

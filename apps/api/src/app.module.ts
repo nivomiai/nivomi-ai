@@ -1,6 +1,7 @@
 import { Module, type DynamicModule } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
+import { AgentsModule } from './agents/agents.module.js';
 import { AuthController } from './auth/auth.controller.js';
 import { CampaignsModule } from './campaigns/campaigns.module.js';
 import { ComplianceModule } from './compliance/compliance.module.js';
@@ -11,6 +12,7 @@ import { TokenService } from './auth/tokens.js';
 import { AllExceptionsFilter } from './common/all-exceptions.filter.js';
 import { ConfigModule } from './config/config.module.js';
 import type { ApiEnv } from './config/env.js';
+import { DashboardModule } from './dashboard/dashboard.module.js';
 import { DatabaseModule } from './database/database.module.js';
 import { DemoModule } from './demo/demo.module.js';
 import { CrmModule } from './crm/crm.module.js';
@@ -42,7 +44,9 @@ export class AppModule {
         ImportsModule.forRoot(env),
         CrmModule,
         ComplianceModule,
+        AgentsModule,
         CampaignsModule,
+        DashboardModule,
         DemoModule,
       ],
       controllers: [

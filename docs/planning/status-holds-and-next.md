@@ -12,19 +12,19 @@ _Last updated: 2026-09-27._
 
 ## Phases
 
-| #   | Phase                                | Status                                                                                   | Where                                        |
-| --- | ------------------------------------ | ---------------------------------------------------------------------------------------- | -------------------------------------------- |
-| 1   | Platform foundation                  | ✅ Done                                                                                  | PR #8                                        |
-| 2   | Contacts, leads, CSV/XLSX import     | ✅ Done                                                                                  | PR #9                                        |
-| 3   | Compliance engine and campaigns      | ✅ Done — rules are a **draft pending counsel**; the dialer is simulated                 | `feature/compliance-campaigns` (PR after #9) |
-| 4   | Calls and call history               | 🔨 **Next** — see [Next](#next)                                                          | —                                            |
-| 5   | Inbound calls                        | Not started                                                                              | —                                            |
-| 6   | Appointments                         | Not started                                                                              | —                                            |
-| 7   | CRM (HubSpot)                        | 🟡 Inbound done (connect, fetch contacts and leads); write-back and webhooks not started | PR #9 (inbound)                              |
-| 8   | Usage, quotas, billing               | Not started                                                                              | —                                            |
-| 9   | Notifications, OTP, Super Admin, MFA | Not started                                                                              | —                                            |
-| 10  | Analytics and observability          | Not started                                                                              | —                                            |
-| 11  | Deploy and hardening                 | Not started                                                                              | —                                            |
+| #   | Phase                                | Status                                                                                       | Where                                        |
+| --- | ------------------------------------ | -------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| 1   | Platform foundation                  | ✅ Done                                                                                      | PR #8                                        |
+| 2   | Contacts, leads, CSV/XLSX import     | ✅ Done                                                                                      | PR #9                                        |
+| 3   | Compliance engine and campaigns      | ✅ Done — rules are a **draft pending counsel**; the dialer is simulated                     | `feature/compliance-campaigns` (PR after #9) |
+| 4   | Calls and call history               | 🟡 4a done: AI Agents, workflow builder, versions, test chat (simulated LLM); 4b next: voice | `feature/ai-agents`                          |
+| 5   | Inbound calls                        | Not started                                                                                  | —                                            |
+| 6   | Appointments                         | Not started                                                                                  | —                                            |
+| 7   | CRM (HubSpot)                        | 🟡 Inbound done (connect, fetch contacts and leads); write-back and webhooks not started     | PR #9 (inbound)                              |
+| 8   | Usage, quotas, billing               | Not started                                                                                  | —                                            |
+| 9   | Notifications, OTP, Super Admin, MFA | Not started                                                                                  | —                                            |
+| 10  | Analytics and observability          | Not started                                                                                  | —                                            |
+| 11  | Deploy and hardening                 | Not started                                                                                  | —                                            |
 
 PRs merge in order: **#7 → #8 → #9 → Phase 3**. Each branch builds on the one before.
 
@@ -63,7 +63,9 @@ Work proceeds around them with fakes and fail-closed defaults.
 
 ## Next
 
-**Phase 4 — Calls and call history.** Phase 3 left these seams for it:
+**Phase 4b — live voice.** Phase 4a (ADR-022) built the AI Agent layer: definitions, the
+visual workflow builder, immutable versions pinned by campaigns and a conversation engine that
+runs in browser test chat. The same engine drives live calls next. Phase 3 left these seams:
 
 - **`VoiceProvider`** (`apps/api/src/campaigns/voice-provider.ts`): the Exotel adapter replaces
   `SimulatedVoiceProvider` and must implement `findCall(reference)` so crash reconciliation works

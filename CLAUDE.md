@@ -25,7 +25,10 @@ tokens, full + 15-min incremental sync of contacts, companies and HubSpot Leads)
 append-only consent ledgers, telecom identity and 140xx/1601xx caller numbers, campaigns with
 pre-launch check, job-driven dialling, retries, Emergency Stop and complaint breaker, against a
 **simulated** `VoiceProvider` and preference registry (refused in production); web `/app/campaigns`,
-`/app/compliance`, `/app/telecom`. Not built yet: real calls (Exotel), CRM write-back and webhooks,
+`/app/compliance`, `/app/telecom`. Phase 4a (ADR-022): AI Agents with a typed conversation workflow,
+visual builder (React Flow), deterministic qualification, platform guardrails, immutable versions
+pinned by campaigns, and browser test chat on a conversation engine with a **simulated** `LLMProvider`;
+web `/app/agents`. Dograh is a feature reference only. Not built yet: real calls (Exotel), CRM write-back and webhooks,
 billing, Super Admin UI (a few `/platform` APIs exist), MFA, SES/MSG91/S3 adapters. Requirement status: `docs/planning/requirements-matrix.md`. Holds (HubSpot app,
 AWS account — parked until all phases are done) and next steps: `docs/planning/status-holds-and-next.md`.
 

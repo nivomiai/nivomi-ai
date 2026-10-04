@@ -38,6 +38,9 @@ export const PERMISSION_LABELS: Record<Permission, { area: AccessArea; label: st
   'compliance.review': { area: 'Campaigns & compliance', label: 'Resolve reviews and complaints' },
   'telecom.read': { area: 'Campaigns & compliance', label: 'View telecom identity' },
   'telecom.manage': { area: 'Campaigns & compliance', label: 'Edit telecom identity' },
+  'dashboard.read': { area: 'Organization & team', label: 'See the dashboard' },
+  'agents.read': { area: 'Campaigns & compliance', label: 'View AI agents' },
+  'agents.manage': { area: 'Campaigns & compliance', label: 'Build and edit AI agents' },
 };
 
 /** Every permission, grouped by area in display order. */

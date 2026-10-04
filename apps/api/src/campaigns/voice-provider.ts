@@ -15,6 +15,8 @@ export interface PlaceCallRequest {
   readonly to: string;
   /** What the call must say up front (AI disclosure, recording notice; CR-10). */
   readonly obligations: ComplianceObligations | null;
+  /** The Agent Version that speaks on this call (FR-32). */
+  readonly agentVersionId: string | null;
 }
 
 export interface VoiceProvider {

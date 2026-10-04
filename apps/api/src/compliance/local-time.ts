@@ -84,6 +84,12 @@ export function windowStatus(
   return { open: false, opensAt: startOfMinute(at, clock.seconds, wait) };
 }
 
+/** The most recent local midnight at or before `at` (the start of "today" there). */
+export function startOfLocalDay(at: Date, timeZone: string): Date {
+  const clock = localClock(at, timeZone);
+  return startOfMinute(at, clock.seconds, -clock.minutes);
+}
+
 /** The next local midnight after `at`. */
 export function nextLocalMidnight(at: Date, timeZone: string): Date {
   const clock = localClock(at, timeZone);
