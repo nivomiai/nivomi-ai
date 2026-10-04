@@ -74,6 +74,17 @@ export const apiEnvSchema = z
     /** Preference registry (NCPR/DND) lookups. Simulated only; refused in production. */
     PREFERENCE_REGISTRY: z.enum(['simulated']).default('simulated'),
 
+    /**
+     * Sarvam AI subscription key. Powers the browser voice demo at /demo/voice (STT + TTS + LLM).
+     * Unset = demo falls back to a canned transcript and the browser Web Speech API.
+     */
+    SARVAM_API_KEY: z.string().optional(),
+    /**
+     * Chat model id used by the voice demo. Defaults to `sarvam-m`; swap to `sarvam-2b` or any
+     * other id the account can call if `sarvam-m` returns a model-not-found error.
+     */
+    SARVAM_CHAT_MODEL: z.string().default('sarvam-m'),
+
     /** HubSpot app credentials (ADR-012). Both or neither; unset = "Connect HubSpot" unavailable. */
     HUBSPOT_CLIENT_ID: z.string().optional(),
     HUBSPOT_CLIENT_SECRET: z.string().optional(),
