@@ -12,19 +12,19 @@ _Last updated: 2026-10-04._
 
 ## Phases
 
-| #   | Phase                                | Status                                                                                       | Where                                        |
-| --- | ------------------------------------ | -------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| 1   | Platform foundation                  | ✅ Done                                                                                      | PR #8                                        |
-| 2   | Contacts, leads, CSV/XLSX import     | ✅ Done                                                                                      | PR #9                                        |
-| 3   | Compliance engine and campaigns      | ✅ Done — rules are a **draft pending counsel**; the dialer is simulated                     | `feature/compliance-campaigns` (PR after #9) |
-| 4   | Calls and call history               | 🟡 4a done; 4b in progress — STT/TTS seams + VoiceSessionRunner + fakes landed; Exotel/Sarvam adapters deferred to adapter PRs when accounts open | `main` (session runner); adapter PRs TBD |
-| 5   | Inbound calls                        | Not started                                                                                  | —                                            |
-| 6   | Appointments                         | Not started                                                                                  | —                                            |
-| 7   | CRM (HubSpot)                        | 🟡 Inbound done (connect, fetch contacts and leads); write-back and webhooks not started     | PR #9 (inbound)                              |
-| 8   | Usage, quotas, billing               | Not started                                                                                  | —                                            |
-| 9   | Notifications, OTP, Super Admin, MFA | Not started                                                                                  | —                                            |
-| 10  | Analytics and observability          | Not started                                                                                  | —                                            |
-| 11  | Deploy and hardening                 | Not started                                                                                  | —                                            |
+| #   | Phase                                | Status                                                                                                                                            | Where                                        |
+| --- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| 1   | Platform foundation                  | ✅ Done                                                                                                                                           | PR #8                                        |
+| 2   | Contacts, leads, CSV/XLSX import     | ✅ Done                                                                                                                                           | PR #9                                        |
+| 3   | Compliance engine and campaigns      | ✅ Done — rules are a **draft pending counsel**; the dialer is simulated                                                                          | `feature/compliance-campaigns` (PR after #9) |
+| 4   | Calls and call history               | 🟡 4a done; 4b in progress — STT/TTS seams + VoiceSessionRunner + fakes landed; Exotel/Sarvam adapters deferred to adapter PRs when accounts open | `main` (session runner); adapter PRs TBD     |
+| 5   | Inbound calls + call_sessions        | 🔵 Designed — ADR-024 + story spec                                                                                                                | —                                            |
+| 6   | Appointments                         | 🔵 Designed — ADR-025 + story spec                                                                                                                | —                                            |
+| 7   | CRM write-back + webhooks            | 🟡 Inbound done; write-back designed — ADR-026 + story spec                                                                                       | PR #9 (inbound)                              |
+| 8   | Usage, quotas, billing               | 🔵 Designed — ADR-027 + story spec                                                                                                                | —                                            |
+| 9   | Notifications, OTP, Super Admin, MFA | 🔵 Designed — ADR-028 + story spec                                                                                                                | —                                            |
+| 10  | Analytics and observability          | 🔵 Designed — ADR-029 + story spec                                                                                                                | —                                            |
+| 11  | Deploy and hardening                 | 🔵 Designed — ADR-030 + story spec                                                                                                                | —                                            |
 
 PRs merge in order: **#7 → #8 → #9 → Phase 3**. Each branch builds on the one before.
 

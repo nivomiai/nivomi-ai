@@ -29,3 +29,10 @@ framework, data store, provider strategy, auth, tenancy model, billing semantics
 | [ADR-021](decisions/ADR-021-compliance-rule-data-and-eligibility-decisions.md) | Compliance rule data, eligibility decision record, campaign execution   | Accepted              |
 | [ADR-022](decisions/ADR-022-ai-agents-and-conversation-workflows.md)           | AI Agents, conversation workflows, versions and the conversation engine | Accepted              |
 | [ADR-023](decisions/ADR-023-live-voice-session.md)                             | Live voice session: STT/TTS seams and VoiceSessionRunner                | Accepted              |
+| [ADR-024](decisions/ADR-024-inbound-calls.md)                                  | Inbound calls, call_sessions table, handoff seam                        | Accepted              |
+| [ADR-025](decisions/ADR-025-appointments.md)                                   | Appointments — Nivomi domain, CalendarProvider seam                     | Accepted              |
+| [ADR-026](decisions/ADR-026-crm-writeback-and-webhooks.md)                     | HubSpot write-back projections and webhook lifecycle                    | Accepted              |
+| [ADR-027](decisions/ADR-027-usage-metering-and-billing.md)                     | Usage metering, plans, quotas and Razorpay billing                      | Accepted              |
+| [ADR-028](decisions/ADR-028-notifications-otp-superadmin-mfa.md)               | Notifications, OTP seam, Super Admin UI, MFA                            | Accepted              |
+| [ADR-029](decisions/ADR-029-analytics-and-observability.md)                    | OTel SDK, product analytics, PII redaction, dashboards                  | Accepted              |
+| [ADR-030](decisions/ADR-030-deploy-and-hardening.md)                           | Deploy and hardening: AWS adapters, infra, prod-readiness gate          | Accepted              |
