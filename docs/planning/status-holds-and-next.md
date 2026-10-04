@@ -8,7 +8,7 @@ of every phase. The detailed trackers are:
 - [TECH_DEBT](../TECH_DEBT.md) — known gaps;
 - [production-readiness-checklist](../operations/production-readiness-checklist.md) — the launch gate.
 
-_Last updated: 2026-10-04._
+_Last updated: 2026-10-05._
 
 ## Phases
 
@@ -18,13 +18,13 @@ _Last updated: 2026-10-04._
 | 2   | Contacts, leads, CSV/XLSX import     | ✅ Done                                                                                                                                           | PR #9                                        |
 | 3   | Compliance engine and campaigns      | ✅ Done — rules are a **draft pending counsel**; the dialer is simulated                                                                          | `feature/compliance-campaigns` (PR after #9) |
 | 4   | Calls and call history               | 🟡 4a done; 4b in progress — STT/TTS seams + VoiceSessionRunner + fakes landed; Exotel/Sarvam adapters deferred to adapter PRs when accounts open | `main` (session runner); adapter PRs TBD     |
-| 5   | Inbound calls + call_sessions        | 🔵 Designed — ADR-024 + story spec                                                                                                                | —                                            |
-| 6   | Appointments                         | 🔵 Designed — ADR-025 + story spec                                                                                                                | —                                            |
-| 7   | CRM write-back + webhooks            | 🟡 Inbound done; write-back designed — ADR-026 + story spec                                                                                       | PR #9 (inbound)                              |
-| 8   | Usage, quotas, billing               | 🔵 Designed — ADR-027 + story spec                                                                                                                | —                                            |
-| 9   | Notifications, OTP, Super Admin, MFA | 🔵 Designed — ADR-028 + story spec                                                                                                                | —                                            |
-| 10  | Analytics and observability          | 🔵 Designed — ADR-029 + story spec                                                                                                                | —                                            |
-| 11  | Deploy and hardening                 | 🔵 Designed — ADR-030 + story spec                                                                                                                | —                                            |
+| 5   | Inbound calls + call_sessions        | ✅ Shipped against fakes — ADR-024 + persisted transcripts + inbound bindings + /api/v1/calls                                                     | `main`                                       |
+| 6   | Appointments                         | ✅ Shipped against fakes — ADR-025 + CalendarProvider seam + appointment.book tool                                                                | `main`                                       |
+| 7   | CRM write-back + webhooks            | ✅ Shipped — ADR-026 + outbox + signed webhook; real HubSpot adapter deferred to hold                                                             | `main`                                       |
+| 8   | Usage, quotas, billing               | ✅ Shipped against fakes — ADR-027 + usage events + plans + quotas + PaymentProvider seam                                                         | `main`                                       |
+| 9   | Notifications, OTP, Super Admin, MFA | 🟡 Service layer shipped — ADR-028 + NotificationsService + OtpProvider seam + TOTP MFA; Super Admin UI still TECH_DEBT                           | `main`                                       |
+| 10  | Analytics and observability          | 🟡 Shipped — ADR-029 + @nivomi/observability + /api/v1/analytics; OTel SDK binding + dashboards TECH_DEBT                                         | `main`                                       |
+| 11  | Deploy and hardening                 | 🟡 Skeleton shipped — ADR-030 + Terraform modules + deploy.yml gated workflow; real apply after AWS hold lifts                                    | `main`                                       |
 
 PRs merge in order: **#7 → #8 → #9 → Phase 3**. Each branch builds on the one before.
 
