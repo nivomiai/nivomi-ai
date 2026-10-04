@@ -28,3 +28,4 @@ framework, data store, provider strategy, auth, tenancy model, billing semantics
 | [ADR-020](decisions/ADR-020-lead-ingestion-and-hubspot-inbound.md)             | Lead data model, file import, HubSpot inbound sync                      | Accepted              |
 | [ADR-021](decisions/ADR-021-compliance-rule-data-and-eligibility-decisions.md) | Compliance rule data, eligibility decision record, campaign execution   | Accepted              |
 | [ADR-022](decisions/ADR-022-ai-agents-and-conversation-workflows.md)           | AI Agents, conversation workflows, versions and the conversation engine | Accepted              |
+| [ADR-023](decisions/ADR-023-live-voice-session.md)                             | Live voice session: STT/TTS seams and VoiceSessionRunner                | Accepted              |

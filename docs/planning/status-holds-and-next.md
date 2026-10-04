@@ -8,7 +8,7 @@ of every phase. The detailed trackers are:
 - [TECH_DEBT](../TECH_DEBT.md) — known gaps;
 - [production-readiness-checklist](../operations/production-readiness-checklist.md) — the launch gate.
 
-_Last updated: 2026-09-27._
+_Last updated: 2026-10-04._
 
 ## Phases
 
@@ -17,7 +17,7 @@ _Last updated: 2026-09-27._
 | 1   | Platform foundation                  | ✅ Done                                                                                      | PR #8                                        |
 | 2   | Contacts, leads, CSV/XLSX import     | ✅ Done                                                                                      | PR #9                                        |
 | 3   | Compliance engine and campaigns      | ✅ Done — rules are a **draft pending counsel**; the dialer is simulated                     | `feature/compliance-campaigns` (PR after #9) |
-| 4   | Calls and call history               | 🟡 4a done: AI Agents, workflow builder, versions, test chat (simulated LLM); 4b next: voice | `feature/ai-agents`                          |
+| 4   | Calls and call history               | 🟡 4a done; 4b in progress — STT/TTS seams + VoiceSessionRunner + fakes landed; Exotel/Sarvam adapters deferred to adapter PRs when accounts open | `main` (session runner); adapter PRs TBD |
 | 5   | Inbound calls                        | Not started                                                                                  | —                                            |
 | 6   | Appointments                         | Not started                                                                                  | —                                            |
 | 7   | CRM (HubSpot)                        | 🟡 Inbound done (connect, fetch contacts and leads); write-back and webhooks not started     | PR #9 (inbound)                              |

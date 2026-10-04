@@ -38,7 +38,6 @@ const registerSchema = z.object({
   password: passwordInput,
 });
 const loginSchema = z.object({ email: emailSchema, password: passwordInput });
-const tokenSchema = z.object({ token: tokenInput });
 const forgotSchema = z.object({ email: emailSchema });
 const resetSchema = z.object({ token: tokenInput, password: passwordInput });
 const changeSchema = z.object({ currentPassword: passwordInput, newPassword: passwordInput });
