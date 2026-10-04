@@ -18,6 +18,8 @@ export default tseslint.config(
       // Vendored BMAD Method installation
       '_bmad/**',
       '.claude/**',
+      // Local scratch scripts (gitignored)
+      'tmp-drive/**',
     ],
   },
   js.configs.recommended,
