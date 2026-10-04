@@ -101,6 +101,7 @@ not yet verified may call it; everything else that is not public requires a veri
 | ------ | ----------------------------------------- | --------------------- | ------------------------------------------------------------ |
 | POST   | `/organizations`                          | signed in             | `{ name }` → `201` organization; caller becomes OWNER        |
 | GET    | `/organizations/current`                  | `organization.read`   | → `{ id, name, slug, status, role }`                         |
+| GET    | `/organizations/current/roles`            | `organization.read`   | → `{ items: [{ role, permissions, ownScoped }] }` (matrix)   |
 | GET    | `/organizations/current/members`          | `members.read`        | → `{ items: [{ id, userId, name, email, role, joinedAt }] }` |
 | PUT    | `/organizations/current/members/:id/role` | `members.update_role` | `{ role }` → `204`                                           |
 | DELETE | `/organizations/current/members/:id`      | `members.remove`      | → `204`                                                      |
