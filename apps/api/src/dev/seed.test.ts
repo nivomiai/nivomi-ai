@@ -91,7 +91,7 @@ describe('seedDevData', () => {
       .where(eq(users.id, adminId));
     await handle.db
       .update(organizationMembers)
-      .set({ role: 'VIEWER' })
+      .set({ role: 'INDV_USER' })
       .where(
         and(
           eq(organizationMembers.userId, adminId),
@@ -121,7 +121,7 @@ describe('seedDevData', () => {
           eq(organizationMembers.organizationId, demoId),
         ),
       );
-    expect(membership?.role).toBe('OWNER');
+    expect(membership?.role).toBe('ORGANIZATION');
     const [demo] = await handle.db.select().from(organizations).where(eq(organizations.id, demoId));
     expect(demo?.status).toBe('ACTIVE');
 

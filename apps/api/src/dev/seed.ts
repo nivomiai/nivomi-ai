@@ -117,9 +117,8 @@ async function seedCalling(
           and(eq(campaigns.organizationId, organizationId), eq(campaigns.name, spec.campaign.name)),
         );
       if (existing) return;
-      const ownerEmail = DEV_ORGANIZATIONS.find((o) => o.slug === slug)?.members.find(
-        (m) => m.role === 'OWNER',
-      )?.email;
+      // No sub-roles anymore: the first listed member of each dev tenant is treated as creator.
+      const ownerEmail = DEV_ORGANIZATIONS.find((o) => o.slug === slug)?.members[0]?.email;
       const ownerId = ownerEmail ? (userIds.get(ownerEmail) ?? null) : null;
       const [campaign] = await tx
         .insert(campaigns)
@@ -242,8 +241,9 @@ async function seedAccounts(
 
     const organizationIds = new Map<string, string>();
     for (const org of DEV_ORGANIZATIONS) {
-      const ownerEmail = org.members.find((m) => m.role === 'OWNER')?.email;
-      if (!ownerEmail) throw new Error(`seed organization ${org.slug} has no OWNER`);
+      // The first listed member of each dev tenant is recorded as the creator.
+      const ownerEmail = org.members[0]?.email;
+      if (!ownerEmail) throw new Error(`seed organization ${org.slug} has no members`);
       const ownerId = userId(ownerEmail);
 
       const [created] = await tx

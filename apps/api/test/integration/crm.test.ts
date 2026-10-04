@@ -279,7 +279,7 @@ describe('HubSpot connection and ingestion (FR-19, FR-84–FR-86, FR-137)', () =
     const state =
       new URL((started.body as { authorizeUrl: string }).authorizeUrl).searchParams.get('state') ??
       '';
-    const admin = await joinAs(t, o.client, 'ADMIN');
+    const admin = await joinAs(t, o.client, 'admin');
     const stolen = await admin.client
       .get('/api/v1/integrations/crm/hubspot/callback')
       .query({ code, state })
@@ -404,7 +404,7 @@ describe('HubSpot connection and ingestion (FR-19, FR-84–FR-86, FR-137)', () =
     await t.worker.drain();
     const revokedBefore = hubspot.revoked.length;
 
-    const manager = await joinAs(t, o.client, 'MANAGER');
+    const manager = await joinAs(t, o.client, 'manager');
     await manager.client
       .delete('/api/v1/integrations/crm')
       .set('Origin', ALLOWED_ORIGIN)
@@ -440,9 +440,9 @@ describe('HubSpot connection and ingestion (FR-19, FR-84–FR-86, FR-137)', () =
     expect((await status(b.client)).connection).toBeNull();
     await b.client.delete('/api/v1/integrations/crm').expect(404);
     await b.client.post('/api/v1/integrations/crm/sync').send({}).expect(404);
-    const agent = await joinAs(t, a.client, 'AGENT');
+    const agent = await joinAs(t, a.client, 'agent');
     await agent.client.get('/api/v1/integrations/crm').expect(403);
-    const manager = await joinAs(t, a.client, 'MANAGER');
+    const manager = await joinAs(t, a.client, 'manager');
     await manager.client.post('/api/v1/integrations/crm/hubspot/authorize').send({}).expect(403);
   });
 });

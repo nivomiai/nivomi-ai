@@ -446,8 +446,8 @@ describe('campaigns against the simulated dialer (FR-35–FR-43)', () => {
 
   it('pauses on Emergency Stop, refuses to resume until released, and audits both (FR-43)', async () => {
     const o = await callingOrg(t, admin, 'Stop Co');
-    const analyst = await joinAs(t, o.client, 'ANALYST');
-    const manager = await joinAs(t, o.client, 'MANAGER');
+    const analyst = await joinAs(t, o.client, 'analyst');
+    const manager = await joinAs(t, o.client, 'manager');
     for (let i = 0; i < 3; i += 1) {
       await addLead(o.client, { fullName: `Lead ${i}`, consentBasis: 'EXISTING_CUSTOMER' });
     }

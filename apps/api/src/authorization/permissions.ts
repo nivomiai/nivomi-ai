@@ -1,4 +1,4 @@
-import type { organizationRoles } from '@nivomi/database';
+import { organizationRoles } from '@nivomi/database';
 
 export type OrganizationRole = (typeof organizationRoles)[number];
 
@@ -10,7 +10,6 @@ export type Permission =
   | 'organization.read'
   | 'members.read'
   | 'members.invite'
-  | 'members.update_role'
   | 'members.remove'
   | 'audit.read'
   | 'leads.read'
@@ -29,96 +28,73 @@ export type Permission =
   | 'telecom.manage'
   | 'consent.manage';
 
-const ADMINISTRATION: readonly Permission[] = [
+/** Everything a tenant can see or do on its own data. All multi-member roles get this set. */
+const FULL_TENANT: readonly Permission[] = [
   'organization.read',
   'members.read',
-  'members.invite',
-  'members.update_role',
-  'members.remove',
   'audit.read',
-];
-
-const DATA_MANAGEMENT: readonly Permission[] = [
   'leads.read',
   'leads.write',
   'imports.manage',
   'suppression.manage',
   'integrations.read',
+  'integrations.manage',
   'integrations.sync',
-];
-
-/** Campaigns: create, start, pause; Emergency Stop (PRD §8.1). */
-const CAMPAIGNS: readonly Permission[] = [
   'campaigns.read',
   'campaigns.manage',
   'campaigns.emergency_stop',
   'compliance.read',
+  'compliance.review',
+  'telecom.read',
+  'telecom.manage',
   'consent.manage',
 ];
 
-/** Telecom Identity ✓; resolve REQUIRES_REVIEW and Complaint Records ✓ (OWNER, ADMIN only). */
-const COMPLIANCE_ADMINISTRATION: readonly Permission[] = [
-  'telecom.read',
-  'telecom.manage',
-  'compliance.review',
-];
+const MEMBERSHIP_MANAGEMENT: readonly Permission[] = ['members.invite', 'members.remove'];
 
-/** Role → permissions, from the PRD §8.1 permission matrix. Central; never checked ad hoc. */
+/**
+ * Role → permissions. Three account types; every member of an account shares the account's role.
+ *
+ * - INDV_USER: solo workspace from public signup. Full data access, but no multi-member admin.
+ * - ORGANIZATION: multi-user team account. Full data access + membership management.
+ * - CUSTOM_PLAN: multi-user enterprise/bespoke account. Same scope as ORGANIZATION.
+ */
 const ROLE_PERMISSIONS: Record<OrganizationRole, ReadonlySet<Permission>> = {
-  OWNER: new Set<Permission>([
-    ...ADMINISTRATION,
-    ...DATA_MANAGEMENT,
-    'integrations.manage',
-    ...CAMPAIGNS,
-    ...COMPLIANCE_ADMINISTRATION,
-  ]),
-  ADMIN: new Set<Permission>([
-    ...ADMINISTRATION,
-    ...DATA_MANAGEMENT,
-    'integrations.manage',
-    ...CAMPAIGNS,
-    ...COMPLIANCE_ADMINISTRATION,
-  ]),
-  // Leads: import, edit, Suppression List ✓; HubSpot R (plus running an ingest, FR-19).
-  // Campaigns ✓ and Emergency Stop ✓; Telecom Identity R; no review queue or complaints.
-  MANAGER: new Set<Permission>([
-    'organization.read',
-    'members.read',
-    ...DATA_MANAGEMENT,
-    ...CAMPAIGNS,
-    'telecom.read',
-  ]),
-  // Leads: own records only. No campaigns.
-  AGENT: new Set<Permission>(['organization.read', 'leads.read', 'leads.write']),
-  // Leads and campaigns: read-only.
-  ANALYST: new Set<Permission>([
-    'organization.read',
-    'leads.read',
-    'campaigns.read',
-    'compliance.read',
-  ]),
-  VIEWER: new Set<Permission>(['organization.read']),
-};
-
-/** Permissions a role holds only for records assigned to the Member ("own" in the matrix). */
-const OWN_SCOPED: Partial<Record<OrganizationRole, ReadonlySet<Permission>>> = {
-  AGENT: new Set<Permission>(['leads.read', 'leads.write']),
+  INDV_USER: new Set<Permission>(FULL_TENANT),
+  ORGANIZATION: new Set<Permission>([...FULL_TENANT, ...MEMBERSHIP_MANAGEMENT]),
+  CUSTOM_PLAN: new Set<Permission>([...FULL_TENANT, ...MEMBERSHIP_MANAGEMENT]),
 };
 
 export function roleHasPermission(role: OrganizationRole, permission: Permission): boolean {
   return ROLE_PERMISSIONS[role].has(permission);
 }
 
-/** True when `role` may use `permission` only on records assigned to the Member. */
-export function isOwnScoped(role: OrganizationRole, permission: Permission): boolean {
-  return OWN_SCOPED[role]?.has(permission) ?? false;
+/** Solo-account roles cannot invite or hold multiple members. */
+export function isMultiMemberRole(role: OrganizationRole): boolean {
+  return role === 'ORGANIZATION' || role === 'CUSTOM_PLAN';
 }
 
-/** Roles only an OWNER may grant (PRD FR-2). */
-export function isPrivilegedRole(role: OrganizationRole): boolean {
-  return role === 'OWNER' || role === 'ADMIN';
+/**
+ * Account types that only a platform Super Admin may provision. Public /signup creates
+ * INDV_USER accounts; everything else goes through the /platform admin.
+ */
+export function isPlatformProvisionedRole(role: OrganizationRole): boolean {
+  return role === 'ORGANIZATION' || role === 'CUSTOM_PLAN';
 }
 
 export function permissionsFor(role: OrganizationRole): Permission[] {
   return [...ROLE_PERMISSIONS[role]];
+}
+
+export interface RoleAccess {
+  readonly role: OrganizationRole;
+  readonly permissions: Permission[];
+}
+
+/** The whole matrix, in role order, so members can see what every role may do. */
+export function roleMatrix(): RoleAccess[] {
+  return organizationRoles.map((role) => ({
+    role,
+    permissions: permissionsFor(role),
+  }));
 }

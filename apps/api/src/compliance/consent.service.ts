@@ -11,7 +11,6 @@ import { and, desc, eq, or, type SQL } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { AuditService } from '../audit/audit.service.js';
 import type { TenantPrincipal } from '../auth/principal.js';
-import { isOwnScoped } from '../authorization/permissions.js';
 import { AppError } from '../common/errors.js';
 import type { ClientContext } from '../common/request-context.js';
 import { DATABASE } from '../database/database.module.js';
@@ -50,14 +49,12 @@ export class ConsentService {
   private async lead(
     tenant: TenantPrincipal,
     leadId: string,
-    permission: 'leads.read' | 'leads.write',
+    _permission: 'leads.read' | 'leads.write',
   ) {
     const conditions: SQL[] = [
       eq(leads.id, leadId),
       eq(leads.organizationId, tenant.membership.organizationId),
     ];
-    if (isOwnScoped(tenant.membership.role, permission))
-      conditions.push(eq(leads.ownerUserId, tenant.userId));
     const [row] = await this.db
       .select({ id: leads.id, contactId: contacts.id, phoneE164: contacts.phoneE164 })
       .from(leads)

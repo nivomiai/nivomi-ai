@@ -136,9 +136,10 @@ export function AuthFrame({ children }: { readonly children: ReactNode }) {
   return (
     <div className="hero-glow flex min-h-dvh flex-col">
       <header className="container-nv flex h-20 items-center">
-        <Link href="/" aria-label="Nivomi AI home" className="rounded-lg">
+        {/* The homepage is a static page, not a Next.js route: a full page load. */}
+        <a href="/" aria-label="Nivomi AI home" className="rounded-lg">
           <Logo />
-        </Link>
+        </a>
       </header>
       <main id="main" className="container-nv grid flex-1 place-items-center pb-20">
         {children}
@@ -208,7 +209,7 @@ export function RoleBadge({ role }: { readonly role: Role }) {
     <span
       className={cx(
         'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold',
-        role === 'OWNER' || role === 'ADMIN'
+        role === 'CUSTOM_PLAN'
           ? 'border-accent-tint bg-accent-soft text-accent'
           : 'border-line bg-soft text-ink-2',
       )}

@@ -44,11 +44,11 @@ export function SignupForm({
   if (sentTo) {
     return (
       <AuthCard
-        title="Check your email"
+        title="Account ready"
         intro={
           <>
-            If <strong className="text-ink">{sentTo}</strong> can be registered, we have sent a
-            verification link to it. The link expires in 24 hours.
+            Your account <strong className="text-ink">{sentTo}</strong> is set up. Sign in to
+            continue.
           </>
         }
       >
@@ -62,12 +62,24 @@ export function SignupForm({
         </div>
       </AuthCard>
     );
+    // Email verification disabled for now — original "Check your email" copy preserved below.
+    // return (
+    //   <AuthCard
+    //     title="Check your email"
+    //     intro={
+    //       <>
+    //         If <strong className="text-ink">{sentTo}</strong> can be registered, we have sent a
+    //         verification link to it. The link expires in 24 hours.
+    //       </>
+    //     }
+    //   >…</AuthCard>
+    // );
   }
 
   return (
     <AuthCard
       title="Create your account"
-      intro="Set up Nivomi for your team. You will verify your email next."
+      intro="Set up Nivomi for your team."
       footer={
         <>
           Already have an account? <TextLink href={loginHref}>Sign in</TextLink>

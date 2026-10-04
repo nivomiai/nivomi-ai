@@ -12,7 +12,6 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
-import { organizationRoles } from '@nivomi/database';
 import { z } from 'zod';
 import { AuditService } from '../audit/audit.service.js';
 import { emailSchema } from '../auth/auth.controller.js';
@@ -25,15 +24,14 @@ import {
   type Principal,
   type TenantPrincipal,
 } from '../auth/principal.js';
-import { permissionsFor } from '../authorization/permissions.js';
+import { permissionsFor, roleMatrix } from '../authorization/permissions.js';
 import { clientContext } from '../common/request-context.js';
 import { validate } from '../common/validation.js';
 import { OrganizationsService } from './organizations.service.js';
 
 const createSchema = z.object({ name: z.string().trim().min(2).max(100) });
 const switchSchema = z.object({ organizationId: z.uuid() });
-const roleSchema = z.object({ role: z.enum(organizationRoles) });
-const inviteSchema = z.object({ email: emailSchema, role: z.enum(organizationRoles) });
+const inviteSchema = z.object({ email: emailSchema });
 const acceptSchema = z.object({ token: z.string().min(20).max(200) });
 const auditQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),
@@ -54,6 +52,7 @@ export class MeController {
         email: principal.email,
         name: principal.name,
         emailVerified: principal.emailVerified,
+        isSuperAdmin: principal.isSuperAdmin,
       },
       activeOrganization: principal.membership
         ? {
@@ -107,23 +106,17 @@ export class OrganizationsController {
     return this.organizations.getActive(tenant);
   }
 
+  /** Role → permission matrix (not tenant data): every member may see what each role can do. */
+  @RequirePermission('organization.read')
+  @Get('current/roles')
+  roles() {
+    return { items: roleMatrix() };
+  }
+
   @RequirePermission('members.read')
   @Get('current/members')
   async members(@CurrentTenant() tenant: TenantPrincipal) {
     return { items: await this.organizations.listMembers(tenant) };
-  }
-
-  @RequirePermission('members.update_role')
-  @Put('current/members/:id/role')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async changeRole(
-    @CurrentTenant() tenant: TenantPrincipal,
-    @Param('id', new ParseUUIDPipe()) id: string,
-    @Body() body: unknown,
-    @Req() request: AuthenticatedRequest,
-  ): Promise<void> {
-    const { role } = validate(roleSchema, body);
-    await this.organizations.changeMemberRole(tenant, id, role, clientContext(request));
   }
 
   @RequirePermission('members.remove')

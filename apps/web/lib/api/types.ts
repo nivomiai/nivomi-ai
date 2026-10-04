@@ -1,13 +1,16 @@
 /** Response shapes of the Nivomi API (apps/api), kept in one place for the web app. */
 
-export const ROLES = ['OWNER', 'ADMIN', 'MANAGER', 'AGENT', 'ANALYST', 'VIEWER'] as const;
+/**
+ * Account roles. Public /signup creates INDV_USER; a Super Admin provisions ORGANIZATION or
+ * CUSTOM_PLAN accounts from /platform. The platform SUPER_ADMIN role is on `users.isSuperAdmin`.
+ */
+export const ROLES = ['INDV_USER', 'ORGANIZATION', 'CUSTOM_PLAN'] as const;
 export type Role = (typeof ROLES)[number];
 
 export type Permission =
   | 'organization.read'
   | 'members.read'
   | 'members.invite'
-  | 'members.update_role'
   | 'members.remove'
   | 'audit.read'
   | 'leads.read'
@@ -28,6 +31,53 @@ export type Permission =
 
 export type OrganizationStatus = 'PENDING_APPROVAL' | 'ACTIVE' | 'SUSPENDED' | 'CLOSED';
 
+export const ORGANIZATION_STATUS_LABELS: Record<OrganizationStatus, string> = {
+  PENDING_APPROVAL: 'Pending approval',
+  ACTIVE: 'Active',
+  SUSPENDED: 'Suspended',
+  CLOSED: 'Closed',
+};
+
+/** Rows from `GET /platform/organizations` (Super Admin console). */
+export interface PlatformOrganization {
+  id: string;
+  name: string;
+  slug: string;
+  status: OrganizationStatus;
+  memberCount: number;
+  createdAt: string;
+  createdBy: { id: string; email: string; name: string } | null;
+}
+
+/** Rows from `GET /platform/users` (Super Admin console). */
+export interface PlatformUser {
+  id: string;
+  email: string;
+  name: string;
+  isSuperAdmin: boolean;
+  emailVerifiedAt: string | null;
+  createdAt: string;
+  memberships: {
+    organizationId: string;
+    organizationName: string;
+    role: Role;
+  }[];
+}
+
+/** Rows from `GET /platform/audit-logs`. */
+export interface PlatformAuditItem {
+  id: string;
+  action: string;
+  organizationId: string | null;
+  actorUserId: string | null;
+  resourceType: string | null;
+  resourceId: string | null;
+  metadata: Record<string, unknown> | null;
+  ipAddress: string | null;
+  requestId: string | null;
+  createdAt: string;
+}
+
 export interface OrganizationSummary {
   id: string;
   name: string;
@@ -37,9 +87,15 @@ export interface OrganizationSummary {
 }
 
 export interface Me {
-  user: { id: string; email: string; name: string; emailVerified: boolean };
+  user: { id: string; email: string; name: string; emailVerified: boolean; isSuperAdmin: boolean };
   activeOrganization: { id: string; role: Role; permissions: Permission[] } | null;
   organizations: OrganizationSummary[];
+}
+
+/** `GET /organizations/current/roles`: the permission matrix the API enforces. */
+export interface RoleAccess {
+  role: Role;
+  permissions: Permission[];
 }
 
 export interface Member {
@@ -86,21 +142,15 @@ export interface Page<T> {
 }
 
 export const ROLE_LABELS: Record<Role, string> = {
-  OWNER: 'Owner',
-  ADMIN: 'Admin',
-  MANAGER: 'Manager',
-  AGENT: 'Agent',
-  ANALYST: 'Analyst',
-  VIEWER: 'Viewer',
+  INDV_USER: 'Individual',
+  ORGANIZATION: 'Organization',
+  CUSTOM_PLAN: 'Custom plan',
 };
 
 export const ROLE_DESCRIPTIONS: Record<Role, string> = {
-  OWNER: 'Full control, including billing and owners.',
-  ADMIN: 'Manages the team, settings and integrations.',
-  MANAGER: 'Runs campaigns and reviews calls.',
-  AGENT: 'Handles leads and callbacks assigned to them.',
-  ANALYST: 'Reads reports and call outcomes.',
-  VIEWER: 'Read-only access.',
+  INDV_USER: 'Solo workspace from the public sign-up flow.',
+  ORGANIZATION: 'Multi-user team account, provisioned by a platform admin.',
+  CUSTOM_PLAN: 'Enterprise or bespoke account, provisioned by a platform admin.',
 };
 
 // ── Leads (PRD §8.3–8.4) ────────────────────────────────────────────────

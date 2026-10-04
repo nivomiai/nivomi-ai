@@ -128,8 +128,8 @@ describe('ComplianceEngine, eligibility, telecom identity and consent (Phase 3)'
 
     it('lets MANAGER read but not change it, and hides it from AGENT', async () => {
       const o = await callingOrg(t, null, 'Roles Co');
-      const manager = await joinAs(t, o.client, 'MANAGER');
-      const agent = await joinAs(t, o.client, 'AGENT');
+      const manager = await joinAs(t, o.client, 'manager');
+      const agent = await joinAs(t, o.client, 'agent');
       await manager.client.get('/api/v1/telecom-identity').expect(200);
       await manager.client.put('/api/v1/telecom-identity').send({ legalName: 'X' }).expect(403);
       await agent.client.get('/api/v1/telecom-identity').expect(403);
@@ -350,7 +350,7 @@ describe('ComplianceEngine, eligibility, telecom identity and consent (Phase 3)'
   describe('REQUIRES_REVIEW queue (FR-50)', () => {
     it('queues ambiguous consent at dial time and lets OWNER/ADMIN resolve it', async () => {
       const o = await callingOrg(t, admin, 'Review Co');
-      const manager = await joinAs(t, o.client, 'MANAGER');
+      const manager = await joinAs(t, o.client, 'manager');
       const undated = await addLead(o.client, { fullName: 'Undated', consentBasis: 'INQUIRY' });
       const excluded = await addLead(o.client, {
         fullName: 'To Exclude',
@@ -403,7 +403,7 @@ describe('ComplianceEngine, eligibility, telecom identity and consent (Phase 3)'
   describe('complaint breaker (FR-49, FR-13)', () => {
     it('trips at two complaints, pauses the number and campaigns, and needs ADMIN + Super Admin to clear', async () => {
       const o = await callingOrg(t, admin, 'Breaker Co');
-      const manager = await joinAs(t, o.client, 'MANAGER');
+      const manager = await joinAs(t, o.client, 'manager');
       await addLead(o.client, { fullName: 'Ready', consentBasis: 'EXISTING_CUSTOMER' });
       const id = await createCampaign(o.client, o.callerNumberId, { callCategory: 'PROMOTIONAL' });
       await prelaunch(t, o.client, id);
@@ -509,8 +509,8 @@ describe('ComplianceEngine, eligibility, telecom identity and consent (Phase 3)'
 
     it('scopes campaign permissions by role (PRD §8.1)', async () => {
       const o = await callingOrg(t, admin, 'Perms Co');
-      const analyst = await joinAs(t, o.client, 'ANALYST');
-      const agent = await joinAs(t, o.client, 'AGENT');
+      const analyst = await joinAs(t, o.client, 'analyst');
+      const agent = await joinAs(t, o.client, 'agent');
       const id = await createCampaign(o.client, o.callerNumberId);
       await analyst.client.get(`/api/v1/campaigns/${id}`).expect(200);
       await analyst.client.post(`/api/v1/campaigns/${id}/prelaunch-check`).expect(403);

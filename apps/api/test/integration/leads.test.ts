@@ -170,9 +170,9 @@ describe('leads, suppression and review queue', () => {
   describe('role-based access (PRD §8.1)', () => {
     it('limits AGENTs to their own leads and ANALYSTs to reading', async () => {
       const o = await owner(t);
-      const agent = await joinAs(t, o.client, 'AGENT');
-      const analyst = await joinAs(t, o.client, 'ANALYST');
-      const viewer = await joinAs(t, o.client, 'VIEWER');
+      const agent = await joinAs(t, o.client, 'agent');
+      const analyst = await joinAs(t, o.client, 'analyst');
+      const viewer = await joinAs(t, o.client, 'viewer');
 
       const ownersLead = await createLead(o.client, {
         fullName: 'Owner Lead',
