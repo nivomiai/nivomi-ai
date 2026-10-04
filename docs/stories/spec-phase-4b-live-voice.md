@@ -40,16 +40,16 @@ table and extending `call_outcome` to carry INTERESTED / CALLBACK_REQUESTED — 
 
 ## Significant-feature questions (CLAUDE.md)
 
-| Question                 | Answer                                                                                                                                                                                            |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Data owner and tenant    | A live call reads tenant data (Agent Version pinned by the campaign, compliance decision for the attempt) and writes to tenant-owned `call_attempts`. No new tables in this phase.                 |
-| Source of truth          | The `call_attempts` row (Phase 3) is the authoritative call record. The transcript and the richer `conversationOutcome` live only in memory for 4b; Phase 5 persists them.                        |
-| Authorization and audit  | No new permissions. Emergency Stop (`campaigns.emergency_stop`) still ends live calls through `VoiceProvider.endCall`; the runner's `close('emergency_stop')` is driven by the campaign runner.    |
-| Provider failure         | STT or TTS failure during a call closes the session with `PROVIDER_ERROR`, feeding `CallOutcomeService.apply`. The engine never regresses: a provider failure for one call never breaks another.  |
-| Duplicate delivery       | The runner is per-call: only one STT stream is open at any time; `endCallerTurn` is idempotent after the first call (returns without advancing). Provider status callbacks remain idempotent on providerCallId. |
+| Question                 | Answer                                                                                                                                                                                                                         |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Data owner and tenant    | A live call reads tenant data (Agent Version pinned by the campaign, compliance decision for the attempt) and writes to tenant-owned `call_attempts`. No new tables in this phase.                                             |
+| Source of truth          | The `call_attempts` row (Phase 3) is the authoritative call record. The transcript and the richer `conversationOutcome` live only in memory for 4b; Phase 5 persists them.                                                     |
+| Authorization and audit  | No new permissions. Emergency Stop (`campaigns.emergency_stop`) still ends live calls through `VoiceProvider.endCall`; the runner's `close('emergency_stop')` is driven by the campaign runner.                                |
+| Provider failure         | STT or TTS failure during a call closes the session with `PROVIDER_ERROR`, feeding `CallOutcomeService.apply`. The engine never regresses: a provider failure for one call never breaks another.                               |
+| Duplicate delivery       | The runner is per-call: only one STT stream is open at any time; `endCallerTurn` is idempotent after the first call (returns without advancing). Provider status callbacks remain idempotent on providerCallId.                |
 | Worker crash / DB outage | A crashed worker leaves the attempt `DIALING`; reconciliation (ADR-021 §5) finds the provider's status via `VoiceProvider.findCall`. The transcript is lost for 4b; this is acceptable (not yet audited) and fixed in Phase 5. |
-| Usage and cost           | The STT final event carries `audioSeconds`; TTS requests name the agent version. The runner sums LLM tokens across turns and returns them in `VoiceSessionResult.usage` for Phase 8 metering.      |
-| 100× scale               | Each live call is one worker process holding one STT stream + one TTS stream + one engine state (tens of KB). The campaign-runner's concurrency cap applies.                                      |
+| Usage and cost           | The STT final event carries `audioSeconds`; TTS requests name the agent version. The runner sums LLM tokens across turns and returns them in `VoiceSessionResult.usage` for Phase 8 metering.                                  |
+| 100× scale               | Each live call is one worker process holding one STT stream + one TTS stream + one engine state (tens of KB). The campaign-runner's concurrency cap applies.                                                                   |
 
 ## Acceptance (this slice)
 

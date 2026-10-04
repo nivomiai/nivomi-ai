@@ -1,13 +1,7 @@
 'use client';
 
 import { useSession } from '@/lib/app/session';
-import {
-  Badge,
-  EmptyState,
-  Notice,
-  PageHeader,
-  Panel,
-} from '../ui';
+import { Badge, EmptyState, Notice, PageHeader, Panel } from '../ui';
 
 const PLAN_OPTIONS = ['Starter', 'Growth', 'Business', 'Enterprise'] as const;
 
@@ -106,9 +100,7 @@ export function PlatformCustomisation() {
               <span
                 aria-hidden="true"
                 className={`inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors ${
-                  flag.enabled
-                    ? 'border-accent bg-accent/80'
-                    : 'border-line bg-soft'
+                  flag.enabled ? 'border-accent bg-accent/80' : 'border-line bg-soft'
                 }`}
               >
                 <span
@@ -131,7 +123,9 @@ export function PlatformCustomisation() {
             </div>
           </div>
           <div>
-            <p className="text-xs font-bold tracking-[0.12em] text-muted uppercase">Accent colour</p>
+            <p className="text-xs font-bold tracking-[0.12em] text-muted uppercase">
+              Accent colour
+            </p>
             <div className="mt-2 grid grid-cols-6 gap-2">
               {['#CC007E', '#6D4BD8', '#0F8A4A', '#1D4ED8', '#B45309', '#111827'].map((hex) => (
                 <span

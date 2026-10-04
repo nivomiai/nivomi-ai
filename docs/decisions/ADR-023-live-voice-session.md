@@ -20,10 +20,10 @@ the design, the seams and the fakes now, so turning the real services on later i
 Business logic depends on interfaces; the Sarvam adapter replaces the simulated one once
 credentials land.
 
-| Seam          | Shape                                                     |
-| ------------- | --------------------------------------------------------- |
+| Seam          | Shape                                                                                                                          |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | `STTProvider` | `openStream({languageHint})` → `SttStream` with `push`/`end`/`cancel` and an async-iterable of partials and a final transcript |
-| `TTSProvider` | `speak({text, language, voice, agentVersionId})` → `TtsStream` of PCM chunks, cancellable on barge-in |
+| `TTSProvider` | `speak({text, language, voice, agentVersionId})` → `TtsStream` of PCM chunks, cancellable on barge-in                          |
 
 Both are **streaming** by contract (ADR-011 §Streaming pipeline). Each is initialised from
 `ApiEnv` and refused in production unless the real adapter is configured (ADR-006 fail-fast).
@@ -56,11 +56,11 @@ Lifecycle:
 
 The engine's `ConversationOutcome` is richer than the telephony `CallOutcome` enum:
 
-| ConversationOutcome                           | CallOutcome (now)  | Note                                                           |
-| --------------------------------------------- | ------------------ | -------------------------------------------------------------- |
-| OPTED_OUT                                     | OPTED_OUT          | Triggers suppression + consent revocation in CallOutcomeService |
-| NOT_INTERESTED                                | NOT_INTERESTED     | —                                                              |
-| INTERESTED, CALLBACK_REQUESTED, COMPLETED, TRANSFERRED, INCOMPLETE | CONNECTED | Dialled and reached a human; richer outcome persisted on the planned `call_transcripts` row (Phase 5) |
+| ConversationOutcome                                                | CallOutcome (now) | Note                                                                                                  |
+| ------------------------------------------------------------------ | ----------------- | ----------------------------------------------------------------------------------------------------- |
+| OPTED_OUT                                                          | OPTED_OUT         | Triggers suppression + consent revocation in CallOutcomeService                                       |
+| NOT_INTERESTED                                                     | NOT_INTERESTED    | —                                                                                                     |
+| INTERESTED, CALLBACK_REQUESTED, COMPLETED, TRANSFERRED, INCOMPLETE | CONNECTED         | Dialled and reached a human; richer outcome persisted on the planned `call_transcripts` row (Phase 5) |
 
 Any `close(reason: 'provider_failure')` returns `PROVIDER_ERROR`, regardless of engine state.
 
@@ -88,7 +88,7 @@ lands with the Exotel account because NCPR access often comes through the teleph
 ## Consequences
 
 - Live voice work can proceed against fakes end to end: `VoiceSessionRunner` + `SimulatedSTTProvider`
-  + `SimulatedTTSProvider` + `SimulatedLLMProvider` run a scripted call in a unit test.
+  - `SimulatedTTSProvider` + `SimulatedLLMProvider` run a scripted call in a unit test.
 - The runner is where every per-call quality concern lands: silence/hangup detection,
   barge-in, usage accounting, and the final CallOutcome mapping.
 - `TECH_DEBT`:

@@ -73,7 +73,10 @@ describe('VoiceSessionRunner', () => {
     const result = await runner.close('hangup');
     expect(result.outcome).toBe('OPTED_OUT');
     // the transcript carries the opt-out acknowledgement so audit review can find it
-    const spoken = result.transcript.filter((t) => t.role === 'agent').map((t) => t.text).join('\n');
+    const spoken = result.transcript
+      .filter((t) => t.role === 'agent')
+      .map((t) => t.text)
+      .join('\n');
     expect(spoken).toMatch(/not call you again/i);
   });
 

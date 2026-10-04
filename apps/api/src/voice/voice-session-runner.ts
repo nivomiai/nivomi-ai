@@ -153,7 +153,9 @@ export class VoiceSessionRunner implements VoiceSession {
     if (!this.closed) this.openSttStream();
   }
 
-  async close(reason: 'hangup' | 'provider_failure' | 'emergency_stop'): Promise<VoiceSessionResult> {
+  async close(
+    reason: 'hangup' | 'provider_failure' | 'emergency_stop',
+  ): Promise<VoiceSessionResult> {
     if (this.closed) return this.buildResult(reason);
     this.closed = true;
     if (this.currentTts) {
@@ -168,7 +170,9 @@ export class VoiceSessionRunner implements VoiceSession {
     return this.buildResult(reason);
   }
 
-  private buildResult(reason: 'hangup' | 'provider_failure' | 'emergency_stop'): VoiceSessionResult {
+  private buildResult(
+    reason: 'hangup' | 'provider_failure' | 'emergency_stop',
+  ): VoiceSessionResult {
     return {
       outcome: this.outcomeAtClose(reason),
       conversationOutcome: this.state?.outcome ?? null,
@@ -211,7 +215,9 @@ export class VoiceSessionRunner implements VoiceSession {
 
   private openSttStream(): void {
     if (this.closed) return;
-    this.sttStream = this.stt.openStream(this.sttLanguage ? { languageHint: this.sttLanguage } : {});
+    this.sttStream = this.stt.openStream(
+      this.sttLanguage ? { languageHint: this.sttLanguage } : {},
+    );
   }
 
   /**

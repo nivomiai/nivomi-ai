@@ -204,7 +204,12 @@ export class PlatformOrganizationsService {
         context,
         tx,
       );
-      return { id: organization.id, name: organization.name, slug: organization.slug, role: input.role };
+      return {
+        id: organization.id,
+        name: organization.name,
+        slug: organization.slug,
+        role: input.role,
+      };
     });
   }
 

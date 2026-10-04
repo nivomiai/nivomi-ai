@@ -92,12 +92,7 @@ export function PlatformUsers() {
       ) : (
         <div className="grid gap-3">
           {(page.data?.items ?? []).map((user) => (
-            <UserRow
-              key={user.id}
-              user={user}
-              currentUserId={me.user.id}
-              onChanged={page.reload}
-            />
+            <UserRow key={user.id} user={user} currentUserId={me.user.id} onChanged={page.reload} />
           ))}
         </div>
       )}

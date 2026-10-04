@@ -133,14 +133,8 @@ describe('organizations, account roles and tenant isolation', () => {
     it('rejects duplicate open invitations and existing members', async () => {
       const o = await owner(t, 'Dedup', 'ORGANIZATION');
       const email = uniqueEmail('dup');
-      await o.client
-        .post('/api/v1/organizations/current/invitations')
-        .send({ email })
-        .expect(201);
-      await o.client
-        .post('/api/v1/organizations/current/invitations')
-        .send({ email })
-        .expect(409);
+      await o.client.post('/api/v1/organizations/current/invitations').send({ email }).expect(201);
+      await o.client.post('/api/v1/organizations/current/invitations').send({ email }).expect(409);
       await o.client
         .post('/api/v1/organizations/current/invitations')
         .send({ email: o.email })
