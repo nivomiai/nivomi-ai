@@ -19,11 +19,12 @@ describe('authorization/permissions', () => {
     }
   });
 
-  it('every account role can see the dashboard and build agents', () => {
+  it('every account role can see the dashboard, build agents and read call history', () => {
     for (const role of ['INDV_USER', 'ORGANIZATION', 'CUSTOM_PLAN'] as const) {
       expect(roleHasPermission(role, 'dashboard.read')).toBe(true);
       expect(roleHasPermission(role, 'agents.read')).toBe(true);
       expect(roleHasPermission(role, 'agents.manage')).toBe(true);
+      expect(roleHasPermission(role, 'calls.read')).toBe(true);
     }
   });
 

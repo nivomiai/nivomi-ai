@@ -3,6 +3,7 @@ import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
 import { AgentsModule } from './agents/agents.module.js';
 import { AuthController } from './auth/auth.controller.js';
+import { CallsModule } from './calls/calls.module.js';
 import { CampaignsModule } from './campaigns/campaigns.module.js';
 import { ComplianceModule } from './compliance/compliance.module.js';
 import { AuthEmailJobs } from './auth/auth.jobs.js';
@@ -46,6 +47,7 @@ export class AppModule {
         ComplianceModule,
         AgentsModule,
         CampaignsModule,
+        CallsModule,
         DashboardModule,
         DemoModule,
       ],

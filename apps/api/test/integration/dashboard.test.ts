@@ -138,29 +138,24 @@ describe('operations dashboard and call queue', () => {
     );
   });
 
-  it('scopes by role: every role sees aggregates, AGENTs only their own leads', async () => {
+  it('every account member sees the same tenant-wide dashboard aggregates and call queue', async () => {
     const o = await callingOrg(t, admin, 'Scoped Dashboard Co');
-    const viewer = await joinAs(t, o.client, 'VIEWER');
-    const analyst = await joinAs(t, o.client, 'ANALYST');
-    const agent = await joinAs(t, o.client, 'AGENT');
+    const second = await joinAs(t, o.client, 'second-member');
     await addLead(o.client, { fullName: 'Team lead one', consentBasis: 'EXISTING_CUSTOMER' });
     await addLead(o.client, { fullName: 'Team lead two', consentBasis: 'EXISTING_CUSTOMER' });
-    await addLead(agent.client, {
-      fullName: 'Agent’s own lead',
+    await addLead(second.client, {
+      fullName: 'Second member’s lead',
       consentAt: iso(DAY),
       consentBasis: 'INQUIRY',
     });
 
-    const viewerView = (await viewer.client.get('/api/v1/dashboard').expect(200)).body as Dashboard;
-    expect(viewerView.leads.total).toBe(3);
-    expect(viewerView.attention).toEqual([]); // VIEWER cannot see campaigns
-    await viewer.client.get('/api/v1/call-queue').expect(403);
-    await analyst.client.get('/api/v1/call-queue').expect(200);
-
-    const agentView = (await agent.client.get('/api/v1/dashboard').expect(200)).body as Dashboard;
-    expect(agentView.leads.total).toBe(1);
-    expect(agentView.campaigns).toEqual([]);
-    await agent.client.get('/api/v1/call-queue').expect(403);
+    // 3-tier RBAC (post-b22063a): every member of the account shares its role; the dashboard
+    // and call-queue views are tenant-scoped, not member-scoped. Cross-tenant isolation is
+    // tested in `never counts another organization's calls or leads` below.
+    const secondView = (await second.client.get('/api/v1/dashboard').expect(200))
+      .body as Dashboard;
+    expect(secondView.leads.total).toBe(3);
+    await second.client.get('/api/v1/call-queue').expect(200);
   });
 
   it('never counts another organization’s calls or leads', async () => {

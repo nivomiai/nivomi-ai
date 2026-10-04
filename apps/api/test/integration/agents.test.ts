@@ -60,14 +60,12 @@ describe('AI agents, versions and test chat (FR-26–FR-32, ADR-022)', () => {
   const getAgent = async (client: Browser, id: string) =>
     (await client.get(`/api/v1/agents/${id}`).expect(200)).body as AgentBody;
 
-  it('creates a valid starter agent named after the organization, and scopes access by role', async () => {
+  it('creates a valid starter agent named after the organization; any member can read, create and publish', async () => {
     const o = await owner(t, 'Harbour Homes');
-    const manager = await joinAs(t, o.client, 'MANAGER');
-    const analyst = await joinAs(t, o.client, 'ANALYST');
-    const agent = await joinAs(t, o.client, 'AGENT');
+    const member = await joinAs(t, o.client, 'member');
 
-    const id = await createAgent(manager.client);
-    const body = await getAgent(analyst.client, id);
+    const id = await createAgent(o.client);
+    const body = await getAgent(member.client, id);
     expect(body).toMatchObject({
       status: 'DRAFT',
       latestVersion: 0,
@@ -76,13 +74,14 @@ describe('AI agents, versions and test chat (FR-26–FR-32, ADR-022)', () => {
     });
     expect(JSON.stringify(body.definition)).toContain('Harbour Homes');
 
-    await analyst.client
+    // 3-tier RBAC (post-b22063a): every member of the account shares its role; there is no
+    // per-member allow/deny inside the tenant. These assertions pin the current model's
+    // behaviour; cross-tenant isolation is tested elsewhere.
+    await member.client
       .post('/api/v1/agents')
-      .send({ name: 'x', callCategory: 'SERVICE' })
-      .expect(403);
-    await analyst.client.post(`/api/v1/agents/${id}/publish`).expect(403);
-    await agent.client.get('/api/v1/agents').expect(403);
-    const tools = await analyst.client.get('/api/v1/agents/tools').expect(200);
+      .send({ name: 'Secondary', callCategory: 'SERVICE' })
+      .expect(201);
+    const tools = await member.client.get('/api/v1/agents/tools').expect(200);
     expect((tools.body as { items: { name: string }[] }).items.map((i) => i.name)).toContain(
       'handoff.request',
     );

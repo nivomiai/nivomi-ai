@@ -1,4 +1,5 @@
 export * from './agents.js';
+export * from './calls.js';
 export * from './campaigns.js';
 export * from './compliance.js';
 export * from './crm.js';
