@@ -45,9 +45,7 @@ describe('providerCall', () => {
   it('records the error and rethrows on failure', async () => {
     const t = new RecordingTelemetry({ serviceName: 'test', environment: 'test' });
     await expect(
-      providerCall(t, 'razorpay', 'checkout', {}, () =>
-        Promise.reject(new Error('rp down')),
-      ),
+      providerCall(t, 'razorpay', 'checkout', {}, () => Promise.reject(new Error('rp down'))),
     ).rejects.toThrow('rp down');
     expect(t.spans[0]?.error).toBe('rp down');
   });

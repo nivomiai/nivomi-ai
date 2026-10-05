@@ -150,7 +150,10 @@ export class CallSessionsService {
     };
   }
 
-  async get(principal: TenantPrincipal, id: string): Promise<{
+  async get(
+    principal: TenantPrincipal,
+    id: string,
+  ): Promise<{
     id: string;
     direction: CallDirection;
     fromE164: string;
@@ -160,7 +163,12 @@ export class CallSessionsService {
     durationSeconds: number;
     telephonyOutcome: string | null;
     conversationOutcome: ConversationOutcomePersisted | null;
-    transcript: ReadonlyArray<{ role: 'agent' | 'caller'; text: string; nodeId?: string; atMs?: number }>;
+    transcript: ReadonlyArray<{
+      role: 'agent' | 'caller';
+      text: string;
+      nodeId?: string;
+      atMs?: number;
+    }>;
     qualification: Record<string, unknown> | null;
     usage: { inputTokens: number; outputTokens: number; audioSeconds: number };
   } | null> {

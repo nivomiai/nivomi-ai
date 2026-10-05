@@ -56,8 +56,12 @@ describe('calls — call sessions persistence and listing (ADR-024, Phase 5)', (
     const other = await callingOrg(t, admin, 'Calls Org B');
     const svc = t.app.get(CallSessionsService);
 
-    const a1 = await svc.persist(session({ organizationId: org.organizationId, providerCallId: 'sim-a1' }));
-    const a1Replay = await svc.persist(session({ organizationId: org.organizationId, providerCallId: 'sim-a1' }));
+    const a1 = await svc.persist(
+      session({ organizationId: org.organizationId, providerCallId: 'sim-a1' }),
+    );
+    const a1Replay = await svc.persist(
+      session({ organizationId: org.organizationId, providerCallId: 'sim-a1' }),
+    );
     expect(a1.id).toBe(a1Replay.id);
     expect(a1.created).toBe(true);
     expect(a1Replay.created).toBe(false);

@@ -22,9 +22,7 @@ export class BillingService {
     private readonly meter: UsageMeter,
   ) {}
 
-  async currentPlan(
-    principal: TenantPrincipal,
-  ): Promise<null | {
+  async currentPlan(principal: TenantPrincipal): Promise<null | {
     id: string;
     code: string;
     name: string;
@@ -141,9 +139,7 @@ export class BillingService {
         total: sql<number>`COALESCE(SUM(quantity), 0)::bigint`,
       })
       .from(sql`usage_events`)
-      .where(
-        sql`organization_id = ${organizationId} AND period_year_month = ${periodYearMonth}`,
-      )
+      .where(sql`organization_id = ${organizationId} AND period_year_month = ${periodYearMonth}`)
       .groupBy(sql`kind`);
 
     const lineItems: Array<{ description: string; quantity: number; unit: string; paise: number }> =

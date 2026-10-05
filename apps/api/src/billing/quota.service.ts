@@ -1,10 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import {
-  organizationPlans,
-  plans,
-  type Database,
-  type UsageEventKind,
-} from '@nivomi/database';
+import { organizationPlans, plans, type Database, type UsageEventKind } from '@nivomi/database';
 import { and, eq } from 'drizzle-orm';
 import { DATABASE } from '../database/database.module.js';
 import { UsageMeter } from './usage-meter.service.js';
@@ -39,8 +34,7 @@ export class QuotaService {
     const projected = usage + Math.max(0, projectedAdditional);
     if (limit === null) return { kind: 'ALLOWED', usage, limit: null };
     if (projected >= limit) return { kind: 'OVER_QUOTA', usage, limit };
-    if (projected >= limit * QuotaService.WARN_FRACTION)
-      return { kind: 'WARN', usage, limit };
+    if (projected >= limit * QuotaService.WARN_FRACTION) return { kind: 'WARN', usage, limit };
     return { kind: 'ALLOWED', usage, limit };
   }
 

@@ -1,9 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import {
-  crmSyncJobs,
-  type CrmSyncJobKind,
-  type Database,
-} from '@nivomi/database';
+import { crmSyncJobs, type CrmSyncJobKind, type Database } from '@nivomi/database';
 import { and, eq } from 'drizzle-orm';
 import { createHash } from 'node:crypto';
 import { DATABASE } from '../database/database.module.js';
@@ -49,7 +45,9 @@ export type WritebackProjection =
   | { kind: 'PUSH_APPOINTMENT'; entityId: string; payload: AppointmentProjection };
 
 const hashOf = (p: Record<string, unknown>) =>
-  createHash('sha256').update(JSON.stringify(sortKeys(p))).digest('hex');
+  createHash('sha256')
+    .update(JSON.stringify(sortKeys(p)))
+    .digest('hex');
 
 function sortKeys(v: unknown): unknown {
   if (Array.isArray(v)) return v.map(sortKeys);
@@ -104,12 +102,14 @@ export class CrmWritebackService {
     return { id: existing.id, created: false };
   }
 
-  pending(organizationId: string): Promise<Array<{
-    id: string;
-    kind: CrmSyncJobKind;
-    entityId: string;
-    payload: Record<string, unknown>;
-  }>> {
+  pending(organizationId: string): Promise<
+    Array<{
+      id: string;
+      kind: CrmSyncJobKind;
+      entityId: string;
+      payload: Record<string, unknown>;
+    }>
+  > {
     return this.db
       .select({
         id: crmSyncJobs.id,
@@ -119,10 +119,7 @@ export class CrmWritebackService {
       })
       .from(crmSyncJobs)
       .where(
-        and(
-          eq(crmSyncJobs.organizationId, organizationId),
-          eq(crmSyncJobs.status, 'PENDING'),
-        ),
+        and(eq(crmSyncJobs.organizationId, organizationId), eq(crmSyncJobs.status, 'PENDING')),
       );
   }
 }

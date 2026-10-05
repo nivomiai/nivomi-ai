@@ -13,11 +13,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { z } from 'zod';
-import {
-  CurrentTenant,
-  RequirePermission,
-  type TenantPrincipal,
-} from '../auth/principal.js';
+import { CurrentTenant, RequirePermission, type TenantPrincipal } from '../auth/principal.js';
 import { validate } from '../common/validation.js';
 import { AppointmentsService } from './appointments.service.js';
 
@@ -97,10 +93,7 @@ export class AppointmentsController {
   @RequirePermission('appointments.manage')
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async cancel(
-    @CurrentTenant() tenant: TenantPrincipal,
-    @Param('id', ParseUUIDPipe) id: string,
-  ) {
+  async cancel(@CurrentTenant() tenant: TenantPrincipal, @Param('id', ParseUUIDPipe) id: string) {
     await this.svc.cancel(tenant, id);
   }
 }

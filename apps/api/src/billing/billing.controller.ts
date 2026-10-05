@@ -1,9 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
-import {
-  CurrentTenant,
-  RequirePermission,
-  type TenantPrincipal,
-} from '../auth/principal.js';
+import { CurrentTenant, RequirePermission, type TenantPrincipal } from '../auth/principal.js';
 import { BillingService } from './billing.service.js';
 
 /** Customer-facing billing (ADR-027). Plan + usage + invoices for the active tenant. */

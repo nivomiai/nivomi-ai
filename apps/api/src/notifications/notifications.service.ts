@@ -93,8 +93,6 @@ export class NotificationsService {
       })
       .onConflictDoNothing()
       .returning({ id: notificationDispatches.id });
-    return row
-      ? { dispatched: true, dispatchId: row.id }
-      : { dispatched: false, dispatchId: null };
+    return row ? { dispatched: true, dispatchId: row.id } : { dispatched: false, dispatchId: null };
   }
 }

@@ -17,12 +17,7 @@ export const notificationChannels = ['EMAIL', 'SMS', 'IN_APP'] as const;
 export const notificationChannel = pgEnum('notification_channel', notificationChannels);
 export type NotificationChannel = (typeof notificationChannels)[number];
 
-export const notificationAudiences = [
-  'OWNERS',
-  'ADMINS',
-  'ALL_MEMBERS',
-  'SPECIFIC_USER',
-] as const;
+export const notificationAudiences = ['OWNERS', 'ADMINS', 'ALL_MEMBERS', 'SPECIFIC_USER'] as const;
 export const notificationAudience = pgEnum('notification_audience', notificationAudiences);
 
 export const notificationDefinitions = pgTable(
@@ -111,7 +106,10 @@ export const userMfa = pgTable(
     method: mfaMethod('method').notNull().default('TOTP'),
     /** Encrypted TOTP seed (envelope-encrypted in prod; static key in dev — TECH_DEBT). */
     secretEncrypted: text('secret_encrypted').notNull(),
-    recoveryCodesEncrypted: jsonb('recovery_codes_encrypted').$type<string[]>().notNull().default([]),
+    recoveryCodesEncrypted: jsonb('recovery_codes_encrypted')
+      .$type<string[]>()
+      .notNull()
+      .default([]),
     enrolledAt: timestamp('enrolled_at', { withTimezone: true }).notNull().defaultNow(),
     lastUsedAt: timestamp('last_used_at', { withTimezone: true }),
   },

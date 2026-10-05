@@ -127,15 +127,17 @@ export class AppointmentsService {
   async list(
     principal: TenantPrincipal,
     query: { from?: Date; to?: Date; status?: AppointmentStatus } = {},
-  ): Promise<Array<{
-    id: string;
-    startsAt: Date;
-    durationMinutes: number;
-    channel: AppointmentChannel;
-    status: AppointmentStatus;
-    assigneeUserId: string | null;
-    leadId: string | null;
-  }>> {
+  ): Promise<
+    Array<{
+      id: string;
+      startsAt: Date;
+      durationMinutes: number;
+      channel: AppointmentChannel;
+      status: AppointmentStatus;
+      assigneeUserId: string | null;
+      leadId: string | null;
+    }>
+  > {
     const conds = [eq(appointments.organizationId, principal.membership.organizationId)];
     if (query.from) conds.push(gte(appointments.startsAt, query.from));
     if (query.to) conds.push(lt(appointments.startsAt, query.to));

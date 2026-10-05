@@ -30,7 +30,8 @@ export class OtpProviderError extends Error {
 export class SimulatedOtpProvider implements OtpProvider {
   readonly name = 'simulated';
   readonly configured = true;
-  readonly tray: Array<{ requestId: string; phoneE164: string; code: string; createdAt: Date }> = [];
+  readonly tray: Array<{ requestId: string; phoneE164: string; code: string; createdAt: Date }> =
+    [];
   private readonly byId = new Map<string, { phoneE164: string; code: string }>();
   failNext = 0;
 

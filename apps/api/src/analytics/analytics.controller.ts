@@ -1,10 +1,6 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { z } from 'zod';
-import {
-  CurrentTenant,
-  RequirePermission,
-  type TenantPrincipal,
-} from '../auth/principal.js';
+import { CurrentTenant, RequirePermission, type TenantPrincipal } from '../auth/principal.js';
 import { validate } from '../common/validation.js';
 import { AnalyticsService } from './analytics.service.js';
 

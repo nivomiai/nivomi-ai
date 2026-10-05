@@ -64,9 +64,7 @@ export class UsageMeter {
     return Number(row?.total ?? 0);
   }
 
-  async currentPeriodTotals(
-    organizationId: string,
-  ): Promise<Record<UsageEventKind, number>> {
+  async currentPeriodTotals(organizationId: string): Promise<Record<UsageEventKind, number>> {
     const period = periodOf(new Date());
     const rows = await this.db
       .select({

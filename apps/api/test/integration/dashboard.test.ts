@@ -152,8 +152,7 @@ describe('operations dashboard and call queue', () => {
     // 3-tier RBAC (post-b22063a): every member of the account shares its role; the dashboard
     // and call-queue views are tenant-scoped, not member-scoped. Cross-tenant isolation is
     // tested in `never counts another organization's calls or leads` below.
-    const secondView = (await second.client.get('/api/v1/dashboard').expect(200))
-      .body as Dashboard;
+    const secondView = (await second.client.get('/api/v1/dashboard').expect(200)).body as Dashboard;
     expect(secondView.leads.total).toBe(3);
     await second.client.get('/api/v1/call-queue').expect(200);
   });

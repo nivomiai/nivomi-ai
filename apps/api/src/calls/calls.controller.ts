@@ -1,10 +1,6 @@
 import { Controller, Get, NotFoundException, Param, ParseUUIDPipe, Query } from '@nestjs/common';
 import { z } from 'zod';
-import {
-  CurrentTenant,
-  RequirePermission,
-  type TenantPrincipal,
-} from '../auth/principal.js';
+import { CurrentTenant, RequirePermission, type TenantPrincipal } from '../auth/principal.js';
 import { validate } from '../common/validation.js';
 import { CallSessionsService } from './call-sessions.service.js';
 
@@ -46,10 +42,7 @@ export class CallsController {
 
   @RequirePermission('calls.read')
   @Get(':id')
-  async get(
-    @CurrentTenant() tenant: TenantPrincipal,
-    @Param('id', ParseUUIDPipe) id: string,
-  ) {
+  async get(@CurrentTenant() tenant: TenantPrincipal, @Param('id', ParseUUIDPipe) id: string) {
     const row = await this.sessions.get(tenant, id);
     if (!row) throw new NotFoundException();
     return row;

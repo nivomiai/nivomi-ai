@@ -1,13 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { userMfa, type Database } from '@nivomi/database';
 import { and, eq } from 'drizzle-orm';
-import {
-  createCipheriv,
-  createDecipheriv,
-  createHmac,
-  randomBytes,
-  scryptSync,
-} from 'node:crypto';
+import { createCipheriv, createDecipheriv, createHmac, randomBytes, scryptSync } from 'node:crypto';
 import { API_ENV } from '../config/config.module.js';
 import type { ApiEnv } from '../config/env.js';
 import { AppError } from '../common/errors.js';
@@ -121,7 +115,10 @@ export class MfaService {
   }
 
   async hasEnrollment(userId: string): Promise<boolean> {
-    const [row] = await this.db.select({ id: userMfa.id }).from(userMfa).where(eq(userMfa.userId, userId));
+    const [row] = await this.db
+      .select({ id: userMfa.id })
+      .from(userMfa)
+      .where(eq(userMfa.userId, userId));
     return row !== undefined;
   }
 
@@ -141,9 +138,10 @@ export class MfaService {
     if (!ivB64 || !tagB64 || !ctB64) throw new Error('mfa: malformed ciphertext');
     const decipher = createDecipheriv('aes-256-gcm', this.key, Buffer.from(ivB64, 'base64'));
     decipher.setAuthTag(Buffer.from(tagB64, 'base64'));
-    return Buffer.concat([decipher.update(Buffer.from(ctB64, 'base64')), decipher.final()]).toString(
-      'utf8',
-    );
+    return Buffer.concat([
+      decipher.update(Buffer.from(ctB64, 'base64')),
+      decipher.final(),
+    ]).toString('utf8');
   }
 
   /** Exposes the TOTP helper for tests. */

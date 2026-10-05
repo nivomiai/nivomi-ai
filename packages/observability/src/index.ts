@@ -25,8 +25,12 @@ export interface Telemetry {
 export class RecordingTelemetry implements Telemetry {
   readonly serviceName: string;
   readonly environment: string;
-  readonly spans: Array<{ name: string; attributes: SpanAttributes; durationMs: number; error?: string }> =
-    [];
+  readonly spans: Array<{
+    name: string;
+    attributes: SpanAttributes;
+    durationMs: number;
+    error?: string;
+  }> = [];
   readonly counters: Array<{ name: string; value: number; attributes?: SpanAttributes }> = [];
   readonly histograms: Array<{ name: string; value: number; attributes?: SpanAttributes }> = [];
 
@@ -43,7 +47,12 @@ export class RecordingTelemetry implements Telemetry {
         error = err instanceof Error ? err.message : String(err);
       },
       end: (extra: SpanAttributes = {}) => {
-        const entry: { name: string; attributes: SpanAttributes; durationMs: number; error?: string } = {
+        const entry: {
+          name: string;
+          attributes: SpanAttributes;
+          durationMs: number;
+          error?: string;
+        } = {
           name,
           attributes: { ...attributes, ...extra },
           durationMs: Date.now() - started,

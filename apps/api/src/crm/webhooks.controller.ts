@@ -60,8 +60,7 @@ export class HubspotWebhookController {
     // v3 signing string: METHOD + URI + body + timestamp
     const payload = `POST${uri}${body.toString('utf8')}${timestamp}`;
     const expected = createHmac('sha256', secret).update(payload).digest('base64');
-    if (!safeEqualBase64(signature, expected))
-      throw new UnauthorizedException('invalid signature');
+    if (!safeEqualBase64(signature, expected)) throw new UnauthorizedException('invalid signature');
 
     let events: HubspotEvent[];
     try {

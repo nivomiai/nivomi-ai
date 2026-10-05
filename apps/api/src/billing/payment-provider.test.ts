@@ -46,7 +46,16 @@ describe('SimulatedPaymentProvider', () => {
     const p = new SimulatedPaymentProvider();
     p.trustAllWebhooks = false;
     expect(() =>
-      p.verifyWebhook({}, Buffer.from(JSON.stringify({ providerEventId: 'e', kind: 'payment.captured', providerSessionId: 's' }))),
+      p.verifyWebhook(
+        {},
+        Buffer.from(
+          JSON.stringify({
+            providerEventId: 'e',
+            kind: 'payment.captured',
+            providerSessionId: 's',
+          }),
+        ),
+      ),
     ).toThrow(/missing simulated signature/);
   });
 });

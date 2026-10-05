@@ -88,7 +88,11 @@ export class SimulatedPaymentProvider implements PaymentProvider {
     cycle: 'MONTHLY' | 'YEARLY';
   }): Promise<{ subscriptionId: string }> {
     const id = `sim-sub-${request.organizationId}-${request.planCode}`;
-    this.subscriptions.push({ id, organizationId: request.organizationId, planCode: request.planCode });
+    this.subscriptions.push({
+      id,
+      organizationId: request.organizationId,
+      planCode: request.planCode,
+    });
     return Promise.resolve({ subscriptionId: id });
   }
 

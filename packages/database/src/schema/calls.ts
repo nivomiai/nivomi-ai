@@ -62,7 +62,9 @@ export const callSessions = pgTable(
     telephonyOutcome: text('telephony_outcome'),
     conversationOutcome: conversationOutcome('conversation_outcome'),
     transcript: jsonb('transcript')
-      .$type<ReadonlyArray<{ role: 'agent' | 'caller'; text: string; nodeId?: string; atMs?: number }>>()
+      .$type<
+        ReadonlyArray<{ role: 'agent' | 'caller'; text: string; nodeId?: string; atMs?: number }>
+      >()
       .notNull()
       .default([]),
     qualification: jsonb('qualification').$type<Record<string, unknown>>(),

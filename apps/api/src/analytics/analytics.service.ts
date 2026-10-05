@@ -1,9 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import {
-  callSessions,
-  leads,
-  type Database,
-} from '@nivomi/database';
+import { callSessions, leads, type Database } from '@nivomi/database';
 import { and, eq, gte, sql } from 'drizzle-orm';
 import type { TenantPrincipal } from '../auth/principal.js';
 import { DATABASE } from '../database/database.module.js';
@@ -14,7 +10,10 @@ import { DATABASE } from '../database/database.module.js';
  */
 
 export interface AnalyticsSummary {
-  readonly leads: { readonly funnel: Array<{ status: string; count: number }>; readonly total: number };
+  readonly leads: {
+    readonly funnel: Array<{ status: string; count: number }>;
+    readonly total: number;
+  };
   readonly calls: {
     readonly byOutcome: Array<{ outcome: string; count: number }>;
     readonly byDirection: { inbound: number; outbound: number };
