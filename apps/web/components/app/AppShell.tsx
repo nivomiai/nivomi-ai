@@ -2,24 +2,16 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { ThemeToggle } from '@/components/marketing/ThemeToggle';
-import { Icon, Logo } from '@/components/marketing/primitives';
-import type { Me, Permission } from '@/lib/api/types';
+import { Icon, Logo, LogoMark } from '@/components/marketing/primitives';
+import type { Me, OrganizationSummary, Permission } from '@/lib/api/types';
 import { errorMessage } from '@/lib/api/client';
 import { SessionProvider, useSession } from '@/lib/app/session';
 import { useSubmit } from '@/lib/app/use-submit';
 import type { IconName } from '@/lib/site/icons';
 import { cx } from '@/lib/site/cx';
-import {
-  AuthCard,
-  AuthFrame,
-  ErrorBlock,
-  FormAlert,
-  LoadingBlock,
-  RoleBadge,
-  selectClass,
-} from './ui';
+import { AuthCard, AuthFrame, ErrorBlock, FormAlert, LoadingBlock, RoleBadge } from './ui';
 
 interface NavItem {
   readonly href: string;
@@ -28,12 +20,15 @@ interface NavItem {
   readonly permission?: Permission;
 }
 
-/** Grouped like the MVP mock-up: Overview, AI & Automation, Operations, Administration. */
+/**
+ * Three groups, named for the job they do (not the taxonomy). Order and labels follow the daily
+ * path an operator takes: find the number to dial, decide what to say, keep the house in order.
+ */
 const NAV: readonly { readonly title: string; readonly items: readonly NavItem[] }[] = [
   {
-    title: 'Overview',
+    title: 'Workspace',
     items: [
-      { href: '/app', label: 'Dashboard', icon: 'i-layers' },
+      { href: '/app', label: 'Overview', icon: 'i-layers' },
       { href: '/app/leads', label: 'Leads', icon: 'i-target', permission: 'leads.read' },
       { href: '/app/campaigns', label: 'Campaigns', icon: 'i-phone', permission: 'campaigns.read' },
       {
@@ -45,14 +40,9 @@ const NAV: readonly { readonly title: string; readonly items: readonly NavItem[]
     ],
   },
   {
-    title: 'AI & Automation',
+    title: 'Automate',
     items: [
-      { href: '/app/agents', label: 'AI Agents', icon: 'i-spark', permission: 'agents.read' },
-    ],
-  },
-  {
-    title: 'Operations',
-    items: [
+      { href: '/app/agents', label: 'AI agents', icon: 'i-spark', permission: 'agents.read' },
       {
         href: '/app/data-sources',
         label: 'Data sources',
@@ -62,7 +52,7 @@ const NAV: readonly { readonly title: string; readonly items: readonly NavItem[]
       {
         href: '/app/compliance',
         label: 'Compliance',
-        icon: 'i-check-c',
+        icon: 'i-shield',
         permission: 'compliance.read',
       },
       {
@@ -74,11 +64,11 @@ const NAV: readonly { readonly title: string; readonly items: readonly NavItem[]
     ],
   },
   {
-    title: 'Administration',
+    title: 'Admin',
     items: [
       { href: '/app/team', label: 'Team', icon: 'i-users', permission: 'members.read' },
-      { href: '/app/audit', label: 'Audit log', icon: 'i-shield', permission: 'audit.read' },
-      { href: '/app/security', label: 'Security', icon: 'i-user' },
+      { href: '/app/audit', label: 'Audit log', icon: 'i-check-c', permission: 'audit.read' },
+      { href: '/app/security', label: 'Account', icon: 'i-user' },
     ],
   },
 ];
@@ -138,7 +128,7 @@ function ChooseOrganization({ me }: { readonly me: Me }) {
   const submit = useSubmit();
   return (
     <AuthFrame>
-      <AuthCard title="Choose an organization" intro="Pick the workspace you want to open.">
+      <AuthCard title="Choose a workspace" intro="Pick the one you want to open.">
         <div className="grid gap-3">
           <FormAlert message={submit.error} />
           {me.organizations.map((org) => (
@@ -149,12 +139,15 @@ function ChooseOrganization({ me }: { readonly me: Me }) {
               onClick={() => void submit.run(() => switchOrganization(org.id))}
               className="card-nv flex items-center justify-between gap-3 p-4 text-left transition-colors hover:border-line-hover"
             >
-              <span className="font-semibold text-ink">{org.name}</span>
+              <span className="flex items-center gap-3">
+                <WorkspaceAvatar name={org.name} />
+                <span className="font-semibold text-ink">{org.name}</span>
+              </span>
               <RoleBadge role={org.role} />
             </button>
           ))}
           <Link href={ONBOARDING} className="btn btn-secondary w-full">
-            Create a new organization
+            Create a new workspace
           </Link>
         </div>
       </AuthCard>
@@ -163,90 +156,17 @@ function ChooseOrganization({ me }: { readonly me: Me }) {
 }
 
 function Frame({ me, children }: { readonly me: Me; readonly children: ReactNode }) {
-  const { can, signOut, switchOrganization } = useSession();
+  const { can, signOut } = useSession();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [switchError, setSwitchError] = useState<string | null>(null);
   const active = me.organizations.find((o) => o.id === me.activeOrganization?.id);
+
   const sections = NAV.map((section) => ({
     ...section,
     items: section.items.filter((item) => !item.permission || can(item.permission)),
   })).filter((section) => section.items.length > 0);
 
   useEffect(() => setMenuOpen(false), [pathname]);
-
-  const nav = (
-    <nav aria-label="App" className="grid gap-5">
-      {sections.map((section) => (
-        <div key={section.title} className="grid gap-1">
-          <p className="px-3 text-[11px] font-bold tracking-[0.12em] text-muted uppercase">
-            {section.title}
-          </p>
-          {section.items.map((item) => {
-            const current =
-              item.href === '/app' ? pathname === '/app' : pathname.startsWith(item.href);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={current ? 'page' : undefined}
-                className={cx(
-                  'flex items-center gap-3 rounded-[12px] px-3 py-2 text-[15px] font-semibold transition-colors',
-                  current
-                    ? 'bg-accent-soft text-accent'
-                    : 'text-ink-2 hover:bg-soft hover:text-ink',
-                )}
-              >
-                <Icon name={item.icon} className="size-[18px]" />
-                {item.label}
-              </Link>
-            );
-          })}
-        </div>
-      ))}
-    </nav>
-  );
-
-  const organizationPicker = (
-    <div>
-      <label
-        htmlFor="org-switcher"
-        className="text-xs font-bold tracking-[0.12em] text-muted uppercase"
-      >
-        Organization
-      </label>
-      {me.organizations.length > 1 ? (
-        <select
-          id="org-switcher"
-          className={cx(selectClass, 'py-2.5')}
-          value={me.activeOrganization?.id}
-          onChange={(e) => {
-            setSwitchError(null);
-            switchOrganization(e.target.value).catch((err: unknown) =>
-              setSwitchError(errorMessage(err)),
-            );
-          }}
-        >
-          {me.organizations.map((org) => (
-            <option key={org.id} value={org.id}>
-              {org.name}
-            </option>
-          ))}
-        </select>
-      ) : (
-        <p id="org-switcher" className="mt-1.5 truncate font-semibold text-ink">
-          {active?.name}
-        </p>
-      )}
-      {switchError ? <p className="mt-1 text-xs text-warn">{switchError}</p> : null}
-      <div className="mt-2 flex items-center gap-2">
-        {me.activeOrganization ? <RoleBadge role={me.activeOrganization.role} /> : null}
-        <Link href={ONBOARDING} className="text-xs font-semibold text-accent hover:underline">
-          New organization
-        </Link>
-      </div>
-    </div>
-  );
 
   return (
     <div className="min-h-dvh bg-soft">
@@ -256,60 +176,420 @@ function Frame({ me, children }: { readonly me: Me; readonly children: ReactNode
       >
         Skip to content
       </a>
-      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-line bg-[var(--nv-header)] px-4 backdrop-blur lg:hidden">
-        <Link href="/app" aria-label="Nivomi AI overview">
-          <Logo />
+
+      {/* Mobile top bar: workspace mark + menu toggle. The sidebar slides in as a sheet below. */}
+      <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-[var(--nv-header)] px-4 backdrop-blur lg:hidden">
+        <Link href="/app" aria-label="Nivomi AI overview" className="flex items-center gap-2.5">
+          <LogoMark className="h-5 w-auto" />
+          <span className="truncate text-[15px] font-semibold text-ink">
+            {active?.name ?? 'Nivomi AI'}
+          </span>
         </Link>
         <button
           type="button"
           aria-expanded={menuOpen}
           aria-controls="app-sidebar"
           onClick={() => setMenuOpen((open) => !open)}
-          className="btn btn-secondary btn-sm"
+          className="inline-flex size-9 items-center justify-center rounded-[10px] border border-line bg-card text-ink-2"
         >
-          {menuOpen ? 'Close' : 'Menu'}
+          <span className="sr-only">{menuOpen ? 'Close menu' : 'Open menu'}</span>
+          <svg aria-hidden="true" className="size-4" viewBox="0 0 24 24" fill="none">
+            {menuOpen ? (
+              <path
+                d="m6 6 12 12M18 6 6 18"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            ) : (
+              <path
+                d="M4 7h16M4 12h16M4 17h16"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            )}
+          </svg>
         </button>
       </header>
-      <div className="lg:grid lg:grid-cols-[272px_1fr]">
+
+      <div className="lg:grid lg:grid-cols-[260px_1fr]">
         <aside
           id="app-sidebar"
           className={cx(
-            'border-line bg-card lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:border-r',
-            menuOpen ? 'flex flex-col border-b' : 'hidden',
+            'bg-card lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:border-r lg:border-line',
+            menuOpen ? 'flex flex-col border-b border-line' : 'hidden',
           )}
         >
-          <div className="hidden h-20 items-center px-6 lg:flex">
-            <Link href="/app" aria-label="Nivomi AI overview">
+          <div className="flex items-center px-5 pt-6 pb-5">
+            <Link href="/app" aria-label="Nivomi AI home" className="rounded-md">
               <Logo />
             </Link>
           </div>
-          {/* Scrolls on short screens so every item stays reachable; the account block stays put. */}
-          <div className="grid gap-6 px-4 py-5 lg:min-h-0 lg:flex-1 lg:content-start lg:overflow-y-auto">
-            <div className="rounded-[14px] border border-line p-3.5">{organizationPicker}</div>
-            {nav}
+          <div className="px-3">
+            <WorkspaceSwitcher me={me} />
           </div>
-          <div className="border-t border-line p-4">
-            <p className="truncate text-sm font-semibold text-ink">{me.user.name}</p>
-            <p className="truncate text-[13px] text-muted">{me.user.email}</p>
-            <div className="mt-3 flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => void signOut()}
-                className="btn btn-secondary btn-sm flex-1"
-              >
-                Sign out
-              </button>
-              <ThemeToggle />
-            </div>
-          </div>
+
+          <nav
+            aria-label="App"
+            className="mt-5 flex-1 overflow-y-auto px-3 pb-4 lg:min-h-0"
+            data-testid="app-nav"
+          >
+            {sections.map((section, index) => (
+              <div key={section.title} className={index === 0 ? '' : 'mt-6'}>
+                <p className="px-3 pb-1.5 text-[11px] font-bold tracking-[0.14em] text-muted uppercase">
+                  {section.title}
+                </p>
+                <ul className="grid gap-0.5">
+                  {section.items.map((item) => {
+                    const current =
+                      item.href === '/app'
+                        ? pathname === '/app'
+                        : pathname === item.href || pathname.startsWith(`${item.href}/`);
+                    return (
+                      <li key={item.href}>
+                        <Link
+                          href={item.href}
+                          aria-current={current ? 'page' : undefined}
+                          className={cx(
+                            'group relative flex items-center gap-3 rounded-[10px] px-3 py-2 text-[14.5px] transition-colors',
+                            current
+                              ? 'bg-accent-soft font-semibold text-accent'
+                              : 'font-medium text-ink-2 hover:bg-soft hover:text-ink',
+                          )}
+                        >
+                          {current ? (
+                            <span
+                              aria-hidden="true"
+                              className="absolute inset-y-1.5 left-0 w-[3px] rounded-r-full bg-accent"
+                            />
+                          ) : null}
+                          <Icon
+                            name={item.icon}
+                            className={cx(
+                              'size-[17px] shrink-0',
+                              current ? 'text-accent' : 'text-muted group-hover:text-ink-2',
+                            )}
+                          />
+                          <span className="truncate">{item.label}</span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+          </nav>
+
+          <AccountDock name={me.user.name} email={me.user.email} signOut={() => void signOut()} />
         </aside>
-        <main id="main" className="min-w-0 px-4 py-8 sm:px-8 lg:px-12 lg:py-12">
+
+        <main id="main" className="min-w-0 px-4 py-6 sm:px-8 lg:px-10 lg:py-10">
           {/* Keyed by tenant: switching organization remounts every screen, dropping its data. */}
-          <div key={me.activeOrganization?.id} className="mx-auto max-w-5xl">
+          <div key={me.activeOrganization?.id} className="mx-auto max-w-6xl">
             {children}
           </div>
         </main>
       </div>
     </div>
   );
+}
+
+/** Workspace switcher: shows the current one as a button; opens a menu to switch or add. */
+function WorkspaceSwitcher({ me }: { readonly me: Me }) {
+  const { switchOrganization } = useSession();
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState<string | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const active = me.organizations.find((o) => o.id === me.activeOrganization?.id);
+  const multiple = me.organizations.length > 1;
+
+  useEffect(() => {
+    if (!open) return;
+    const onClick = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (!menuRef.current?.contains(target) && !buttonRef.current?.contains(target)) {
+        setOpen(false);
+      }
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', onClick);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onClick);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  if (!active) return null;
+
+  const choose = async (org: OrganizationSummary) => {
+    if (org.id === active.id) {
+      setOpen(false);
+      return;
+    }
+    setError(null);
+    setPending(org.id);
+    try {
+      await switchOrganization(org.id);
+      setOpen(false);
+    } catch (err) {
+      setError(errorMessage(err));
+    } finally {
+      setPending(null);
+    }
+  };
+
+  return (
+    <div className="relative">
+      <button
+        ref={buttonRef}
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => multiple && setOpen((prev) => !prev)}
+        disabled={!multiple}
+        className={cx(
+          'group flex w-full items-center gap-2.5 rounded-[12px] border border-line bg-surface px-2.5 py-2 text-left transition-colors',
+          multiple ? 'hover:border-line-hover' : 'cursor-default',
+        )}
+      >
+        <WorkspaceAvatar name={active.name} />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[14px] font-semibold text-ink">{active.name}</span>
+          <span className="block truncate text-[11.5px] font-medium tracking-[0.04em] text-muted uppercase">
+            {active.status === 'ACTIVE' ? 'Workspace' : workspaceStatusLabel(active.status)}
+          </span>
+        </span>
+        {multiple ? (
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            fill="none"
+            className="size-4 shrink-0 text-muted"
+          >
+            <path
+              d="m8 10 4-4 4 4M8 14l4 4 4-4"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        ) : null}
+      </button>
+
+      {open ? (
+        <div
+          ref={menuRef}
+          role="menu"
+          aria-label="Workspaces"
+          className="absolute inset-x-0 top-full z-40 mt-1.5 rounded-[12px] border border-line bg-card p-1.5 shadow-md"
+        >
+          {me.organizations.map((org) => (
+            <button
+              key={org.id}
+              type="button"
+              role="menuitemradio"
+              aria-checked={org.id === active.id}
+              onClick={() => void choose(org)}
+              disabled={pending !== null}
+              className={cx(
+                'flex w-full items-center gap-2.5 rounded-[9px] px-2 py-2 text-left transition-colors',
+                org.id === active.id ? 'bg-accent-soft' : 'hover:bg-soft',
+                pending === org.id && 'opacity-60',
+              )}
+            >
+              <WorkspaceAvatar name={org.name} />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[14px] font-semibold text-ink">
+                  {org.name}
+                </span>
+                <span className="block truncate text-[11.5px] text-muted">
+                  {workspaceStatusLabel(org.status)}
+                </span>
+              </span>
+              {org.id === active.id ? <Icon name="i-check" className="size-4 text-accent" /> : null}
+            </button>
+          ))}
+          <Link
+            href={ONBOARDING}
+            className="mt-1 flex items-center gap-2 rounded-[9px] border-t border-line px-2 py-2 pt-2.5 text-[13.5px] font-semibold text-accent hover:bg-soft"
+            onClick={() => setOpen(false)}
+          >
+            <Icon name="i-plus" className="size-4" />
+            New workspace
+          </Link>
+        </div>
+      ) : null}
+
+      {error ? (
+        <p role="alert" className="mt-1 px-1 text-xs text-warn">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function AccountDock({
+  name,
+  email,
+  signOut,
+}: {
+  readonly name: string;
+  readonly email: string;
+  readonly signOut: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onClick = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (!menuRef.current?.contains(target) && !buttonRef.current?.contains(target)) {
+        setOpen(false);
+      }
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', onClick);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onClick);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  return (
+    <div className="relative border-t border-line p-3">
+      <button
+        ref={buttonRef}
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((prev) => !prev)}
+        className="flex w-full items-center gap-2.5 rounded-[12px] px-2 py-2 text-left transition-colors hover:bg-soft"
+      >
+        <UserAvatar name={name} />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[13.5px] font-semibold text-ink">{name}</span>
+          <span className="block truncate text-[12px] text-muted">{email}</span>
+        </span>
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 24 24"
+          fill="none"
+          className="size-4 shrink-0 text-muted"
+        >
+          <circle cx="12" cy="6" r="1.5" fill="currentColor" />
+          <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+          <circle cx="12" cy="18" r="1.5" fill="currentColor" />
+        </svg>
+      </button>
+      {open ? (
+        <div
+          ref={menuRef}
+          role="menu"
+          aria-label="Account"
+          className="absolute right-3 bottom-full left-3 z-40 mb-1.5 rounded-[12px] border border-line bg-card p-1.5 shadow-md"
+        >
+          <Link
+            href="/app/security"
+            role="menuitem"
+            className="flex items-center gap-2.5 rounded-[9px] px-2 py-2 text-[14px] font-medium text-ink hover:bg-soft"
+            onClick={() => setOpen(false)}
+          >
+            <Icon name="i-user" className="size-4 text-muted" />
+            Account & security
+          </Link>
+          <div
+            role="group"
+            aria-label="Appearance"
+            className="mt-0.5 flex items-center justify-between gap-2 rounded-[9px] px-2 py-2"
+          >
+            <span className="flex items-center gap-2.5 text-[14px] font-medium text-ink">
+              <Icon name="i-sun" className="size-4 text-muted dark:hidden" />
+              <Icon name="i-moon" className="hidden size-4 text-muted dark:inline" />
+              Appearance
+            </span>
+            <ThemeToggle className="inline-grid size-8 place-items-center rounded-[8px] border border-line bg-surface text-ink-2 transition-colors hover:border-line-hover hover:text-accent" />
+          </div>
+          <div role="separator" className="my-1 border-t border-line" />
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              signOut();
+            }}
+            className="flex w-full items-center gap-2.5 rounded-[9px] px-2 py-2 text-left text-[14px] font-medium text-ink hover:bg-soft"
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="size-4 text-muted">
+              <path
+                d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l-5-5 5-5M5 12h12"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            Sign out
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function WorkspaceAvatar({ name }: { readonly name: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="inline-grid size-7 shrink-0 place-items-center rounded-[8px] text-[12.5px] font-bold text-white"
+      style={{
+        background: 'linear-gradient(135deg, var(--nv-pink) 0%, var(--nv-pink-2) 100%)',
+      }}
+    >
+      {initials(name)}
+    </span>
+  );
+}
+
+function UserAvatar({ name }: { readonly name: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="inline-grid size-8 shrink-0 place-items-center rounded-full bg-accent-soft text-[12.5px] font-bold text-accent"
+    >
+      {initials(name)}
+    </span>
+  );
+}
+
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  const first = parts[0]?.[0] ?? '?';
+  const second = parts.length > 1 ? parts[parts.length - 1]?.[0] : '';
+  return (first + (second ?? '')).toUpperCase();
+}
+
+function workspaceStatusLabel(status: OrganizationSummary['status']): string {
+  switch (status) {
+    case 'ACTIVE':
+      return 'Active';
+    case 'PENDING_APPROVAL':
+      return 'Pending approval';
+    case 'SUSPENDED':
+      return 'Suspended';
+    case 'CLOSED':
+      return 'Closed';
+  }
 }
