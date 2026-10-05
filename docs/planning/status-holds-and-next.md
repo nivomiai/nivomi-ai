@@ -36,14 +36,28 @@ The owner decided to **hold these until every product phase is complete**, then 
 together. Nothing here blocks building or testing: each one already has a development stand-in,
 and production refuses to start without it (fail fast, never a silent fallback).
 
-| Item                                                      | What it unblocks                                                                                                                                                                                   | Development stand-in today                                                                 | How to set it up later                              |
-| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------- |
-| **HubSpot app** (developer account; client ID and secret) | Real "Connect HubSpot" for customers; testing against a real HubSpot account; later, write-back and webhooks (FR-87–FR-95)                                                                         | In-process fake HubSpot in the tests; the app shows "Connecting HubSpot is not enabled"    | [hubspot-setup.md](../operations/hubspot-setup.md)  |
-| **AWS account** (ap-south-1)                              | **S3** storage for uploads and recordings; **KMS** envelope encryption for CRM tokens; **malware scanning** of uploads; **SES** email; **RDS** PostgreSQL; **ECS Fargate** hosting; **CloudWatch** | Local file storage, a static encryption key, the dev mailbox, embedded PostgreSQL (PGlite) | Phase 11, plus the adapter work listed in TECH_DEBT |
+| Item                                                      | What it unblocks                                                                                                                                                                                                                                                                      | Development stand-in today                                                                 | How to set it up later                              |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------- |
+| **HubSpot app** (developer account; client ID and secret) | Real "Connect HubSpot" for customers who ask for it. **Not on the primary path any more** — Excel/CSV import (Phase 2) and `POST /leads` (direct API) are the production path for lead ingestion; HubSpot is an optional second route (FR-87–FR-95) added when a customer requests it | In-process fake HubSpot in the tests; the app shows "Connecting HubSpot is not enabled"    | [hubspot-setup.md](../operations/hubspot-setup.md)  |
+| **AWS account** (ap-south-1)                              | **S3** storage for uploads and recordings; **KMS** envelope encryption for CRM tokens; **malware scanning** of uploads; **SES** email; **RDS** PostgreSQL; **ECS Fargate** hosting; **CloudWatch**                                                                                    | Local file storage, a static encryption key, the dev mailbox, embedded PostgreSQL (PGlite) | Phase 11, plus the adapter work listed in TECH_DEBT |
 
 **Rule while on hold:** new code keeps depending on the provider interfaces (`StorageProvider`,
 `EmailProvider`, `CRMProvider`, …) and ships with a development adapter or a fake, so turning on
 the real service later is an adapter and configuration change, not a rewrite.
+
+**Lead ingestion plan (2026-10-06, revised):** Nivomi does not depend on HubSpot to onboard a
+customer. The primary path is:
+
+1. **Excel / CSV upload** — the full Phase 2 pipeline: signed upload, column mapping, preview,
+   chunked import. Lives under `/app/data-sources` and the `/imports` API.
+2. **Direct `POST /leads` API** — one lead per request, with `Idempotency-Key` honoured; the
+   same payload shape the import pipeline uses. Any back-office tool or form can hit it.
+3. **Status-driven campaigns** — campaigns select leads with
+   `selection = { kind: 'FILTER', statuses: [...] }`, so a saved campaign dials every lead that
+   enters a given status (NEW, FOLLOW_UP, CALLBACK_REQUESTED, …) without a manual re-select.
+
+HubSpot stays as an **optional second route**: customers who already run HubSpot can connect
+it for two-way sync, but it is no longer a launch dependency.
 
 ## Other external dependencies (not on hold — still needed)
 

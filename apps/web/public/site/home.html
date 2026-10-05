@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0E050C" />
 <link rel="canonical" href="https://www.nivomi.ai/" />
 <title>Nivomi AI — AI voice agents for sales teams in India</title>
-<meta name="description" content="Nivomi AI runs outbound and inbound AI calls in English, Hindi, Malayalam, Tamil, Telugu and Kannada. Qualifies leads, books appointments, hands off to humans, and keeps every call inside DNC and DND rules." />
+<meta name="description" content="Upload leads from Excel or push them through our API. Nivomi AI runs outbound and inbound calls in English, Hindi, Malayalam, Tamil, Telugu and Kannada, qualifies leads, books appointments, and keeps every call inside DNC and DND rules." />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='150 40 1660 1262'%3E%3Cpath fill='%23CC007E' d='M157 1299 1410 42v1043h183V383h212v916h-607V556L671 1085h398v214z'/%3E%3Cpath fill='%23CC007E' d='M1593 42h212v213h-212z'/%3E%3C/svg%3E" />
 <script>(function(){var t;try{t=localStorage.getItem('nivomi-theme')}catch(e){}if(t!=='dark'&&t!=='light'){t='dark'}document.documentElement.setAttribute('data-theme',t)})();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -1126,14 +1126,14 @@ fieldset.field{border:0;padding:0;margin:0}
     <div class="hero-copy">
       <div class="hero-badge reveal"><span class="dot-live"></span>Built in India <em>·</em> English + 5 Indian languages</div>
       <h1 class="split" style="--i:1">AI voice agents<br>that <span class="hl">call your leads</span></h1>
-      <p class="hero-sub reveal" style="--i:2">Nivomi runs outbound and inbound calls for your sales team — qualifies the lead, books the meeting, writes it back to your CRM. Every number is checked against DNC and DND before it rings.</p>
+      <p class="hero-sub reveal" style="--i:2">Upload your leads from Excel or push them through our API. Nivomi qualifies the lead, books the meeting, writes the summary back — and checks every number against DNC and DND before it rings.</p>
       <div class="hero-cta reveal" style="--i:3">
         <a class="btn btn-primary btn-lg shine" href="#demo">Book a demo <svg class="ico ico-arrow"><use href="#i-arrow"/></svg></a>
         <a class="btn btn-secondary btn-lg" href="#how">See how it works</a>
       </div>
       <ul class="hero-points reveal" style="--i:4">
         <li><span class="tick"><svg class="ico"><use href="#i-check"/></svg></span>Hindi, Malayalam, Tamil, Telugu, Kannada</li>
-        <li><span class="tick"><svg class="ico"><use href="#i-check"/></svg></span>Exotel &amp; HubSpot ready</li>
+        <li><span class="tick"><svg class="ico"><use href="#i-check"/></svg></span>Excel upload or REST API</li>
         <li><span class="tick"><svg class="ico"><use href="#i-check"/></svg></span>Consent &amp; audit log on every dial</li>
         <li><span class="tick"><svg class="ico"><use href="#i-check"/></svg></span>Human handoff when it matters</li>
       </ul>
@@ -1166,7 +1166,7 @@ fieldset.field{border:0;padding:0;margin:0}
       <li class="cap"><span class="c-ic"><svg class="ico"><use href="#i-target"/></svg></span>Lead qualification</li>
       <li class="cap"><span class="c-ic"><svg class="ico"><use href="#i-cal"/></svg></span>Appointment booking</li>
       <li class="cap"><span class="c-ic"><svg class="ico"><use href="#i-user"/></svg></span>Human handoff</li>
-      <li class="cap"><span class="c-ic"><svg class="ico"><use href="#i-link"/></svg></span>HubSpot sync</li>
+      <li class="cap"><span class="c-ic"><svg class="ico"><use href="#i-db"/></svg></span>Excel upload &amp; API</li>
       <li class="cap"><span class="c-ic"><svg class="ico"><use href="#i-shield"/></svg></span>DNC &amp; consent</li>
     </ul>
   </div>
@@ -1234,18 +1234,18 @@ fieldset.field{border:0;padding:0;margin:0}
         </div>
       </article>
 
-      <!-- CRM -->
+      <!-- Lead inbox -->
       <article class="mgr span2 reveal" style="--i:1">
         <div class="mgr-body">
-          <div class="mgr-top"><span class="mgr-ic"><svg class="ico"><use href="#i-db"/></svg></span><span class="status">Syncing</span></div>
-          <h3>CRM Manager</h3>
-          <p>Lead and contact updates, data synchronisation and CRM workflows — customer history, follow-ups and lead assignment stay current without manual entry.</p>
+          <div class="mgr-top"><span class="mgr-ic"><svg class="ico"><use href="#i-db"/></svg></span><span class="status">Live</span></div>
+          <h3>Lead inbox</h3>
+          <p>Every lead — from an Excel upload, a website form hitting <code>POST /leads</code>, or a HubSpot sync — lands in one place, with status, owner and the next action the agent will take.</p>
         </div>
         <div class="mgr-preview" aria-hidden="true">
           <div class="pv-crm">
-            <div class="crm-row"><span class="av">PN</span><div><b>Priya N.</b><small>Stage → Qualified · Owner assigned</small></div><span class="sync"><svg class="ico"><use href="#i-check"/></svg>Synced</span></div>
-            <div class="crm-row"><span class="av">AR</span><div><b>Arjun R.</b><small>Call summary added · Follow-up tomorrow</small></div><span class="sync"><svg class="ico"><use href="#i-check"/></svg>Synced</span></div>
-            <div class="crm-row"><span class="av">FM</span><div><b>Fathima M.</b><small>WhatsApp enquiry → New contact</small></div><span class="sync pending"><svg class="ico"><use href="#i-refresh"/></svg>Updating</span></div>
+            <div class="crm-row"><span class="av">PN</span><div><b>Priya N.</b><small>Status → Qualified · Owner assigned</small></div><span class="sync"><svg class="ico"><use href="#i-check"/></svg>In campaign</span></div>
+            <div class="crm-row"><span class="av">AR</span><div><b>Arjun R.</b><small>Imported from leads-oct.xlsx · row 142</small></div><span class="sync"><svg class="ico"><use href="#i-check"/></svg>Ready to dial</span></div>
+            <div class="crm-row"><span class="av">FM</span><div><b>Fathima M.</b><small>Website form → POST /leads</small></div><span class="sync pending"><svg class="ico"><use href="#i-refresh"/></svg>Deduping</span></div>
           </div>
         </div>
       </article>
@@ -1331,10 +1331,10 @@ fieldset.field{border:0;padding:0;margin:0}
         <div class="step-card">
           <span class="kicker">Week 3 · Connect</span>
           <h3>Wire up the systems</h3>
-          <p>Caller numbers, HubSpot, WhatsApp, DNC/DND lists — tested on real contacts before anything goes out.</p>
+          <p>Upload the lead list, pick the caller numbers, map lead statuses to campaigns — tested on real contacts before anything goes out.</p>
           <div class="step-more"><div><ul>
-            <li><svg class="ico"><use href="#i-check"/></svg>Exotel numbers &amp; 140xx caller IDs</li>
-            <li><svg class="ico"><use href="#i-check"/></svg>HubSpot two-way sync</li>
+            <li><svg class="ico"><use href="#i-check"/></svg>Excel import or <code>POST /leads</code></li>
+            <li><svg class="ico"><use href="#i-check"/></svg>Status filters drive the campaign</li>
             <li><svg class="ico"><use href="#i-check"/></svg>Pre-launch compliance check</li>
           </ul></div></div>
         </div>
@@ -1443,13 +1443,14 @@ fieldset.field{border:0;padding:0;margin:0}
 <section class="section integ" id="integrations">
   <div class="container integ-grid">
     <div class="reveal">
-      <span class="eyebrow">Integrations</span>
-      <h2 class="h2">Nivomi reads from — and writes to — the stack you already run.</h2>
-      <p class="lede">HubSpot is first-class, with per-workspace OAuth and 15-minute delta sync. Exotel handles the dial. The rest connects over webhooks and APIs.</p>
+      <span class="eyebrow">Lead sources &amp; integrations</span>
+      <h2 class="h2">Bring your leads in the way that fits — then let status drive the dial.</h2>
+      <p class="lede">Upload a spreadsheet, call our API, or wire up a CRM. However the lead arrives, every number is checked against DNC and DND before Nivomi rings it.</p>
       <ul class="integ-points">
-        <li><span class="p-ic"><svg class="ico"><use href="#i-refresh"/></svg></span><div><b>Two-way CRM sync</b><span>Leads, companies, notes and call outcomes flow both ways with HubSpot.</span></div></li>
-        <li><span class="p-ic"><svg class="ico"><use href="#i-link"/></svg></span><div><b>Webhooks &amp; APIs</b><span>Signed webhooks for internal tools, workflows and custom logic.</span></div></li>
-        <li><span class="p-ic"><svg class="ico"><use href="#i-shield"/></svg></span><div><b>Scoped permissions</b><span>You decide what the agent may do alone and what needs a human on the loop.</span></div></li>
+        <li><span class="p-ic"><svg class="ico"><use href="#i-db"/></svg></span><div><b>Excel &amp; CSV upload</b><span>Column mapping, duplicate review, chunked import. Up to tens of thousands of rows per file.</span></div></li>
+        <li><span class="p-ic"><svg class="ico"><use href="#i-link"/></svg></span><div><b>Direct REST API</b><span><code>POST /leads</code> with <code>Idempotency-Key</code> for your website form or back-office tool.</span></div></li>
+        <li><span class="p-ic"><svg class="ico"><use href="#i-repeat"/></svg></span><div><b>Status-driven campaigns</b><span>Save a campaign once; every lead that enters NEW, FOLLOW_UP or CALLBACK_REQUESTED is dialled automatically.</span></div></li>
+        <li><span class="p-ic"><svg class="ico"><use href="#i-refresh"/></svg></span><div><b>HubSpot &amp; webhooks (optional)</b><span>Two-way HubSpot sync when you need it; signed webhooks for everything else.</span></div></li>
       </ul>
     </div>
     <div class="hub reveal" style="--i:1" id="hub">
@@ -1486,7 +1487,7 @@ fieldset.field{border:0;padding:0;margin:0}
         <li><svg class="ico"><use href="#i-globe"/></svg>English + 5 Indian languages</li>
         <li><svg class="ico"><use href="#i-shield"/></svg>DNC, DND &amp; consent ledger</li>
         <li><svg class="ico"><use href="#i-layers"/></svg>Multi-tenant by design</li>
-        <li><svg class="ico"><use href="#i-link"/></svg>HubSpot &amp; Exotel ready</li>
+        <li><svg class="ico"><use href="#i-db"/></svg>Excel upload &amp; REST API</li>
         <li><svg class="ico"><use href="#i-check-c"/></svg>Audit log on every action</li>
         <li><svg class="ico"><use href="#i-user"/></svg>Human handoff built in</li>
       </ul>
