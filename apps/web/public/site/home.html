@@ -1936,7 +1936,9 @@ const CONTACT_EMAIL = "nivomiai@gmail.com";
     try { return new Intl.NumberFormat('en-IN', { style:'currency', currency:'INR', maximumFractionDigits:0 }).format(rupees); }
     catch (_) { return '₹' + rupees.toLocaleString('en-IN'); }
   }
-  fetch(PLAN_PRICING_API, { headers: { Accept: 'application/json' } })
+  // cache:'no-store' makes the browser revalidate on every visit so a super admin's
+  // edit shows up on the next page load. Server still advertises max-age=60 for CDN/edge.
+  fetch(PLAN_PRICING_API, { headers: { Accept: 'application/json' }, cache: 'no-store' })
     .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
     .then(envelope => {
       const items = (envelope && envelope.data && envelope.data.items) || (envelope && envelope.items) || [];

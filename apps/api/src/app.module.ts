@@ -30,6 +30,7 @@ import { MeController, OrganizationsController } from './organizations/organizat
 import { OrganizationJobs } from './organizations/organizations.jobs.js';
 import { OrganizationsService } from './organizations/organizations.service.js';
 import { PlatformModule } from './platform/platform.module.js';
+import { PlatformIntegrationsController } from './platform/platform-integrations.controller.js';
 import { PlatformOrganizationsController } from './platform/platform-organizations.controller.js';
 import { PlatformOrganizationsService } from './platform/platform-organizations.service.js';
 import { PlatformUsersController } from './platform/platform-users.controller.js';
@@ -66,6 +67,7 @@ export class AppModule {
         AuthController,
         MeController,
         OrganizationsController,
+        PlatformIntegrationsController,
         PlatformOrganizationsController,
         PlatformUsersController,
       ],

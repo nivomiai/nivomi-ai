@@ -89,6 +89,8 @@ export function Overview() {
         <LoadingBlock label="Loading today’s numbers" />
       ) : null}
 
+      {data ? <OnboardingChecklist setup={data.setup} status={organization.status} /> : null}
+
       {data ? (
         <>
           <KpiRow data={data} />
@@ -130,8 +132,6 @@ export function Overview() {
           ) : null}
         </>
       ) : null}
-
-      {data && data.leads.total === 0 ? <SetupSteps /> : null}
 
       <Panel
         title="Coming to your workspace"
@@ -520,70 +520,112 @@ function Meter({ value }: { readonly value: number }) {
   );
 }
 
-function SetupSteps() {
-  const { can } = useSession();
-  const steps: { readonly label: string; readonly text: string; readonly href: string }[] = [
-    ...(can('imports.manage')
-      ? [
-          {
-            label: 'Bring in your leads',
-            text: 'Upload a CSV or XLSX, or add a lead by hand.',
-            href: '/app/data-sources',
-          },
-        ]
-      : []),
-    ...(can('telecom.read')
-      ? [
-          {
-            label: 'Record your telecom identity',
-            text: 'The entity and caller numbers used for every outbound dial.',
-            href: '/app/telecom',
-          },
-        ]
-      : []),
-    ...(can('agents.manage')
-      ? [
-          {
-            label: 'Design and publish an AI agent',
-            text: 'A versioned workflow for how the agent handles each call.',
-            href: '/app/agents',
-          },
-        ]
-      : []),
-    ...(can('members.invite')
-      ? [{ label: 'Invite your team', text: 'Owners, admins and agents.', href: '/app/team' }]
-      : []),
+interface SetupStep {
+  readonly key: string;
+  readonly label: string;
+  readonly text: string;
+  readonly href: string;
+  readonly done: boolean;
+  readonly waitingOnApproval?: boolean;
+}
+
+/**
+ * Four-step path to the first real call: caller number → agent → leads → campaign. Shown while
+ * the tenant hasn't finished all four, with each step linking to the right screen. During the
+ * PENDING_APPROVAL wait, the user can still prep the first three — the last one unlocks on
+ * approval. Once every step is done, the component returns null (the dashboard is enough).
+ */
+function OnboardingChecklist({
+  setup,
+  status,
+}: {
+  readonly setup: DashboardSummary['setup'];
+  readonly status: OrganizationStatus;
+}) {
+  const pending = status === 'PENDING_APPROVAL';
+  const steps: SetupStep[] = [
     {
-      label: 'Review your security settings',
-      text: 'Sessions, password and verified email.',
-      href: '/app/security',
+      key: 'caller',
+      label: 'Verify your telecom identity + a caller number',
+      text: 'The entity and 140xx/1601xx number every outbound dial uses.',
+      href: '/app/telecom',
+      done: setup.callerNumbersVerified > 0,
+    },
+    {
+      key: 'agent',
+      label: 'Publish an AI agent',
+      text: 'Design a conversation flow and publish an immutable version.',
+      href: '/app/agents',
+      done: setup.agentsPublished > 0,
+    },
+    {
+      key: 'leads',
+      label: 'Load leads',
+      text: 'Upload a CSV or XLSX, or POST /leads from your backend.',
+      href: '/app/data-sources',
+      done: setup.hasLeads,
+    },
+    {
+      key: 'campaign',
+      label: 'Create and launch a campaign',
+      text: pending ? 'Available after your workspace is approved.' : 'Pre-launch check + Emergency Stop guard every dial.',
+      href: '/app/campaigns/new',
+      done: setup.campaignCount > 0,
+      waitingOnApproval: pending,
     },
   ];
+  const openCount = steps.filter((s) => !s.done).length;
+  if (openCount === 0) return null;
+
+  const title = pending ? 'Set up while you wait for approval' : 'You are nearly ready to call';
+  const description = pending
+    ? 'Your workspace is pending approval. Prep the first three steps now so launching a campaign is one click once Nivomi approves you.'
+    : `${openCount} of ${steps.length} steps remaining before your first live call.`;
+
   return (
-    <Panel
-      title="Get set up"
-      description="A short list before your first campaign. You can come back to this any time."
-    >
+    <Panel title={title} description={description}>
       <ol className="grid gap-2">
         {steps.map((step, index) => (
-          <li key={step.label}>
+          <li key={step.key}>
             <Link
               href={step.href}
-              className="group flex items-center gap-3 rounded-[12px] border border-line bg-surface px-4 py-3 transition-colors hover:border-line-hover"
+              aria-disabled={step.waitingOnApproval ? true : undefined}
+              className={cx(
+                'group flex items-center gap-3 rounded-[12px] border px-4 py-3 transition-colors',
+                step.done
+                  ? 'border-live/25 bg-live-soft/40'
+                  : step.waitingOnApproval
+                    ? 'border-line bg-soft/40 opacity-70'
+                    : 'border-line bg-surface hover:border-line-hover',
+              )}
             >
               <span
                 aria-hidden="true"
-                className="inline-grid size-7 place-items-center rounded-full border border-accent-tint bg-accent-soft text-[12.5px] font-bold text-accent"
+                className={cx(
+                  'inline-grid size-7 place-items-center rounded-full text-[12.5px] font-bold',
+                  step.done
+                    ? 'bg-live text-white'
+                    : 'border border-accent-tint bg-accent-soft text-accent',
+                )}
               >
-                {index + 1}
+                {step.done ? '✓' : index + 1}
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block font-semibold text-ink">{step.label}</span>
+                <span
+                  className={cx(
+                    'block font-semibold',
+                    step.done ? 'text-ink-2 line-through' : 'text-ink',
+                  )}
+                >
+                  {step.label}
+                </span>
                 <span className="block text-[13px] text-muted">{step.text}</span>
               </span>
-              <span className="text-[13px] font-semibold text-accent group-hover:underline">
-                Open →
-              </span>
+              {!step.done ? (
+                <span className="text-[13px] font-semibold text-accent group-hover:underline">
+                  {step.waitingOnApproval ? 'Blocked' : 'Open →'}
+                </span>
+              ) : null}
             </Link>
           </li>
         ))}

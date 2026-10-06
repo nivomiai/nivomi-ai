@@ -193,6 +193,17 @@ export interface Plan {
   orgsActive: number;
 }
 
+/** One integration from `GET /platform/integrations/health`. */
+export interface IntegrationCheck {
+  key: string;
+  label: string;
+  status: 'ready' | 'simulated' | 'missing';
+  summary: string;
+  missing: string[];
+  productionBlocker: boolean;
+  docs?: string;
+}
+
 /** A row from `GET /plans/public` (marketing site, unauthenticated). */
 export interface PublicPlan {
   code: string;
@@ -1008,6 +1019,12 @@ export interface DashboardSummary {
   };
   funnel: { stage: string; count: number }[];
   leads: { total: number; qualified: number; appointments: number; doNotCall: number };
+  setup: {
+    agentsPublished: number;
+    callerNumbersVerified: number;
+    hasLeads: boolean;
+    campaignCount: number;
+  };
   attention: {
     code: string;
     label: string;

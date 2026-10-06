@@ -85,6 +85,7 @@ const NAV: readonly NavSection[] = [
       { href: '/app/platform/plans', label: 'Plans', icon: 'i-layers' },
       { href: '/app/platform/users', label: 'Users', icon: 'i-users' },
       { href: '/app/platform/audit', label: 'Platform audit', icon: 'i-shield' },
+      { href: '/app/launch-checklist', label: 'Launch checklist', icon: 'i-check-c' },
       { href: '/app/platform/customisation', label: 'Customisation', icon: 'i-flow' },
     ],
   },

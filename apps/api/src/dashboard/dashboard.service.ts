@@ -1,6 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
+  agentVersions,
   callAttempts,
+  callerNumbers,
   campaignLeads,
   campaigns,
   contacts,
@@ -118,6 +120,23 @@ export class DashboardService {
     const totalLeads = statuses.reduce((n, s) => n + s.n, 0);
 
     const canCampaigns = roleHasPermission(tenant.membership.role, 'campaigns.read');
+
+    // Setup progress: four signals the Overview turns into a numbered checklist for new tenants.
+    // agent_versions rows are only inserted on publish (every version is already published), so
+    // "any row" = "the org has published at least one agent".
+    const [agentPub] = await this.db
+      .select({ n: count() })
+      .from(agentVersions)
+      .where(eq(agentVersions.organizationId, orgId));
+    const [callerVerified] = await this.db
+      .select({ n: count() })
+      .from(callerNumbers)
+      .where(and(eq(callerNumbers.organizationId, orgId), eq(callerNumbers.status, 'ACTIVE')));
+    const [campaignAny] = await this.db
+      .select({ n: count() })
+      .from(campaigns)
+      .where(eq(campaigns.organizationId, orgId));
+
     return {
       timezone,
       since: dayStart,
@@ -140,6 +159,12 @@ export class DashboardService {
         qualified: byStatus.QUALIFIED ?? 0,
         appointments: byStatus.APPOINTMENT_BOOKED ?? 0,
         doNotCall: byStatus.DO_NOT_CALL ?? 0,
+      },
+      setup: {
+        agentsPublished: Number(agentPub?.n ?? 0),
+        callerNumbersVerified: Number(callerVerified?.n ?? 0),
+        hasLeads: totalLeads > 0,
+        campaignCount: Number(campaignAny?.n ?? 0),
       },
       attention: canCampaigns ? await this.attention(tenant, controls) : [],
       campaigns: canCampaigns ? await this.activeCampaigns(orgId) : [],
