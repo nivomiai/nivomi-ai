@@ -17,13 +17,17 @@ test.describe('homepage pricing is driven by /api/v1/plans/public', () => {
               code: 'starter',
               name: 'Starter',
               monthlyPaiseInr: 199900,
+              annualPaiseInr: 1919040, // 199900 × 12 × 0.80
+              annualDiscountBps: 2000,
               limits: { CALL_MINUTES_OUTBOUND: 2000 },
               displayOrder: 10,
             },
             {
-              code: 'growth',
-              name: 'Growth',
+              code: 'organisation',
+              name: 'Organisation',
               monthlyPaiseInr: 999900,
+              annualPaiseInr: 9599040, // 999900 × 12 × 0.80
+              annualDiscountBps: 2000,
               limits: { CALL_MINUTES_OUTBOUND: 15000 },
               displayOrder: 20,
             },
@@ -34,12 +38,17 @@ test.describe('homepage pricing is driven by /api/v1/plans/public', () => {
 
     await page.goto('/');
     const starter = page.locator('article.plan[data-plan="starter"]');
-    const growth = page.locator('article.plan[data-plan="growth"]');
+    const org = page.locator('article.plan[data-plan="organisation"]');
     await expect(starter.locator('.amt')).toContainText('1,999', { timeout: 5000 });
-    await expect(growth.locator('.amt')).toContainText('9,999', { timeout: 5000 });
+    await expect(org.locator('.amt')).toContainText('9,999', { timeout: 5000 });
     // The hardcoded "₹ —" placeholder is gone.
     await expect(starter.locator('.amt')).not.toContainText('—');
-    await expect(growth.locator('.amt')).not.toContainText('—');
+    await expect(org.locator('.amt')).not.toContainText('—');
+
+    // Switching to Annual shows the discounted annual price.
+    await page.getByRole('button', { name: 'Annual' }).click();
+    await expect(starter.locator('.amt')).toContainText('19,190');
+    await expect(org.locator('.amt')).toContainText('95,990');
   });
 
   test('a failed fetch leaves the fallback in place and does not throw', async ({ page }) => {

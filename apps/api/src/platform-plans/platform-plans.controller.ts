@@ -35,6 +35,8 @@ const basePlanSchema = z.object({
     .regex(/^[a-z0-9-]+$/, 'code must be lower-case letters, digits or dashes'),
   name: z.string().trim().min(2).max(80),
   monthlyPaiseInr: z.number().int().nonnegative(),
+  /** 0..10000 basis points (0..100%). Default 2000 = 20% off the annual total. */
+  annualDiscountBps: z.number().int().min(0).max(10000).default(2000),
   limits: usageKindsSchema,
   overageRates: usageKindsSchema,
   status: planStatusSchema.default('ACTIVE'),

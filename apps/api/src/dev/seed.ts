@@ -50,7 +50,8 @@ export async function seedDevData(db: Database): Promise<DevSeedResult> {
 
 /**
  * Placeholder plan catalogue so the marketing homepage shows something in dev. These are
- * illustrative — a Super Admin can edit prices and limits in /app/platform/plans. Idempotent
+ * illustrative and align with the account types (INDV_USER → Starter, ORGANIZATION → Organisation,
+ * CUSTOM_PLAN → Custom). A Super Admin edits prices and limits in /app/platform/plans. Idempotent
  * on `code`: existing rows are left alone so admin edits survive reseeds.
  */
 async function seedPlans(db: Database): Promise<void> {
@@ -58,23 +59,26 @@ async function seedPlans(db: Database): Promise<void> {
     {
       code: 'starter',
       name: 'Starter',
-      monthlyPaiseInr: 199900,
+      monthlyPaiseInr: 199900, // ₹1,999 / month
+      annualDiscountBps: 2000, // 20% off annual
       displayOrder: 10,
       limits: { CALL_MINUTES_OUTBOUND: 2000 } as Record<string, number>,
       overageRates: { CALL_MINUTES_OUTBOUND: 300 } as Record<string, number>,
     },
     {
-      code: 'growth',
-      name: 'Growth',
-      monthlyPaiseInr: 999900,
+      code: 'organisation',
+      name: 'Organisation',
+      monthlyPaiseInr: 999900, // ₹9,999 / month
+      annualDiscountBps: 2000,
       displayOrder: 20,
       limits: { CALL_MINUTES_OUTBOUND: 15000 } as Record<string, number>,
       overageRates: { CALL_MINUTES_OUTBOUND: 250 } as Record<string, number>,
     },
     {
-      code: 'scale',
-      name: 'Scale',
-      monthlyPaiseInr: 0,
+      code: 'custom',
+      name: 'Custom',
+      monthlyPaiseInr: 0, // Custom pricing — talk to sales
+      annualDiscountBps: 0,
       displayOrder: 30,
       limits: {} as Record<string, number>,
       overageRates: {} as Record<string, number>,

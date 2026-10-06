@@ -87,6 +87,8 @@ export interface OrganizationSummary {
   slug: string;
   status: OrganizationStatus;
   role: Role;
+  /** 7-day free-trial deadline (ISO) or null for pre-trial orgs. */
+  trialEndsAt: string | null;
 }
 
 export interface Me {
@@ -180,6 +182,8 @@ export interface Plan {
   code: string;
   name: string;
   monthlyPaiseInr: number;
+  /** Annual discount in basis points: 2000 = 20% off the annual total. */
+  annualDiscountBps: number;
   limits: Partial<Record<UsageEventKind, number>>;
   overageRates: Partial<Record<UsageEventKind, number>>;
   status: PlanStatus;
@@ -194,6 +198,9 @@ export interface PublicPlan {
   code: string;
   name: string;
   monthlyPaiseInr: number;
+  /** Effective annual paise after annualDiscountBps; 0 ⇒ Custom pricing. */
+  annualPaiseInr: number;
+  annualDiscountBps: number;
   limits: Partial<Record<UsageEventKind, number>>;
   displayOrder: number;
 }

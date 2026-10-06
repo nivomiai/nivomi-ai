@@ -71,6 +71,13 @@
       "when": 1791299824375,
       "tag": "0009_plans_display_order_and_updated_at",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791305351481,
+      "tag": "0010_plans_annual_discount_and_org_trial",
+      "breakpoints": true
     }
   ]
 }

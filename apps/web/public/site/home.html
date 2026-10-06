@@ -1554,12 +1554,12 @@ fieldset.field{border:0;padding:0;margin:0}
           <li><span class="ck"><svg class="ico"><use href="#i-check"/></svg></span>Basic analytics</li>
           <li><span class="ck"><svg class="ico"><use href="#i-check"/></svg></span>Email support</li>
         </ul>
-        <a class="btn btn-secondary btn-lg" href="#demo" data-plan-cta="Starter">Get Started</a>
+        <a class="btn btn-secondary btn-lg" href="/signup" data-plan-cta="Starter">Start 7-day free trial</a>
       </article>
 
-      <article class="plan pop reveal" data-plan="growth" style="--i:1">
-        <div class="plan-name"><h3>Growth</h3><span class="badge-pop"><svg class="ico"><use href="#i-spark"/></svg>Most Popular</span></div>
-        <p class="plan-for">For businesses ready to automate core customer and sales workflows.</p>
+      <article class="plan pop reveal" data-plan="organisation" style="--i:1">
+        <div class="plan-name"><h3>Organisation</h3><span class="badge-pop"><svg class="ico"><use href="#i-spark"/></svg>Most Popular</span></div>
+        <p class="plan-for">For organisations ready to automate core customer and sales workflows across a team.</p>
         <div class="price"><span class="amt">₹ —</span><span class="per">/ month</span></div>
         <ul class="feat">
           <li><span class="ck"><svg class="ico"><use href="#i-check"/></svg></span>Multiple AI Managers</li>
@@ -1571,12 +1571,12 @@ fieldset.field{border:0;padding:0;margin:0}
           <li><span class="ck"><svg class="ico"><use href="#i-check"/></svg></span>Analytics</li>
           <li><span class="ck"><svg class="ico"><use href="#i-check"/></svg></span>Priority support</li>
         </ul>
-        <a class="btn btn-primary btn-lg" href="#demo" data-plan-cta="Growth">Start Growing <svg class="ico ico-arrow"><use href="#i-arrow"/></svg></a>
+        <a class="btn btn-primary btn-lg" href="/signup" data-plan-cta="Organisation">Start 7-day free trial <svg class="ico ico-arrow"><use href="#i-arrow"/></svg></a>
       </article>
 
-      <article class="plan reveal" data-plan="scale" style="--i:2">
-        <div class="plan-name"><h3>Scale</h3></div>
-        <p class="plan-for">For businesses requiring advanced automation.</p>
+      <article class="plan reveal" data-plan="custom" style="--i:2">
+        <div class="plan-name"><h3>Custom</h3></div>
+        <p class="plan-for">Enterprise or bespoke setup — provisioned by Nivomi with your limits and SLA.</p>
         <div class="price"><span class="amt custom">Custom Pricing</span></div>
         <ul class="feat">
           <li><span class="ck"><svg class="ico"><use href="#i-check"/></svg></span>Custom AI Managers</li>
@@ -1588,7 +1588,7 @@ fieldset.field{border:0;padding:0;margin:0}
           <li><span class="ck"><svg class="ico"><use href="#i-check"/></svg></span>Priority support</li>
           <li><span class="ck"><svg class="ico"><use href="#i-check"/></svg></span>Enterprise-level customization</li>
         </ul>
-        <a class="btn btn-secondary btn-lg" href="#demo" data-plan-cta="Scale">Talk to Sales</a>
+        <a class="btn btn-secondary btn-lg" href="#demo" data-plan-cta="Custom">Talk to Sales</a>
       </article>
     </div>
     <p class="plans-note reveal">Every business is different. Contact us for a customized AI automation plan. <a href="#demo">Get a custom plan <svg class="ico"><use href="#i-arrow"/></svg></a></p>
@@ -1608,7 +1608,7 @@ fieldset.field{border:0;padding:0;margin:0}
           <a class="btn btn-white btn-lg" href="#demoForm" id="ctaBook">Book a Demo <svg class="ico ico-arrow"><use href="#i-arrow"/></svg></a>
           <a class="btn btn-ghost-dark btn-lg" href="https://wa.me/919946202458?text=Hi%20NIVOMI%20AI%2C%20I%20would%20like%20to%20know%20more%20about%20your%20AI%20Manager%20solutions." target="_blank" rel="noopener"><svg class="wa-glyph"><use href="#i-wa-mono"/></svg>Talk to NIVOMI AI</a>
         </div>
-        <p class="trial"><svg class="ico" style="width:16px;height:16px;color:#FF75BF"><use href="#i-spark"/></svg>Prefer to try first? <a href="https://wa.me/919946202458?text=Hi%20NIVOMI%20AI%2C%20I%20would%20like%20to%20start%20the%207-day%20free%20trial." target="_blank" rel="noopener">Start a 7-day free trial</a></p>
+        <p class="trial"><svg class="ico" style="width:16px;height:16px;color:#FF75BF"><use href="#i-spark"/></svg>Prefer to try first? <a href="/signup">Start a 7-day free trial</a> — no card needed.</p>
         <div class="cta-contacts">
           <a href="tel:+919946202458"><svg class="ico"><use href="#i-phone"/></svg>+91 99462 02458</a>
           <a href="mailto:nivomiai@gmail.com"><svg class="ico"><use href="#i-mail"/></svg>nivomiai@gmail.com</a>
@@ -1710,9 +1710,9 @@ fieldset.field{border:0;padding:0;margin:0}
    Keys match the `data-plan` attribute on each pricing card below.
    ========================================================= */
 let PLAN_PRICING = {
-  starter: { monthly: { amount: "₹ —", period: "/ month" }, annual: { amount: "₹ —", period: "/ year" } },
-  growth:  { monthly: { amount: "₹ —", period: "/ month" }, annual: { amount: "₹ —", period: "/ year" } },
-  scale:   { monthly: { amount: "Custom Pricing", period: "" }, annual: { amount: "Custom Pricing", period: "" } }
+  starter:      { monthly: { amount: "₹ —", period: "/ month" }, annual: { amount: "₹ —", period: "/ year" } },
+  organisation: { monthly: { amount: "₹ —", period: "/ month" }, annual: { amount: "₹ —", period: "/ year" } },
+  custom:       { monthly: { amount: "Custom Pricing", period: "" }, annual: { amount: "Custom Pricing", period: "" } }
 };
 const PLAN_PRICING_API = "/api/v1/plans/public";
 const WHATSAPP_NUMBER = "919946202458";
@@ -1943,12 +1943,18 @@ const CONTACT_EMAIL = "nivomiai@gmail.com";
       let matched = 0;
       for (const plan of items) {
         if (!plan || typeof plan.code !== 'string') continue;
-        const amount = plan.monthlyPaiseInr > 0 ? formatInr(plan.monthlyPaiseInr) : 'Custom Pricing';
-        if (!amount) continue;
-        const custom = plan.monthlyPaiseInr <= 0;
+        const custom = !(plan.monthlyPaiseInr > 0);
+        const monthlyAmount = custom ? 'Custom Pricing' : formatInr(plan.monthlyPaiseInr);
+        if (!monthlyAmount) continue;
+        // The API returns the effective annual price (monthly × 12 × (1 − discount)); fall back to
+        // monthly × 12 if the field is absent (older servers).
+        const annualPaise = typeof plan.annualPaiseInr === 'number'
+          ? plan.annualPaiseInr
+          : (plan.monthlyPaiseInr * 12);
+        const annualAmount = custom ? 'Custom Pricing' : formatInr(annualPaise);
         PLAN_PRICING[plan.code] = {
-          monthly: { amount, period: custom ? '' : '/ month' },
-          annual:  { amount, period: custom ? '' : '/ year' },
+          monthly: { amount: monthlyAmount, period: custom ? '' : '/ month' },
+          annual:  { amount: annualAmount || monthlyAmount, period: custom ? '' : '/ year' },
         };
         matched += 1;
       }

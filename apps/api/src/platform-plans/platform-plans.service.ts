@@ -20,6 +20,7 @@ export interface PlanRow {
   readonly code: string;
   readonly name: string;
   readonly monthlyPaiseInr: number;
+  readonly annualDiscountBps: number;
   readonly limits: Partial<Record<UsageEventKind, number>>;
   readonly overageRates: Partial<Record<UsageEventKind, number>>;
   readonly status: PlanStatus;
@@ -33,6 +34,9 @@ export interface PublicPlan {
   readonly code: string;
   readonly name: string;
   readonly monthlyPaiseInr: number;
+  /** Effective annual price in paise after `annualDiscountBps`. 0 ⇒ Custom pricing. */
+  readonly annualPaiseInr: number;
+  readonly annualDiscountBps: number;
   readonly limits: Partial<Record<UsageEventKind, number>>;
   readonly displayOrder: number;
 }
@@ -41,6 +45,7 @@ export interface CreatePlanInput {
   readonly code: string;
   readonly name: string;
   readonly monthlyPaiseInr: number;
+  readonly annualDiscountBps: number;
   readonly limits: Partial<Record<UsageEventKind, number>>;
   readonly overageRates: Partial<Record<UsageEventKind, number>>;
   readonly status: PlanStatus;
@@ -49,6 +54,13 @@ export interface CreatePlanInput {
 
 export interface UpdatePlanInput extends CreatePlanInput {
   readonly expectedVersion: string; // ISO timestamp of plans.updatedAt the editor last saw
+}
+
+function effectiveAnnualPaise(monthlyPaiseInr: number, annualDiscountBps: number): number {
+  if (monthlyPaiseInr <= 0) return 0;
+  const full = monthlyPaiseInr * 12;
+  const discount = Math.round((full * annualDiscountBps) / 10000);
+  return Math.max(0, full - discount);
 }
 
 /**
@@ -70,6 +82,7 @@ export class PlatformPlansService {
         code: plans.code,
         name: plans.name,
         monthlyPaiseInr: plans.monthlyPaiseInr,
+        annualDiscountBps: plans.annualDiscountBps,
         limits: plans.limits,
         overageRates: plans.overageRates,
         status: plans.status,
@@ -116,13 +129,18 @@ export class PlatformPlansService {
         code: plans.code,
         name: plans.name,
         monthlyPaiseInr: plans.monthlyPaiseInr,
+        annualDiscountBps: plans.annualDiscountBps,
         limits: plans.limits,
         displayOrder: plans.displayOrder,
       })
       .from(plans)
       .where(eq(plans.status, 'ACTIVE'))
       .orderBy(asc(plans.displayOrder), asc(plans.monthlyPaiseInr));
-    return rows.map((r) => ({ ...r, limits: r.limits ?? {} }));
+    return rows.map((r) => ({
+      ...r,
+      limits: r.limits ?? {},
+      annualPaiseInr: effectiveAnnualPaise(r.monthlyPaiseInr, r.annualDiscountBps),
+    }));
   }
 
   async create(
@@ -139,6 +157,7 @@ export class PlatformPlansService {
             code: input.code,
             name: input.name,
             monthlyPaiseInr: input.monthlyPaiseInr,
+            annualDiscountBps: input.annualDiscountBps,
             limits: input.limits,
             overageRates: input.overageRates,
             status: input.status,
@@ -170,6 +189,7 @@ export class PlatformPlansService {
         code: inserted.code,
         name: inserted.name,
         monthlyPaiseInr: inserted.monthlyPaiseInr,
+        annualDiscountBps: inserted.annualDiscountBps,
         limits: inserted.limits ?? {},
         overageRates: inserted.overageRates ?? {},
         status: inserted.status,
@@ -211,6 +231,7 @@ export class PlatformPlansService {
             code: input.code,
             name: input.name,
             monthlyPaiseInr: input.monthlyPaiseInr,
+            annualDiscountBps: input.annualDiscountBps,
             limits: input.limits,
             overageRates: input.overageRates,
             status: input.status,
@@ -254,6 +275,7 @@ export class PlatformPlansService {
         code: updated.code,
         name: updated.name,
         monthlyPaiseInr: updated.monthlyPaiseInr,
+        annualDiscountBps: updated.annualDiscountBps,
         limits: updated.limits ?? {},
         overageRates: updated.overageRates ?? {},
         status: updated.status,
@@ -310,6 +332,9 @@ export class PlatformPlansService {
   private validatePayload(input: CreatePlanInput): void {
     if (input.monthlyPaiseInr < 0) {
       throw new AppError('VALIDATION_ERROR', 'monthlyPaiseInr must be >= 0.');
+    }
+    if (input.annualDiscountBps < 0 || input.annualDiscountBps > 10000) {
+      throw new AppError('VALIDATION_ERROR', 'annualDiscountBps must be between 0 and 10000.');
     }
     const kinds = new Set<string>(usageEventKinds);
     for (const key of Object.keys(input.limits ?? {})) {

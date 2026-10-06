@@ -79,6 +79,7 @@ export function Overview() {
         }
       />
 
+      <TrialNotice trialEndsAt={organization.trialEndsAt} />
       {status.text ? <Notice tone={status.tone}>{status.text}</Notice> : null}
 
       {summary.error && !data ? (
@@ -159,6 +160,41 @@ export function Overview() {
         </ul>
       </Panel>
     </div>
+  );
+}
+
+/**
+ * Shows days remaining in the 7-day free trial, or an expired-trial reminder. Soft only — nothing
+ * is blocked yet; hard enforcement arrives with the Razorpay billing phase. Null trialEndsAt
+ * (orgs created before the feature) is silent.
+ */
+function TrialNotice({ trialEndsAt }: { readonly trialEndsAt: string | null }) {
+  if (!trialEndsAt) return null;
+  const endsAt = new Date(trialEndsAt);
+  if (Number.isNaN(endsAt.getTime())) return null;
+  const msLeft = endsAt.getTime() - Date.now();
+  const daysLeft = Math.ceil(msLeft / (24 * 60 * 60 * 1000));
+  if (msLeft > 0) {
+    const label =
+      daysLeft === 1 ? '1 day left in your free trial' : `${daysLeft} days left in your free trial`;
+    return (
+      <Notice tone="info">
+        <span className="font-semibold text-ink">{label}.</span>{' '}
+        After it ends, calls remain available while you choose a plan.{' '}
+        <Link className="font-semibold text-accent hover:underline" href="/#plans">
+          See plans →
+        </Link>
+      </Notice>
+    );
+  }
+  return (
+    <Notice tone="warn">
+      <span className="font-semibold text-ink">Your free trial has ended.</span>{' '}
+      Nothing is blocked yet, but please pick a plan to keep calling without interruption.{' '}
+      <Link className="font-semibold text-accent hover:underline" href="/#plans">
+        Choose a plan →
+      </Link>
+    </Notice>
   );
 }
 

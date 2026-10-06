@@ -177,6 +177,7 @@ describe('Super Admin plans CRUD + public pricing', () => {
         code: 'public-active',
         name: 'Public Active',
         monthlyPaiseInr: 49900,
+        annualDiscountBps: 2500, // 25% off → effective annual = 49900 * 12 * 0.75 = 449100
         limits: { CALL_MINUTES_OUTBOUND: 500 },
         overageRates: { CALL_MINUTES_OUTBOUND: 200 },
         status: 'ACTIVE',
@@ -203,6 +204,8 @@ describe('Super Admin plans CRUD + public pricing', () => {
         code: string;
         name: string;
         monthlyPaiseInr: number;
+        annualPaiseInr: number;
+        annualDiscountBps: number;
         limits: Record<string, number>;
         displayOrder: number;
         overageRates?: unknown;
@@ -216,6 +219,8 @@ describe('Super Admin plans CRUD + public pricing', () => {
     expect(row.overageRates).toBeUndefined();
     expect(row.id).toBeUndefined();
     expect(row.limits.CALL_MINUTES_OUTBOUND).toBe(500);
+    expect(row.annualDiscountBps).toBe(2500);
+    expect(row.annualPaiseInr).toBe(449100);
 
     // Suppress unused-var lint; both ids referenced for clarity.
     void activeRes;

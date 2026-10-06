@@ -32,6 +32,7 @@ interface DraftForm {
   code: string;
   name: string;
   monthlyRupees: string;
+  annualDiscountPct: string;
   status: PlanStatus;
   displayOrder: string;
   limits: Partial<Record<UsageEventKind, string>>;
@@ -43,6 +44,7 @@ function emptyForm(): DraftForm {
     code: '',
     name: '',
     monthlyRupees: '',
+    annualDiscountPct: '20',
     status: 'ACTIVE',
     displayOrder: '0',
     limits: {},
@@ -65,11 +67,19 @@ function fromPlan(plan: Plan): DraftForm {
     code: plan.code,
     name: plan.name,
     monthlyRupees: (plan.monthlyPaiseInr / 100).toFixed(2),
+    annualDiscountPct: (plan.annualDiscountBps / 100).toString(),
     status: plan.status,
     displayOrder: String(plan.displayOrder),
     limits: stringMap(plan.limits),
     overageRates: stringMap(plan.overageRates),
   };
+}
+
+function effectiveAnnualPaise(monthlyPaiseInr: number, annualDiscountBps: number): number {
+  if (monthlyPaiseInr <= 0) return 0;
+  const full = monthlyPaiseInr * 12;
+  const discount = Math.round((full * annualDiscountBps) / 10000);
+  return Math.max(0, full - discount);
 }
 
 function formatRupees(paise: number): string {
@@ -189,8 +199,13 @@ function PlanRow({
           </div>
           <p className="mt-1 text-[13px] text-muted">
             <code className="rounded bg-soft px-1.5 py-0.5">{plan.code}</code> ·{' '}
-            {plan.monthlyPaiseInr > 0 ? `${formatRupees(plan.monthlyPaiseInr)} / month` : 'Custom pricing'} ·
-            display order {plan.displayOrder}
+            {plan.monthlyPaiseInr > 0
+              ? `${formatRupees(plan.monthlyPaiseInr)} / month`
+              : 'Custom pricing'}
+            {plan.monthlyPaiseInr > 0
+              ? ` · ${formatRupees(effectiveAnnualPaise(plan.monthlyPaiseInr, plan.annualDiscountBps))} / year (${(plan.annualDiscountBps / 100).toFixed(0)}% off)`
+              : ''}{' '}
+            · display order {plan.displayOrder}
           </p>
           {Object.keys(plan.limits).length > 0 ? (
             <p className="mt-2 text-[13px] text-ink-2">
@@ -259,16 +274,21 @@ function PlanDialog({
       if (!Number.isFinite(rupees) || rupees < 0) {
         throw new Error('Monthly price must be a non-negative number of rupees.');
       }
-      await persist(rupees);
+      const discountPct = Number(form.annualDiscountPct || '0');
+      if (!Number.isFinite(discountPct) || discountPct < 0 || discountPct > 100) {
+        throw new Error('Annual discount must be between 0 and 100%.');
+      }
+      await persist(rupees, Math.round(discountPct * 100));
     });
     if (ok) onSaved();
   };
 
-  const persist = async (rupees: number) => {
+  const persist = async (rupees: number, annualDiscountBps: number) => {
     const payload: Record<string, unknown> = {
       code: form.code.trim(),
       name: form.name.trim(),
       monthlyPaiseInr: Math.round(rupees * 100),
+      annualDiscountBps,
       limits: Object.fromEntries(
         USAGE_EVENT_KINDS.map((k) => [k, parseLimit(form.limits[k])]).filter(
           ([, v]) => typeof v === 'number',
@@ -364,6 +384,15 @@ function PlanDialog({
               hint="Rupees. Enter 0 for Custom-pricing plans like Enterprise."
               inputMode="numeric"
               required
+            />
+            <Field
+              id="plan-annual-discount"
+              label="Annual discount (%)"
+              value={form.annualDiscountPct}
+              onChange={(e) => setForm((f) => ({ ...f, annualDiscountPct: e.target.value }))}
+              placeholder="20"
+              hint="Marketing site shows annual = monthly × 12 × (1 − this %). 0 keeps the full annual price."
+              inputMode="numeric"
             />
             <Field
               id="plan-order"

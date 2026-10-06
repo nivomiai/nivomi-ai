@@ -74,6 +74,12 @@ export const plans = pgTable(
     status: planStatus('status').notNull().default('ACTIVE'),
     /** Marketing-site order; lower first. The super admin sets this independently of price. */
     displayOrder: integer('display_order').notNull().default(0),
+    /**
+     * Discount applied to the annual price in basis points. 0 = no discount (annual = monthly×12),
+     * 2000 = 20% off. The public endpoint computes the effective annual-paise so clients never
+     * need to know the formula.
+     */
+    annualDiscountBps: integer('annual_discount_bps').notNull().default(2000),
     /** Updated by the service on every edit; used as an optimistic-concurrency token. */
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
     effectiveFrom: timestamp('effective_from', { withTimezone: true }).notNull().defaultNow(),
