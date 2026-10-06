@@ -33,9 +33,11 @@ BMAD installation, engineering rules (`CLAUDE.md`).
 ## Phase 3: MVP journey
 
 Lead → AI outbound call → qualification → appointment → human handoff → transcript → AI summary →
-HubSpot sync → usage → analytics. Covers the eligibility + ComplianceEngine (India rules), voice
-runtime (Exotel + Sarvam streaming, LLMRouter, barge-in, fallback), AI tool registry, HubSpot
-OAuth and sync worker, usage metering and Razorpay subscription billing, and MVP analytics.
+usage → analytics. Covers the eligibility + ComplianceEngine (India rules), voice runtime
+(Exotel + Sarvam streaming, LLMRouter, barge-in, fallback), AI tool registry, usage metering and
+Razorpay subscription billing, and MVP analytics. External CRM integrations (HubSpot and others)
+are NOT IN MVP (owner decision 2026-10-06) — the primary lead paths are CSV/XLSX upload, manual
+entry, and `POST /leads`.
 
 ## Later
 

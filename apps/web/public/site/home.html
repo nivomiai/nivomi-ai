@@ -1152,7 +1152,7 @@ fieldset.field{border:0;padding:0;margin:0}
       <div class="event ev1" data-step="0" aria-hidden="true"><span class="e-ic"><svg class="ico"><use href="#i-phone"/></svg></span><div><b>Call answered</b><small>Picked up in &lt;1s</small></div><span class="e-st"><svg class="ico"><use href="#i-check"/></svg></span></div>
       <div class="event ev2" data-step="1" aria-hidden="true"><span class="e-ic"><svg class="ico"><use href="#i-target"/></svg></span><div><b>Lead qualified</b><small>Intent &amp; budget captured</small></div><span class="e-st"><svg class="ico"><use href="#i-check"/></svg></span></div>
       <div class="event ev3 wa" data-step="2" aria-hidden="true"><span class="e-ic"><svg class="ico"><use href="#i-chat"/></svg></span><div><b>WhatsApp sent</b><small>Brochure &amp; price shared</small></div><span class="e-st"><svg class="ico"><use href="#i-check"/></svg></span></div>
-      <div class="event ev4" data-step="3" aria-hidden="true"><span class="e-ic"><svg class="ico"><use href="#i-db"/></svg></span><div><b>CRM updated</b><small>Notes synced to HubSpot</small></div><span class="e-st"><svg class="ico"><use href="#i-check"/></svg></span></div>
+      <div class="event ev4" data-step="3" aria-hidden="true"><span class="e-ic"><svg class="ico"><use href="#i-db"/></svg></span><div><b>CRM updated</b><small>Notes synced to your CRM</small></div><span class="e-st"><svg class="ico"><use href="#i-check"/></svg></span></div>
       <div class="event ev5" data-step="4" aria-hidden="true"><span class="e-ic"><svg class="ico"><use href="#i-cal"/></svg></span><div><b>Meeting booked</b><small>Tomorrow · 11:30 IST</small></div><span class="e-st"><svg class="ico"><use href="#i-check"/></svg></span></div>
     </div>
   </div>
@@ -1239,7 +1239,7 @@ fieldset.field{border:0;padding:0;margin:0}
         <div class="mgr-body">
           <div class="mgr-top"><span class="mgr-ic"><svg class="ico"><use href="#i-db"/></svg></span><span class="status">Live</span></div>
           <h3>Lead inbox</h3>
-          <p>Every lead — from an Excel upload, a website form hitting <code>POST /leads</code>, or a HubSpot sync — lands in one place, with status, owner and the next action the agent will take.</p>
+          <p>Every lead — from an Excel upload, a website form hitting <code>POST /leads</code>, or a webhook from your back-office tool — lands in one place, with status, owner and the next action the agent will take.</p>
         </div>
         <div class="mgr-preview" aria-hidden="true">
           <div class="pv-crm">
@@ -1364,7 +1364,7 @@ fieldset.field{border:0;padding:0;margin:0}
       <div class="section-head reveal">
         <span class="eyebrow">In the moment</span>
         <h2 class="h2">Follow one call, start to finish.</h2>
-        <p class="lede">The agent picks up, qualifies, replies on WhatsApp, writes the summary to HubSpot and schedules the next step — in the time a human SDR takes to open the ticket.</p>
+        <p class="lede">The agent picks up, qualifies, replies on WhatsApp, writes the summary back and schedules the next step — in the time a human SDR takes to open the ticket.</p>
       </div>
       <div class="tabs reveal" role="tablist" aria-label="Demo channel">
         <button class="tab" role="tab" aria-selected="true" data-demo="call"><svg class="ico"><use href="#i-phone"/></svg>AI Call</button>
@@ -1445,12 +1445,12 @@ fieldset.field{border:0;padding:0;margin:0}
     <div class="reveal">
       <span class="eyebrow">Lead sources &amp; integrations</span>
       <h2 class="h2">Bring your leads in the way that fits — then let status drive the dial.</h2>
-      <p class="lede">Upload a spreadsheet, call our API, or wire up a CRM. However the lead arrives, every number is checked against DNC and DND before Nivomi rings it.</p>
+      <p class="lede">Upload a spreadsheet or call our API. However the lead arrives, every number is checked against DNC and DND before Nivomi rings it.</p>
       <ul class="integ-points">
         <li><span class="p-ic"><svg class="ico"><use href="#i-db"/></svg></span><div><b>Excel &amp; CSV upload</b><span>Column mapping, duplicate review, chunked import. Up to tens of thousands of rows per file.</span></div></li>
         <li><span class="p-ic"><svg class="ico"><use href="#i-link"/></svg></span><div><b>Direct REST API</b><span><code>POST /leads</code> with <code>Idempotency-Key</code> for your website form or back-office tool.</span></div></li>
         <li><span class="p-ic"><svg class="ico"><use href="#i-repeat"/></svg></span><div><b>Status-driven campaigns</b><span>Save a campaign once; every lead that enters NEW, FOLLOW_UP or CALLBACK_REQUESTED is dialled automatically.</span></div></li>
-        <li><span class="p-ic"><svg class="ico"><use href="#i-refresh"/></svg></span><div><b>HubSpot &amp; webhooks (optional)</b><span>Two-way HubSpot sync when you need it; signed webhooks for everything else.</span></div></li>
+        <li><span class="p-ic"><svg class="ico"><use href="#i-refresh"/></svg></span><div><b>Signed webhooks</b><span>Receive events from Nivomi for your back-office automation.</span></div></li>
       </ul>
     </div>
     <div class="hub reveal" style="--i:1" id="hub">

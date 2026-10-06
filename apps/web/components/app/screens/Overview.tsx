@@ -40,8 +40,8 @@ const UPCOMING: readonly { icon: IconName; title: string; text: string }[] = [
   { icon: 'i-cal', title: 'Appointments', text: 'Qualified leads booked straight from the call.' },
   {
     icon: 'i-link',
-    title: 'CRM write-back',
-    text: 'Call outcomes, notes and meetings synced back to HubSpot.',
+    title: 'External CRM connectors',
+    text: 'Two-way sync with your CRM — not in the MVP.',
   },
   { icon: 'i-chart', title: 'Usage & billing', text: 'Metered minutes and monthly invoices.' },
 ];
@@ -491,7 +491,7 @@ function SetupSteps() {
       ? [
           {
             label: 'Bring in your leads',
-            text: 'Upload a CSV or XLSX, or connect HubSpot.',
+            text: 'Upload a CSV or XLSX, or add a lead by hand.',
             href: '/app/data-sources',
           },
         ]

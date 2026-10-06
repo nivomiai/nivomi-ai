@@ -3,14 +3,7 @@
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useRef, useState, type FormEvent } from 'react';
-import {
-  CONSENT_BASES,
-  CONSENT_LABELS,
-  type CrmStatus,
-  type ImportJob,
-  type Page,
-  type ReviewItem,
-} from '@/lib/api/types';
+import { type CrmStatus, type ImportJob, type Page, type ReviewItem } from '@/lib/api/types';
 import { api } from '@/lib/app/api';
 import { formatBytes, formatDateTime, formatNumber } from '@/lib/app/format';
 import { useSession } from '@/lib/app/session';
@@ -20,7 +13,6 @@ import {
   Badge,
   EmptyState,
   ErrorBlock,
-  Field,
   FormAlert,
   LoadingBlock,
   Notice,
@@ -30,22 +22,26 @@ import {
 
 const MAX_BYTES = 20 * 1024 * 1024;
 
-/** Messages for the `?crm=` outcome the OAuth callback redirects back with. */
+/**
+ * Messages for the `?crm=` outcome the OAuth callback redirects back with. Kept for legacy
+ * workspaces whose CRM is already connected — external CRM connectors are not in MVP, so new
+ * connection attempts aren't offered from the UI.
+ */
 const CALLBACK_MESSAGES: Record<string, { tone: 'success' | 'warn'; text: string }> = {
-  connected: { tone: 'success', text: 'HubSpot is connected. The first sync has started.' },
-  denied: { tone: 'warn', text: 'HubSpot access was not granted.' },
+  connected: { tone: 'success', text: 'CRM reconnected. The first sync has started.' },
+  denied: { tone: 'warn', text: 'CRM access was not granted.' },
   invalid_state: { tone: 'warn', text: 'That connection attempt expired. Please try again.' },
-  signed_out: { tone: 'warn', text: 'You were signed out. Sign in and connect again.' },
-  not_allowed: { tone: 'warn', text: 'Only owners and admins can connect HubSpot.' },
+  signed_out: { tone: 'warn', text: 'You were signed out. Sign in and try again.' },
+  not_allowed: { tone: 'warn', text: 'Only owners and admins can manage CRM connections.' },
   account_in_use: {
     tone: 'warn',
-    text: 'That HubSpot account is already connected to another Nivomi organization.',
+    text: 'That CRM account is already connected to another Nivomi organization.',
   },
   account_change_requires_confirmation: {
     tone: 'warn',
-    text: 'That is a different HubSpot account. Use “Connect a different account” to confirm the switch.',
+    text: 'That is a different CRM account. Reconnect to confirm the switch.',
   },
-  provider_error: { tone: 'warn', text: 'HubSpot could not be reached. Please try again.' },
+  provider_error: { tone: 'warn', text: 'The CRM could not be reached. Please try again.' },
 };
 
 export const IMPORT_STATUS_LABELS: Record<ImportJob['status'], string> = {
@@ -78,7 +74,7 @@ export function DataSources() {
     <div className="grid gap-8">
       <PageHeader
         title="Data sources"
-        description="Add leads by hand, import a file, or connect an outside CRM — whatever fits how you already work. Every source goes through the same checks, and nothing is called without a consent basis."
+        description="Add leads by hand or import a CSV/XLSX — whichever fits how you work. Every source goes through the same checks, and nothing is called without a consent basis."
         actions={
           can('leads.write') ? (
             <Link href="/app/leads/new" className="btn btn-primary btn-sm">
@@ -167,6 +163,13 @@ function ImportCard() {
   );
 }
 
+/**
+ * External CRM card. External CRM connectors are NOT in the MVP (owner decision 2026-10-06);
+ * the primary paths are manual entry and CSV/XLSX file import. This card is deliberately a
+ * "coming soon" placeholder for workspaces with no existing connection. For legacy workspaces
+ * that already have a connection in the database, it still shows the connection summary and
+ * lets owners/admins disconnect so stale state can be cleaned up.
+ */
 function CrmCard() {
   const { can } = useSession();
   const crm = useResource<CrmStatus>('/integrations/crm', {
@@ -174,72 +177,48 @@ function CrmCard() {
   });
   const action = useSubmit();
 
-  const connect = (confirmAccountChange: boolean) =>
-    action.run(async () => {
-      const { authorizeUrl } = await api.post<{ authorizeUrl: string }>(
-        '/integrations/crm/hubspot/authorize',
-        { confirmAccountChange },
-      );
-      // HubSpot's consent screen is a full-page navigation outside the app.
-      window.location.href = authorizeUrl;
-    });
-
   if (crm.error && !crm.data) return <ErrorBlock message={crm.error} onRetry={crm.reload} />;
   if (!crm.data) return <LoadingBlock />;
-  const { connection, available, runs } = crm.data;
+  const { connection, runs } = crm.data;
   const running = runs.some((r) => r.status === 'QUEUED' || r.status === 'RUNNING');
   const active = connection && connection.status !== 'DISCONNECTED';
 
+  if (!active) {
+    return (
+      <Panel
+        title="External CRM"
+        description="Nivomi owns the Leads domain for the MVP. External CRM connectors are coming later — for now, add leads manually or import a CSV/XLSX."
+      >
+        <Notice>
+          External CRM integrations aren’t available in the MVP. Nothing here is required — manual
+          entry and file imports are the primary paths.
+        </Notice>
+      </Panel>
+    );
+  }
+
   return (
     <Panel
-      title="Connect a CRM (optional)"
-      description="HubSpot today; more CRMs come behind the same connector. Contacts, their companies and leads come into Nivomi; Nivomi stays the source of truth. Skip this if you don’t need it — manual entry and file imports work on their own."
+      title="External CRM (legacy connection)"
+      description="This workspace has an existing CRM connection. New CRM connections aren’t available in the MVP — manage or disconnect the one you have below."
     >
       <div className="grid gap-4">
         <FormAlert message={action.error} />
-        {!available ? (
-          <Notice>Connecting HubSpot is not enabled on this workspace yet.</Notice>
-        ) : null}
-        {connection ? (
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge
-              tone={
-                connection.status === 'CONNECTED'
-                  ? 'live'
-                  : connection.status === 'DISCONNECTED'
-                    ? 'neutral'
-                    : 'warn'
-              }
-            >
-              {connection.status === 'TOKEN_INVALID'
-                ? 'Reconnect needed'
-                : connection.status.charAt(0) + connection.status.slice(1).toLowerCase()}
-            </Badge>
-            <span className="text-sm text-muted">Account {connection.accountId}</span>
-            {active && !connection.leadsEnabled ? (
-              <Badge tone="soon">HubSpot leads not shared</Badge>
-            ) : null}
-          </div>
-        ) : null}
-        {connection?.lastError ? <Notice tone="warn">{connection.lastError}</Notice> : null}
-        {connection?.lastSyncAt ? (
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge tone={connection.status === 'CONNECTED' ? 'live' : 'warn'}>
+            {connection.status === 'TOKEN_INVALID'
+              ? 'Reconnect needed'
+              : connection.status.charAt(0) + connection.status.slice(1).toLowerCase()}
+          </Badge>
+          <span className="text-sm text-muted">Account {connection.accountId}</span>
+        </div>
+        {connection.lastError ? <Notice tone="warn">{connection.lastError}</Notice> : null}
+        {connection.lastSyncAt ? (
           <p className="text-sm text-muted">Last synced {formatDateTime(connection.lastSyncAt)}</p>
         ) : null}
 
         <div className="flex flex-wrap gap-2">
-          {available &&
-          can('integrations.manage') &&
-          (!active || connection.status === 'TOKEN_INVALID') ? (
-            <button
-              type="button"
-              className="btn btn-primary btn-sm"
-              disabled={action.pending}
-              onClick={() => void connect(false)}
-            >
-              {connection ? 'Reconnect HubSpot' : 'Connect HubSpot'}
-            </button>
-          ) : null}
-          {active && connection.status !== 'TOKEN_INVALID' && can('integrations.sync') ? (
+          {connection.status !== 'TOKEN_INVALID' && can('integrations.sync') ? (
             <button
               type="button"
               className="btn btn-secondary btn-sm"
@@ -253,49 +232,25 @@ function CrmCard() {
               {running ? 'Syncing…' : 'Sync now'}
             </button>
           ) : null}
-          {active && can('integrations.manage') ? (
-            <>
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
-                disabled={action.pending}
-                onClick={() => {
-                  if (
-                    window.confirm(
-                      'Connect a different HubSpot account? Consent mapping is reset and records from the two accounts are kept apart.',
-                    )
-                  ) {
-                    void connect(true);
-                  }
-                }}
-              >
-                Connect a different account
-              </button>
-              <button
-                type="button"
-                className="btn btn-secondary btn-sm"
-                disabled={action.pending}
-                onClick={() => {
-                  if (
-                    !window.confirm(
-                      'Disconnect HubSpot? Syncing stops; every lead stays in Nivomi.',
-                    )
-                  )
-                    return;
-                  void action
-                    .run(() => api.del('/integrations/crm'))
-                    .then((ok) => ok && crm.reload());
-                }}
-              >
-                Disconnect
-              </button>
-            </>
+          {can('integrations.manage') ? (
+            <button
+              type="button"
+              className="btn btn-secondary btn-sm"
+              disabled={action.pending}
+              onClick={() => {
+                if (
+                  !window.confirm('Disconnect this CRM? Syncing stops; every lead stays in Nivomi.')
+                )
+                  return;
+                void action
+                  .run(() => api.del('/integrations/crm'))
+                  .then((ok) => ok && crm.reload());
+              }}
+            >
+              Disconnect
+            </button>
           ) : null}
         </div>
-
-        {active && can('integrations.manage') ? (
-          <ConsentMapping settings={connection.settings} onSaved={crm.reload} />
-        ) : null}
 
         {runs.length > 0 ? (
           <div>
@@ -326,132 +281,10 @@ function CrmCard() {
                 </li>
               ))}
             </ul>
-            <p className="mt-2 text-[13px] text-muted">
-              Contacts without a usable phone number are skipped. Changes sync every 15 minutes.
-            </p>
           </div>
         ) : null}
       </div>
     </Panel>
-  );
-}
-
-/** FR-19: which HubSpot property holds consent; contacts without it import as not callable. */
-function ConsentMapping({
-  settings,
-  onSaved,
-}: {
-  readonly settings: NonNullable<CrmStatus['connection']>['settings'];
-  readonly onSaved: () => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [property, setProperty] = useState(settings.consentProperty ?? '');
-  const [rows, setRows] = useState<{ value: string; basis: string }[]>(
-    Object.entries(settings.consentValueMap ?? {}).map(([value, basis]) => ({ value, basis })),
-  );
-  const submit = useSubmit();
-
-  const onSubmit = async (event: FormEvent) => {
-    event.preventDefault();
-    const ok = await submit.run(() =>
-      api.put('/integrations/crm/settings', {
-        consentProperty: property.trim() || null,
-        consentValueMap: Object.fromEntries(
-          rows.filter((r) => r.value.trim()).map((r) => [r.value.trim(), r.basis]),
-        ),
-      }),
-    );
-    if (ok) {
-      setOpen(false);
-      onSaved();
-    }
-  };
-
-  if (!open) {
-    return (
-      <div className="rounded-[12px] border border-line px-4 py-3 text-sm">
-        <p className="text-ink-2">
-          {settings.consentProperty
-            ? `Consent comes from the HubSpot property “${settings.consentProperty}”.`
-            : 'No consent property is mapped: HubSpot contacts arrive without a consent basis and cannot be called.'}
-        </p>
-        <button
-          type="button"
-          className="mt-2 font-semibold text-accent hover:underline"
-          onClick={() => setOpen(true)}
-        >
-          {settings.consentProperty ? 'Change consent mapping' : 'Map a consent property'}
-        </button>
-      </div>
-    );
-  }
-  return (
-    <form
-      onSubmit={(e) => void onSubmit(e)}
-      className="grid gap-3 rounded-[12px] border border-line p-4"
-    >
-      <FormAlert message={submit.error} />
-      <Field
-        id="consent-property"
-        label="HubSpot property (internal name)"
-        placeholder="e.g. nivomi_consent"
-        value={property}
-        onChange={(e) => setProperty(e.target.value)}
-      />
-      <p className="text-sm font-semibold text-ink">Property value → consent basis</p>
-      {rows.map((row, index) => (
-        <div key={index} className="grid gap-2 sm:grid-cols-[1fr_1fr_auto] sm:items-center">
-          <input
-            aria-label={`HubSpot value ${index + 1}`}
-            className="rounded-[10px] border border-line bg-surface px-3 py-2 text-sm text-ink"
-            value={row.value}
-            onChange={(e) =>
-              setRows((r) => r.map((x, i) => (i === index ? { ...x, value: e.target.value } : x)))
-            }
-          />
-          <select
-            aria-label={`Consent basis for value ${index + 1}`}
-            className="rounded-[10px] border border-line bg-surface px-3 py-2 text-sm text-ink"
-            value={row.basis}
-            onChange={(e) =>
-              setRows((r) => r.map((x, i) => (i === index ? { ...x, basis: e.target.value } : x)))
-            }
-          >
-            {CONSENT_BASES.map((b) => (
-              <option key={b} value={b}>
-                {CONSENT_LABELS[b]}
-              </option>
-            ))}
-            <option value="DND">Opted out (never call)</option>
-          </select>
-          <button
-            type="button"
-            className="text-sm font-semibold text-muted hover:text-accent"
-            onClick={() => setRows((r) => r.filter((_, i) => i !== index))}
-          >
-            Remove
-          </button>
-        </div>
-      ))}
-      <button
-        type="button"
-        className="justify-self-start text-sm font-semibold text-accent hover:underline"
-        onClick={() => setRows((r) => [...r, { value: '', basis: 'INQUIRY' }])}
-      >
-        Add a value
-      </button>
-      <div className="flex gap-2">
-        <button type="submit" className="btn btn-primary btn-sm" disabled={submit.pending}>
-          Save mapping
-        </button>
-        <button type="button" className="btn btn-secondary btn-sm" onClick={() => setOpen(false)}>
-          Cancel
-        </button>
-      </div>
-      <p className="text-[13px] text-muted">
-        Applies from the next sync. Use “Sync now” to apply it straight away.
-      </p>
-    </form>
   );
 }
 

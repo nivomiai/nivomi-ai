@@ -400,7 +400,7 @@ export const CONSENT_LABELS: Record<ConsentBasis, string> = {
 
 export const SOURCE_LABELS: Record<DataSource, string> = {
   FILE_IMPORT: 'File import',
-  HUBSPOT: 'HubSpot',
+  HUBSPOT: 'External CRM (legacy)',
   MANUAL: 'Manual',
   INBOUND: 'Inbound call',
 };

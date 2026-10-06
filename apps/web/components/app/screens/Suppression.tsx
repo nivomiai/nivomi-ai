@@ -24,7 +24,7 @@ const SOURCE: Record<SuppressionEntry['source'], string> = {
   MANUAL: 'Added by a member',
   IMPORT: 'From an import',
   IN_CALL_OPT_OUT: 'Opted out on a call',
-  HUBSPOT: 'From HubSpot',
+  HUBSPOT: 'From an external CRM',
 };
 
 /** PRD FR-22: numbers Nivomi must never call. */

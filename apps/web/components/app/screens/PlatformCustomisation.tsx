@@ -13,10 +13,10 @@ const FEATURE_FLAGS = [
     enabled: true,
   },
   {
-    id: 'crm_hubspot',
-    label: 'HubSpot sync',
-    description: 'OAuth connection, contact and lead sync, call-outcome write-back.',
-    enabled: true,
+    id: 'crm_external',
+    label: 'External CRM sync',
+    description: 'OAuth connection, contact/lead sync, call-outcome write-back. Not in MVP.',
+    enabled: false,
   },
   {
     id: 'imports_csv',
