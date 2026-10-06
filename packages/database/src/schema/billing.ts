@@ -1,6 +1,7 @@
 import {
   bigint,
   index,
+  integer,
   jsonb,
   pgEnum,
   pgTable,
@@ -71,6 +72,10 @@ export const plans = pgTable(
       .notNull()
       .default({}),
     status: planStatus('status').notNull().default('ACTIVE'),
+    /** Marketing-site order; lower first. The super admin sets this independently of price. */
+    displayOrder: integer('display_order').notNull().default(0),
+    /** Updated by the service on every edit; used as an optimistic-concurrency token. */
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
     effectiveFrom: timestamp('effective_from', { withTimezone: true }).notNull().defaultNow(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },

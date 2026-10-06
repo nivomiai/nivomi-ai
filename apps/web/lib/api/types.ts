@@ -144,6 +144,60 @@ export interface Page<T> {
   nextCursor?: string | null;
 }
 
+/** Usage kinds metered by the billing engine (apps/api UsageEventKind). */
+export const USAGE_EVENT_KINDS = [
+  'CALL_MINUTES_OUTBOUND',
+  'CALL_MINUTES_INBOUND',
+  'STT_AUDIO_SECONDS',
+  'TTS_AUDIO_SECONDS',
+  'LLM_INPUT_TOKENS',
+  'LLM_OUTPUT_TOKENS',
+  'SMS_SENT',
+  'EMAILS_SENT',
+  'IMPORT_ROWS',
+  'CRM_API_CALLS',
+] as const;
+export type UsageEventKind = (typeof USAGE_EVENT_KINDS)[number];
+
+export const USAGE_KIND_LABELS: Record<UsageEventKind, string> = {
+  CALL_MINUTES_OUTBOUND: 'Outbound call minutes',
+  CALL_MINUTES_INBOUND: 'Inbound call minutes',
+  STT_AUDIO_SECONDS: 'STT seconds',
+  TTS_AUDIO_SECONDS: 'TTS seconds',
+  LLM_INPUT_TOKENS: 'LLM input tokens',
+  LLM_OUTPUT_TOKENS: 'LLM output tokens',
+  SMS_SENT: 'SMS sent',
+  EMAILS_SENT: 'Emails sent',
+  IMPORT_ROWS: 'Import rows',
+  CRM_API_CALLS: 'CRM API calls',
+};
+
+export type PlanStatus = 'ACTIVE' | 'ARCHIVED';
+
+/** A row from `GET /platform/plans` (super admin console). */
+export interface Plan {
+  id: string;
+  code: string;
+  name: string;
+  monthlyPaiseInr: number;
+  limits: Partial<Record<UsageEventKind, number>>;
+  overageRates: Partial<Record<UsageEventKind, number>>;
+  status: PlanStatus;
+  displayOrder: number;
+  updatedAt: string;
+  createdAt: string;
+  orgsActive: number;
+}
+
+/** A row from `GET /plans/public` (marketing site, unauthenticated). */
+export interface PublicPlan {
+  code: string;
+  name: string;
+  monthlyPaiseInr: number;
+  limits: Partial<Record<UsageEventKind, number>>;
+  displayOrder: number;
+}
+
 export const ROLE_LABELS: Record<Role, string> = {
   INDV_USER: 'Individual',
   ORGANIZATION: 'Organization',

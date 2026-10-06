@@ -1704,14 +1704,17 @@ fieldset.field{border:0;padding:0;margin:0}
 
 <script>
 /* =========================================================
-   EDIT PRICING HERE — no fake prices. Replace "₹ —" when ready.
-   period text is shown after the amount (leave "" to hide).
+   PRICING is loaded live from /api/v1/plans/public (super admin edits
+   it in /app/platform/plans). The object below is the fallback used
+   until the fetch resolves, and when the API cannot be reached.
+   Keys match the `data-plan` attribute on each pricing card below.
    ========================================================= */
-const PLAN_PRICING = {
+let PLAN_PRICING = {
   starter: { monthly: { amount: "₹ —", period: "/ month" }, annual: { amount: "₹ —", period: "/ year" } },
   growth:  { monthly: { amount: "₹ —", period: "/ month" }, annual: { amount: "₹ —", period: "/ year" } },
   scale:   { monthly: { amount: "Custom Pricing", period: "" }, annual: { amount: "Custom Pricing", period: "" } }
 };
+const PLAN_PRICING_API = "/api/v1/plans/public";
 const WHATSAPP_NUMBER = "919946202458";
 const CONTACT_EMAIL = "nivomiai@gmail.com";
 
@@ -1918,10 +1921,43 @@ const CONTACT_EMAIL = "nivomiai@gmail.com";
       box.innerHTML = `<span class="amt${custom ? ' custom' : ''}">${esc(p.amount)}</span>` + (p.period ? `<span class="per">${esc(p.period)}</span>` : '');
     });
   }
+  let currentBill = 'monthly';
   $$('.toggle button').forEach(b => b.addEventListener('click', () => {
-    $$('.toggle button').forEach(x => x.setAttribute('aria-pressed', x === b)); renderPrices(b.dataset.bill);
+    $$('.toggle button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    currentBill = b.dataset.bill;
+    renderPrices(currentBill);
   }));
   renderPrices('monthly');
+
+  /* ---- Live pricing from the API (super admin edits in /app/platform/plans) ---- */
+  function formatInr(paise){
+    if (!paise || paise <= 0) return null;
+    const rupees = Math.round(paise / 100);
+    try { return new Intl.NumberFormat('en-IN', { style:'currency', currency:'INR', maximumFractionDigits:0 }).format(rupees); }
+    catch (_) { return '₹' + rupees.toLocaleString('en-IN'); }
+  }
+  fetch(PLAN_PRICING_API, { headers: { Accept: 'application/json' } })
+    .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
+    .then(envelope => {
+      const items = (envelope && envelope.data && envelope.data.items) || (envelope && envelope.items) || [];
+      let matched = 0;
+      for (const plan of items) {
+        if (!plan || typeof plan.code !== 'string') continue;
+        const amount = plan.monthlyPaiseInr > 0 ? formatInr(plan.monthlyPaiseInr) : 'Custom Pricing';
+        if (!amount) continue;
+        const custom = plan.monthlyPaiseInr <= 0;
+        PLAN_PRICING[plan.code] = {
+          monthly: { amount, period: custom ? '' : '/ month' },
+          annual:  { amount, period: custom ? '' : '/ year' },
+        };
+        matched += 1;
+      }
+      if (matched > 0) renderPrices(currentBill);
+    })
+    .catch(err => {
+      // The static site must still render; fallback PLAN_PRICING above is already shown.
+      if (typeof console !== 'undefined') console.warn('nivomi: live pricing fetch failed —', err);
+    });
   $$('[data-plan-cta]').forEach(a => a.addEventListener('click', () => { $('#f-plan').value = a.dataset.planCta; }));
 
   /* ---- Book-a-demo form → WhatsApp (with email fallback) ---- */
