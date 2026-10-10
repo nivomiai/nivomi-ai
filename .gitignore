@@ -97,3 +97,5 @@ CLAUDE.local.md
 
 # Local scratch scripts (debugging drivers, parse experiments)
 tmp-drive/
+
+.vercel

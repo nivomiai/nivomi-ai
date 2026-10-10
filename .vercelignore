@@ -1,0 +1,13 @@
+# Never upload local secrets or build output to Vercel (CLI deploys).
+.env
+.env.*
+**/.env
+**/.env.*
+!**/.env.example
+**/.next
+**/node_modules
+**/dist
+**/*.tsbuildinfo
+_bmad
+.claude
+docs
