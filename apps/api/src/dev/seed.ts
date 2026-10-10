@@ -6,6 +6,7 @@ import {
   organizationInvitations,
   organizationMembers,
   organizations,
+  plans,
   telecomIdentities,
   users,
   type Database,
@@ -43,7 +44,49 @@ export async function seedDevData(db: Database): Promise<DevSeedResult> {
   const accounts = await seedAccounts(db);
   const leadsCreated = await seedLeads(db, accounts.userIds, accounts.organizationIds);
   const campaignsCreated = await seedCalling(db, accounts.userIds, accounts.organizationIds);
+  await seedPlans(db);
   return { ...accounts, leadsCreated, campaignsCreated };
+}
+
+/**
+ * Placeholder plan catalogue so the marketing homepage shows something in dev. These are
+ * illustrative and align with the account types (INDV_USER → Starter, ORGANIZATION → Organisation,
+ * CUSTOM_PLAN → Custom). A Super Admin edits prices and limits in /app/platform/plans. Idempotent
+ * on `code`: existing rows are left alone so admin edits survive reseeds.
+ */
+async function seedPlans(db: Database): Promise<void> {
+  const DEV_PLANS = [
+    {
+      code: 'starter',
+      name: 'Starter',
+      monthlyPaiseInr: 199900, // ₹1,999 / month
+      annualDiscountBps: 2000, // 20% off annual
+      displayOrder: 10,
+      limits: { CALL_MINUTES_OUTBOUND: 2000 } as Record<string, number>,
+      overageRates: { CALL_MINUTES_OUTBOUND: 300 } as Record<string, number>,
+    },
+    {
+      code: 'organisation',
+      name: 'Organisation',
+      monthlyPaiseInr: 999900, // ₹9,999 / month
+      annualDiscountBps: 2000,
+      displayOrder: 20,
+      limits: { CALL_MINUTES_OUTBOUND: 15000 } as Record<string, number>,
+      overageRates: { CALL_MINUTES_OUTBOUND: 250 } as Record<string, number>,
+    },
+    {
+      code: 'custom',
+      name: 'Custom',
+      monthlyPaiseInr: 0, // Custom pricing — talk to sales
+      annualDiscountBps: 0,
+      displayOrder: 30,
+      limits: {} as Record<string, number>,
+      overageRates: {} as Record<string, number>,
+    },
+  ];
+  for (const plan of DEV_PLANS) {
+    await db.insert(plans).values(plan).onConflictDoNothing({ target: plans.code });
+  }
 }
 
 /**

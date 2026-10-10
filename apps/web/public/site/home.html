@@ -1630,12 +1630,12 @@ h3,h4{font-weight:700;letter-spacing:-.02em;line-height:1.2}
           <li><span class="ck"><svg class="ico"><use href="#i-check"/></svg></span>Basic analytics</li>
           <li><span class="ck"><svg class="ico"><use href="#i-check"/></svg></span>Email support</li>
         </ul>
-        <a class="btn btn-secondary btn-lg" href="#demo" data-plan-cta="Starter">Get Started</a>
+        <a class="btn btn-secondary btn-lg" href="/signup" data-plan-cta="Starter">Start 7-day free trial</a>
       </article>
 
-      <article class="plan pop reveal" data-plan="growth" style="--i:1">
-        <div class="plan-name"><h3>Growth</h3><span class="badge-pop"><svg class="ico"><use href="#i-spark"/></svg>Most Popular</span></div>
-        <p class="plan-for">For businesses ready to automate core customer and sales workflows.</p>
+      <article class="plan pop reveal" data-plan="organisation" style="--i:1">
+        <div class="plan-name"><h3>Organisation</h3><span class="badge-pop"><svg class="ico"><use href="#i-spark"/></svg>Most Popular</span></div>
+        <p class="plan-for">For organisations ready to automate core customer and sales workflows across a team.</p>
         <div class="price"><span class="amt">₹ —</span><span class="per">/ month</span></div>
         <ul class="feat">
           <li><span class="ck"><svg class="ico"><use href="#i-check"/></svg></span>Multiple AI Managers</li>
@@ -1647,12 +1647,12 @@ h3,h4{font-weight:700;letter-spacing:-.02em;line-height:1.2}
           <li><span class="ck"><svg class="ico"><use href="#i-check"/></svg></span>Analytics</li>
           <li><span class="ck"><svg class="ico"><use href="#i-check"/></svg></span>Priority support</li>
         </ul>
-        <a class="btn btn-primary btn-lg" href="#demo" data-plan-cta="Growth">Start Growing <svg class="ico ico-arrow"><use href="#i-arrow"/></svg></a>
+        <a class="btn btn-primary btn-lg" href="/signup" data-plan-cta="Organisation">Start 7-day free trial <svg class="ico ico-arrow"><use href="#i-arrow"/></svg></a>
       </article>
 
-      <article class="plan reveal" data-plan="scale" style="--i:2">
-        <div class="plan-name"><h3>Scale</h3></div>
-        <p class="plan-for">For businesses requiring advanced automation.</p>
+      <article class="plan reveal" data-plan="custom" style="--i:2">
+        <div class="plan-name"><h3>Custom</h3></div>
+        <p class="plan-for">Enterprise or bespoke setup — provisioned by Nivomi with your limits and SLA.</p>
         <div class="price"><span class="amt custom">Custom Pricing</span></div>
         <ul class="feat">
           <li><span class="ck"><svg class="ico"><use href="#i-check"/></svg></span>Custom AI Managers</li>
@@ -1664,7 +1664,7 @@ h3,h4{font-weight:700;letter-spacing:-.02em;line-height:1.2}
           <li><span class="ck"><svg class="ico"><use href="#i-check"/></svg></span>Priority support</li>
           <li><span class="ck"><svg class="ico"><use href="#i-check"/></svg></span>Enterprise-level customization</li>
         </ul>
-        <a class="btn btn-secondary btn-lg" href="#demo" data-plan-cta="Scale">Talk to Sales</a>
+        <a class="btn btn-secondary btn-lg" href="#demo" data-plan-cta="Custom">Talk to Sales</a>
       </article>
     </div>
     <p class="plans-note reveal">Every business is different. Contact us for a customized AI automation plan. <a href="#demo">Get a custom plan <svg class="ico"><use href="#i-arrow"/></svg></a></p>
@@ -1780,14 +1780,17 @@ h3,h4{font-weight:700;letter-spacing:-.02em;line-height:1.2}
 
 <script>
 /* =========================================================
-   EDIT PRICING HERE — no fake prices. Replace "₹ —" when ready.
-   period text is shown after the amount (leave "" to hide).
+   PRICING is loaded live from /api/v1/plans/public (super admin edits
+   it in /app/platform/plans). The object below is the fallback used
+   until the fetch resolves, and when the API cannot be reached.
+   Keys match the `data-plan` attribute on each pricing card below.
    ========================================================= */
-const PLAN_PRICING = {
-  starter: { monthly: { amount: "₹ —", period: "/ month" }, annual: { amount: "₹ —", period: "/ year" } },
-  growth:  { monthly: { amount: "₹ —", period: "/ month" }, annual: { amount: "₹ —", period: "/ year" } },
-  scale:   { monthly: { amount: "Custom Pricing", period: "" }, annual: { amount: "Custom Pricing", period: "" } }
+let PLAN_PRICING = {
+  starter:      { monthly: { amount: "₹ —", period: "/ month" }, annual: { amount: "₹ —", period: "/ year" } },
+  organisation: { monthly: { amount: "₹ —", period: "/ month" }, annual: { amount: "₹ —", period: "/ year" } },
+  custom:       { monthly: { amount: "Custom Pricing", period: "" }, annual: { amount: "Custom Pricing", period: "" } }
 };
+const PLAN_PRICING_API = "/api/v1/plans/public";
 const WHATSAPP_NUMBER = "919946202458";
 const CONTACT_EMAIL = "nivomiai@gmail.com";
 
@@ -1970,10 +1973,51 @@ const CONTACT_EMAIL = "nivomiai@gmail.com";
       box.innerHTML = `<span class="amt${custom ? ' custom' : ''}">${esc(p.amount)}</span>` + (p.period ? `<span class="per">${esc(p.period)}</span>` : '');
     });
   }
+  let currentBill = 'monthly';
   $$('.toggle button').forEach(b => b.addEventListener('click', () => {
-    $$('.toggle button').forEach(x => x.setAttribute('aria-pressed', x === b)); renderPrices(b.dataset.bill);
+    $$('.toggle button').forEach(x => x.setAttribute('aria-pressed', x === b));
+    currentBill = b.dataset.bill;
+    renderPrices(currentBill);
   }));
   renderPrices('monthly');
+
+  /* ---- Live pricing from the API (super admin edits in /app/platform/plans) ---- */
+  function formatInr(paise){
+    if (!paise || paise <= 0) return null;
+    const rupees = Math.round(paise / 100);
+    try { return new Intl.NumberFormat('en-IN', { style:'currency', currency:'INR', maximumFractionDigits:0 }).format(rupees); }
+    catch (_) { return '₹' + rupees.toLocaleString('en-IN'); }
+  }
+  // cache:'no-store' makes the browser revalidate on every visit so a super admin's
+  // edit shows up on the next page load. Server still advertises max-age=60 for CDN/edge.
+  fetch(PLAN_PRICING_API, { headers: { Accept: 'application/json' }, cache: 'no-store' })
+    .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
+    .then(envelope => {
+      const items = (envelope && envelope.data && envelope.data.items) || (envelope && envelope.items) || [];
+      let matched = 0;
+      for (const plan of items) {
+        if (!plan || typeof plan.code !== 'string') continue;
+        const custom = !(plan.monthlyPaiseInr > 0);
+        const monthlyAmount = custom ? 'Custom Pricing' : formatInr(plan.monthlyPaiseInr);
+        if (!monthlyAmount) continue;
+        // The API returns the effective annual price (monthly × 12 × (1 − discount)); fall back to
+        // monthly × 12 if the field is absent (older servers).
+        const annualPaise = typeof plan.annualPaiseInr === 'number'
+          ? plan.annualPaiseInr
+          : (plan.monthlyPaiseInr * 12);
+        const annualAmount = custom ? 'Custom Pricing' : formatInr(annualPaise);
+        PLAN_PRICING[plan.code] = {
+          monthly: { amount: monthlyAmount, period: custom ? '' : '/ month' },
+          annual:  { amount: annualAmount || monthlyAmount, period: custom ? '' : '/ year' },
+        };
+        matched += 1;
+      }
+      if (matched > 0) renderPrices(currentBill);
+    })
+    .catch(err => {
+      // The static site must still render; fallback PLAN_PRICING above is already shown.
+      if (typeof console !== 'undefined') console.warn('nivomi: live pricing fetch failed —', err);
+    });
   $$('[data-plan-cta]').forEach(a => a.addEventListener('click', () => { $('#f-plan').value = a.dataset.planCta; }));
 
   /* ---- Book-a-demo form → WhatsApp (with email fallback) ---- */

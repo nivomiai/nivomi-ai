@@ -184,9 +184,16 @@ export class PlatformOrganizationsService {
         .limit(1);
       if (taken) slug = `${slug}-${randomBytes(3).toString('hex')}`;
 
+      const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
       const [organization] = await tx
         .insert(organizations)
-        .values({ name: input.name, slug, createdByUserId: actorUserId, status: 'ACTIVE' })
+        .values({
+          name: input.name,
+          slug,
+          createdByUserId: actorUserId,
+          status: 'ACTIVE',
+          trialEndsAt,
+        })
         .returning();
       if (!organization) throw new Error('organization insert returned no row');
       await tx

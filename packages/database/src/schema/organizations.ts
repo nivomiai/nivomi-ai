@@ -33,6 +33,8 @@ export const organizations = pgTable(
     createdByUserId: uuid('created_by_user_id').references(() => users.id, {
       onDelete: 'set null',
     }),
+    /** 7-day free-trial deadline, set at org creation. Null for orgs created before the feature. */
+    trialEndsAt: timestamp('trial_ends_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()

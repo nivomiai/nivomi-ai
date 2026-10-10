@@ -87,6 +87,8 @@ export interface OrganizationSummary {
   slug: string;
   status: OrganizationStatus;
   role: Role;
+  /** 7-day free-trial deadline (ISO) or null for pre-trial orgs. */
+  trialEndsAt: string | null;
 }
 
 export interface Me {
@@ -142,6 +144,76 @@ export interface AuditItem {
 export interface Page<T> {
   items: T[];
   nextCursor?: string | null;
+}
+
+/** Usage kinds metered by the billing engine (apps/api UsageEventKind). */
+export const USAGE_EVENT_KINDS = [
+  'CALL_MINUTES_OUTBOUND',
+  'CALL_MINUTES_INBOUND',
+  'STT_AUDIO_SECONDS',
+  'TTS_AUDIO_SECONDS',
+  'LLM_INPUT_TOKENS',
+  'LLM_OUTPUT_TOKENS',
+  'SMS_SENT',
+  'EMAILS_SENT',
+  'IMPORT_ROWS',
+  'CRM_API_CALLS',
+] as const;
+export type UsageEventKind = (typeof USAGE_EVENT_KINDS)[number];
+
+export const USAGE_KIND_LABELS: Record<UsageEventKind, string> = {
+  CALL_MINUTES_OUTBOUND: 'Outbound call minutes',
+  CALL_MINUTES_INBOUND: 'Inbound call minutes',
+  STT_AUDIO_SECONDS: 'STT seconds',
+  TTS_AUDIO_SECONDS: 'TTS seconds',
+  LLM_INPUT_TOKENS: 'LLM input tokens',
+  LLM_OUTPUT_TOKENS: 'LLM output tokens',
+  SMS_SENT: 'SMS sent',
+  EMAILS_SENT: 'Emails sent',
+  IMPORT_ROWS: 'Import rows',
+  CRM_API_CALLS: 'CRM API calls',
+};
+
+export type PlanStatus = 'ACTIVE' | 'ARCHIVED';
+
+/** A row from `GET /platform/plans` (super admin console). */
+export interface Plan {
+  id: string;
+  code: string;
+  name: string;
+  monthlyPaiseInr: number;
+  /** Annual discount in basis points: 2000 = 20% off the annual total. */
+  annualDiscountBps: number;
+  limits: Partial<Record<UsageEventKind, number>>;
+  overageRates: Partial<Record<UsageEventKind, number>>;
+  status: PlanStatus;
+  displayOrder: number;
+  updatedAt: string;
+  createdAt: string;
+  orgsActive: number;
+}
+
+/** One integration from `GET /platform/integrations/health`. */
+export interface IntegrationCheck {
+  key: string;
+  label: string;
+  status: 'ready' | 'simulated' | 'missing';
+  summary: string;
+  missing: string[];
+  productionBlocker: boolean;
+  docs?: string;
+}
+
+/** A row from `GET /plans/public` (marketing site, unauthenticated). */
+export interface PublicPlan {
+  code: string;
+  name: string;
+  monthlyPaiseInr: number;
+  /** Effective annual paise after annualDiscountBps; 0 ⇒ Custom pricing. */
+  annualPaiseInr: number;
+  annualDiscountBps: number;
+  limits: Partial<Record<UsageEventKind, number>>;
+  displayOrder: number;
 }
 
 export const ROLE_LABELS: Record<Role, string> = {
@@ -947,6 +1019,12 @@ export interface DashboardSummary {
   };
   funnel: { stage: string; count: number }[];
   leads: { total: number; qualified: number; appointments: number; doNotCall: number };
+  setup: {
+    agentsPublished: number;
+    callerNumbersVerified: number;
+    hasLeads: boolean;
+    campaignCount: number;
+  };
   attention: {
     code: string;
     label: string;
