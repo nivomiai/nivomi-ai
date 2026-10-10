@@ -12,6 +12,19 @@ const securityHeaders = [
   { key: 'Permissions-Policy', value: 'camera=(), geolocation=(), microphone=(self)' },
 ];
 
+// Marketing-only hosting (e.g. a Vercel preview with no API behind it): every route that needs
+// the API is sent to the homepage's contact section instead of a sign-in that cannot work.
+// Read at build time; leave unset wherever the API is reachable.
+const SITE_ONLY = process.env.NIVOMI_SITE_ONLY === '1';
+const SITE_ONLY_ROUTES = [
+  '/login',
+  '/signup',
+  '/forgot-password',
+  '/reset-password',
+  '/invite/:path*',
+  '/app/:path*',
+];
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
@@ -21,6 +34,17 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   headers() {
     return Promise.resolve([{ source: '/:path*', headers: securityHeaders }]);
+  },
+  redirects() {
+    return Promise.resolve(
+      SITE_ONLY
+        ? SITE_ONLY_ROUTES.map((source) => ({
+            source,
+            destination: '/#contact',
+            permanent: false,
+          }))
+        : [],
+    );
   },
   // The homepage is the static page authored in the nivomiai/website repo (plus a Login button),
   // served ahead of the app routes. Its "Login" leads into the customer app flow.
