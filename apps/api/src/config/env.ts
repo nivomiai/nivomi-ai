@@ -49,6 +49,14 @@ export const apiEnvSchema = z
     /** Where the development mailbox writes emails (git-ignored; never used in production). */
     EMAIL_DEV_MAILBOX_DIR: z.string().default('.data/mailbox'),
 
+    /**
+     * Public demo deployment (e.g. a free-tier host before AWS): lets production run the dev-only
+     * providers that are all that exist today (dev mailbox, local storage, simulated dialer,
+     * preference registry and LLM). Every other production requirement still applies. Never set
+     * it on a deployment that handles real customer data or places real calls.
+     */
+    DEMO_MODE: booleanFlagSchema.default(false),
+
     /** Run the background-job worker inside this process (ADR-019). */
     WORKER_ENABLED: booleanFlagSchema.default(true),
 
@@ -130,14 +138,16 @@ export const apiEnvSchema = z
     requireInProduction('CORS_ALLOWED_ORIGINS', Boolean(env.CORS_ALLOWED_ORIGINS?.length));
     requireInProduction('DATABASE_URL', env.DATABASE_URL !== undefined);
     requireInProduction('APP_WEB_URL', env.APP_WEB_URL !== undefined);
-    if (env.NODE_ENV === 'production' && env.EMAIL_PROVIDER === 'dev-mailbox') {
+    // Dev-only providers are refused in production unless this is an explicit demo deployment.
+    const strictProduction = env.NODE_ENV === 'production' && !env.DEMO_MODE;
+    if (strictProduction && env.EMAIL_PROVIDER === 'dev-mailbox') {
       ctx.addIssue({
         code: 'custom',
         path: ['EMAIL_PROVIDER'],
         message: 'dev-mailbox is not allowed in production',
       });
     }
-    if (env.STORAGE_PROVIDER === 'local' && env.NODE_ENV === 'production') {
+    if (strictProduction && env.STORAGE_PROVIDER === 'local') {
       ctx.addIssue({
         code: 'custom',
         path: ['STORAGE_PROVIDER'],
@@ -176,7 +186,7 @@ export const apiEnvSchema = z
       });
     }
     for (const key of ['VOICE_PROVIDER', 'PREFERENCE_REGISTRY', 'LLM_PROVIDER'] as const) {
-      if (env.NODE_ENV === 'production' && env[key] === 'simulated') {
+      if (strictProduction && env[key] === 'simulated') {
         ctx.addIssue({
           code: 'custom',
           path: [key],

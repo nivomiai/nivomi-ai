@@ -18,5 +18,12 @@ try {
   throw error;
 }
 
+if (env.NODE_ENV === 'production' && env.DEMO_MODE) {
+  process.stderr.write(
+    'DEMO_MODE is on: simulated calls/LLM, dev mailbox and local storage are active. ' +
+      'Not for real customer data.\n',
+  );
+}
+
 const app = await createApp(env);
 await app.listen(env.PORT, env.HOST);

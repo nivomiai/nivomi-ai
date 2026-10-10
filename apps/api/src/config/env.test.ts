@@ -67,6 +67,26 @@ describe('loadApiEnv', () => {
     expect(() => loadApiEnv(productionBase)).toThrow(/LLM_PROVIDER/);
   });
 
+  it('DEMO_MODE allows the dev-only providers in production but keeps the other requirements', () => {
+    const env = loadApiEnv({
+      ...productionBase,
+      CREDENTIALS_ENCRYPTION_KEY: Buffer.alloc(32, 1).toString('base64'),
+      DEMO_MODE: 'true',
+    });
+    expect(env).toMatchObject({
+      DEMO_MODE: true,
+      EMAIL_PROVIDER: 'dev-mailbox',
+      STORAGE_PROVIDER: 'local',
+      VOICE_PROVIDER: 'simulated',
+      LLM_PROVIDER: 'simulated',
+      COOKIE_SECURE: true,
+      DATABASE_AUTO_MIGRATE: false,
+    });
+    expect(() =>
+      loadApiEnv({ NODE_ENV: 'production', AUTH_JWT_SECRET: SECRET, DEMO_MODE: 'true' }),
+    ).toThrow(/CORS_ALLOWED_ORIGINS[\s\S]*DATABASE_URL[\s\S]*APP_WEB_URL/);
+  });
+
   it('fails fast on providers that are not implemented yet', () => {
     expect(() => loadApiEnv({ ...productionBase, EMAIL_PROVIDER: 'ses' })).toThrow(
       /ses is not implemented yet/,
