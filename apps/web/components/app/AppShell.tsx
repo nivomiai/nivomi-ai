@@ -92,6 +92,24 @@ const NAV: readonly NavSection[] = [
 ];
 
 const ONBOARDING = '/app/onboarding';
+/** Per-browser preference only: whether the desktop sidebar is collapsed to icons. */
+const SIDEBAR_COLLAPSED_KEY = 'nv.sidebar.collapsed';
+
+function readSidebarCollapsed(): boolean {
+  try {
+    return window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function writeSidebarCollapsed(collapsed: boolean): void {
+  try {
+    window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? '1' : '0');
+  } catch {
+    // Storage blocked (private window, policy): the toggle still works for this visit.
+  }
+}
 
 export function AppShell({ children }: { readonly children: ReactNode }) {
   return (
@@ -177,11 +195,20 @@ function Frame({ me, children }: { readonly me: Me; readonly children: ReactNode
   const { can, signOut } = useSession();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  // Desktop only (every class it drives is `lg:`); the mobile sheet always shows labels.
+  const [collapsed, setCollapsed] = useState(false);
   const active = me.organizations.find((o) => o.id === me.activeOrganization?.id);
 
-  const visible = NAV.filter(
-    (section) => !section.requiresSuperAdmin || me.user.isSuperAdmin,
-  )
+  useEffect(() => setCollapsed(readSidebarCollapsed()), []);
+
+  const toggleCollapsed = () => {
+    setCollapsed((prev) => {
+      writeSidebarCollapsed(!prev);
+      return !prev;
+    });
+  };
+
+  const visible = NAV.filter((section) => !section.requiresSuperAdmin || me.user.isSuperAdmin)
     .map((section) => ({
       ...section,
       items: section.items.filter((item) => !item.permission || can(item.permission)),
@@ -243,7 +270,12 @@ function Frame({ me, children }: { readonly me: Me; readonly children: ReactNode
         </button>
       </header>
 
-      <div className="lg:grid lg:grid-cols-[260px_1fr]">
+      <div
+        className={cx(
+          'lg:grid lg:transition-[grid-template-columns] lg:duration-200',
+          collapsed ? 'lg:grid-cols-[72px_1fr]' : 'lg:grid-cols-[260px_1fr]',
+        )}
+      >
         <aside
           id="app-sidebar"
           className={cx(
@@ -251,25 +283,67 @@ function Frame({ me, children }: { readonly me: Me; readonly children: ReactNode
             menuOpen ? 'flex flex-col border-b border-line' : 'hidden',
           )}
         >
-          <div className="flex items-center px-5 pt-5 pb-4">
+          <div
+            className={cx(
+              'flex items-center justify-between gap-2 px-5 pt-5 pb-4',
+              collapsed && 'lg:flex-col lg:justify-start lg:gap-3 lg:px-0',
+            )}
+          >
             <Link href="/app" aria-label="Nivomi AI home" className="rounded-md">
-              <Logo />
+              <Logo className={cx(collapsed && 'lg:hidden')} />
+              <LogoMark className={cx('hidden h-6 w-auto', collapsed && 'lg:block')} />
             </Link>
+            <button
+              type="button"
+              aria-controls="app-sidebar"
+              aria-expanded={!collapsed}
+              onClick={toggleCollapsed}
+              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              className="hidden size-8 items-center justify-center rounded-[8px] text-muted transition-colors hover:bg-soft hover:text-ink lg:inline-flex"
+            >
+              <span className="sr-only">{collapsed ? 'Expand sidebar' : 'Collapse sidebar'}</span>
+              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="size-4.5">
+                <rect
+                  x="3.5"
+                  y="5"
+                  width="17"
+                  height="14"
+                  rx="2.5"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                />
+                <path d="M9.5 5v14" stroke="currentColor" strokeWidth="1.6" />
+              </svg>
+            </button>
           </div>
-          <div className="px-3">
-            <WorkspaceSwitcher me={me} />
+          <div className={cx('px-3', collapsed && 'lg:px-0 lg:flex lg:justify-center')}>
+            <WorkspaceSwitcher me={me} compact={collapsed} />
           </div>
 
           <nav
             aria-label="App"
-            className="mt-4 flex-1 overflow-y-auto px-3 pb-4 lg:min-h-0"
+            className={cx(
+              'mt-4 flex-1 overflow-y-auto px-3 pb-4 lg:min-h-0',
+              collapsed && 'lg:px-2',
+            )}
             data-testid="app-nav"
           >
             {sections.map((section, index) => (
               <div key={section.title} className={index === 0 ? '' : 'mt-4'}>
-                <p className="px-3 pb-1 text-[10.5px] font-semibold tracking-[0.12em] text-muted uppercase">
+                <p
+                  className={cx(
+                    'px-3 pb-1 text-[10.5px] font-semibold tracking-[0.12em] text-muted uppercase',
+                    collapsed && 'lg:sr-only',
+                  )}
+                >
                   {section.title}
                 </p>
+                {collapsed && index > 0 ? (
+                  <div
+                    aria-hidden="true"
+                    className="mx-3 mb-2 hidden border-t border-line lg:block"
+                  />
+                ) : null}
                 <ul className="grid gap-px">
                   {section.items.map((item) => {
                     const current =
@@ -281,8 +355,10 @@ function Frame({ me, children }: { readonly me: Me; readonly children: ReactNode
                         <Link
                           href={item.href}
                           aria-current={current ? 'page' : undefined}
+                          title={collapsed ? item.label : undefined}
                           className={cx(
                             'group relative flex items-center gap-2.5 rounded-[8px] px-3 py-1.5 text-[13.5px] transition-colors',
+                            collapsed && 'lg:justify-center lg:px-0 lg:py-2',
                             current
                               ? 'bg-accent-soft font-semibold text-accent'
                               : 'font-medium text-ink-2 hover:bg-soft hover:text-ink',
@@ -301,7 +377,9 @@ function Frame({ me, children }: { readonly me: Me; readonly children: ReactNode
                               current ? 'text-accent' : 'text-muted group-hover:text-ink-2',
                             )}
                           />
-                          <span className="truncate">{item.label}</span>
+                          <span className={cx('truncate', collapsed && 'lg:sr-only')}>
+                            {item.label}
+                          </span>
                         </Link>
                       </li>
                     );
@@ -312,11 +390,7 @@ function Frame({ me, children }: { readonly me: Me; readonly children: ReactNode
           </nav>
 
           <div className="lg:hidden">
-            <AccountDock
-              name={me.user.name}
-              email={me.user.email}
-              signOut={() => void signOut()}
-            />
+            <AccountDock name={me.user.name} email={me.user.email} signOut={() => void signOut()} />
           </div>
         </aside>
 
@@ -343,8 +417,11 @@ function Frame({ me, children }: { readonly me: Me; readonly children: ReactNode
   );
 }
 
-/** Workspace switcher: shows the current one as a button; opens a menu to switch or add. */
-function WorkspaceSwitcher({ me }: { readonly me: Me }) {
+/**
+ * Workspace switcher: shows the current one as a button; opens a menu to switch or add.
+ * `compact` (collapsed desktop sidebar) shows only the avatar; the menu keeps its full width.
+ */
+function WorkspaceSwitcher({ me, compact }: { readonly me: Me; readonly compact: boolean }) {
   const { switchOrganization } = useSession();
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -401,13 +478,15 @@ function WorkspaceSwitcher({ me }: { readonly me: Me }) {
         aria-expanded={open}
         onClick={() => multiple && setOpen((prev) => !prev)}
         disabled={!multiple}
+        title={compact ? active.name : undefined}
         className={cx(
           'group flex w-full items-center gap-2.5 rounded-[12px] border border-line bg-surface px-2.5 py-2 text-left transition-colors',
+          compact && 'lg:w-auto lg:p-1.5',
           multiple ? 'hover:border-line-hover' : 'cursor-default',
         )}
       >
         <WorkspaceAvatar name={active.name} />
-        <span className="min-w-0 flex-1">
+        <span className={cx('min-w-0 flex-1', compact && 'lg:sr-only')}>
           <span className="block truncate text-[14px] font-semibold text-ink">{active.name}</span>
           <span className="block truncate text-[11.5px] font-medium tracking-[0.04em] text-muted uppercase">
             {active.status === 'ACTIVE' ? 'Workspace' : workspaceStatusLabel(active.status)}
@@ -418,7 +497,7 @@ function WorkspaceSwitcher({ me }: { readonly me: Me }) {
             aria-hidden="true"
             viewBox="0 0 24 24"
             fill="none"
-            className="size-4 shrink-0 text-muted"
+            className={cx('size-4 shrink-0 text-muted', compact && 'lg:hidden')}
           >
             <path
               d="m8 10 4-4 4 4M8 14l4 4 4-4"
@@ -436,7 +515,10 @@ function WorkspaceSwitcher({ me }: { readonly me: Me }) {
           ref={menuRef}
           role="menu"
           aria-label="Workspaces"
-          className="absolute inset-x-0 top-full z-40 mt-1.5 rounded-[12px] border border-line bg-card p-1.5 shadow-md"
+          className={cx(
+            'absolute inset-x-0 top-full z-40 mt-1.5 rounded-[12px] border border-line bg-card p-1.5 shadow-md',
+            compact && 'lg:right-auto lg:w-64',
+          )}
         >
           {me.organizations.map((org) => (
             <button

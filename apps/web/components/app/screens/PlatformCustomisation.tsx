@@ -173,7 +173,7 @@ export function PlatformCustomisation() {
               Accent colour
             </p>
             <div className="mt-2 grid grid-cols-6 gap-2">
-              {['#CC007E', '#6D4BD8', '#0F8A4A', '#1D4ED8', '#B45309', '#111827'].map((hex) => (
+              {['#C2410C', '#6D4BD8', '#0F8A4A', '#1D4ED8', '#B45309', '#111827'].map((hex) => (
                 <span
                   key={hex}
                   aria-hidden="true"

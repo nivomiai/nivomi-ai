@@ -16,14 +16,14 @@ export default function GlobalError({
           placeItems: 'center',
           minHeight: '100vh',
           margin: 0,
-          color: '#111827',
-          background: '#fcf8fb',
+          color: '#0f1b3d',
+          background: '#fbf8f4',
         }}
       >
         <title>Something went wrong | Nivomi AI</title>
         <main style={{ maxWidth: 420, padding: 24, textAlign: 'center' }}>
           <h1 style={{ fontSize: 24 }}>Something went wrong</h1>
-          <p style={{ color: '#5d6679' }}>Nivomi hit an unexpected problem. Please try again.</p>
+          <p style={{ color: '#5b6478' }}>Nivomi hit an unexpected problem. Please try again.</p>
           <button
             type="button"
             onClick={() => retry()}
@@ -32,7 +32,7 @@ export default function GlobalError({
               padding: '12px 20px',
               borderRadius: 12,
               border: 0,
-              background: '#cc007e',
+              background: '#c2410c',
               color: '#fff',
               fontWeight: 600,
               cursor: 'pointer',

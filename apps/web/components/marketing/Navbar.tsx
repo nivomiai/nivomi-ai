@@ -57,7 +57,7 @@ export function Navbar() {
       className={cx(
         'fixed inset-x-0 top-0 z-50 border-b backdrop-blur-xl backdrop-saturate-[1.8] transition-[background-color,border-color,box-shadow] duration-300',
         scrolled || open
-          ? 'border-line-2 bg-[var(--nv-header)] shadow-[0_6px_24px_rgba(60,10,45,0.05)]'
+          ? 'border-line-2 bg-[var(--nv-header)] shadow-[0_6px_24px_rgba(15,27,61,0.05)]'
           : 'border-transparent bg-[var(--nv-header)]',
       )}
     >
