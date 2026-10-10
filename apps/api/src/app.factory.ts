@@ -36,6 +36,8 @@ export async function createApp(env: ApiEnv): Promise<NestExpressApplication> {
   app.use('/api/v1/uploads', express.raw({ type: () => true, limit: IMPORT_MAX_BYTES }));
   // Browser voice demo: short mic clips posted as raw audio bytes.
   app.use('/api/v1/demo/stt', express.raw({ type: 'audio/*', limit: '10mb' }));
+  // Exotel's Flow and status callbacks post application/x-www-form-urlencoded.
+  app.use('/api/v1/webhooks/exotel', express.urlencoded({ extended: false, limit: '64kb' }));
   app.use(cookieParser());
   app.setGlobalPrefix('api');
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });

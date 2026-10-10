@@ -36,6 +36,7 @@ import { PlatformOrganizationsService } from './platform/platform-organizations.
 import { PlatformUsersController } from './platform/platform-users.controller.js';
 import { PlatformUsersService } from './platform/platform-users.service.js';
 import { PlatformPlansModule } from './platform-plans/platform-plans.module.js';
+import { VoiceModule } from './voice/voice.module.js';
 
 @Module({})
 export class AppModule {
@@ -62,6 +63,7 @@ export class AppModule {
         DemoModule,
         NotificationsModule,
         PlatformPlansModule,
+        VoiceModule,
       ],
       controllers: [
         AuthController,
