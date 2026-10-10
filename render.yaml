@@ -16,7 +16,7 @@ services:
     healthCheckPath: /api/v1/health
     autoDeployTrigger: commit
     buildFilter:
-      include:
+      paths:
         - apps/api/**
         - packages/**
         - package.json
