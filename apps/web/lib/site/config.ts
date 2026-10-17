@@ -2,7 +2,7 @@
 export const siteConfig = {
   name: 'Nivomi AI',
   legalName: 'NIVOMI AI LLP',
-  url: 'https://www.nivomi.ai',
+  url: 'https://www.nivomiai.com',
   title: 'Nivomi AI — AI Voice Automation for Sales Teams',
   description:
     'AI voice automation for sales teams in India: outbound and inbound AI calls, lead qualification, appointment scheduling, human handoff, transcripts, AI summaries and CRM sync.',
