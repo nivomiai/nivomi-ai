@@ -1,12 +1,21 @@
 import { AppError } from '../common/errors.js';
 
+/**
+ * Direct Sarvam REST wrapper used by the inbound voice path (turn-based conversation; ADR-024)
+ * and by the public voice demo. The Phase 4b streaming `STTProvider` / `TTSProvider` adapters
+ * (ADR-023) will supersede this for live `<Stream>` once Exotel's streaming applet is on the
+ * tenant's plan — until then, `<Record>` → this wrapper → `<Say>` is the honest path.
+ */
+
 const SARVAM_STT_URL = 'https://api.sarvam.ai/speech-to-text';
 const SARVAM_TTS_URL = 'https://api.sarvam.ai/text-to-speech';
 const SARVAM_CHAT_URL = 'https://api.sarvam.ai/v1/chat/completions';
 /** Hard ceiling on tokens-per-reply so a runaway model can't block the call. */
 const SARVAM_CHAT_MAX_TOKENS = 240;
-/** How long we'll wait for the LLM before giving up and letting the call move on. */
+/** Timeout for the LLM reply so a slow call fails fast and the next turn can continue. */
 const SARVAM_CHAT_TIMEOUT_MS = 20_000;
+/** Timeout for STT; recordings arrive as short WAVs so the response is usually sub-second. */
+const SARVAM_STT_TIMEOUT_MS = 15_000;
 
 export interface ChatMessage {
   readonly role: 'system' | 'user' | 'assistant';
@@ -23,11 +32,12 @@ export interface SynthesizeResult {
   readonly sampleRate: number;
 }
 
-/**
- * Thin wrapper around Sarvam's Speech-to-Text and Text-to-Speech endpoints. Kept in the demo
- * module on purpose: the production voice path (ADR-011, Phase 4) will introduce proper
- * `STTProvider` / `TTSProvider` interfaces and a tenant-scoped adapter.
- */
+export interface ChatResult {
+  readonly text: string;
+  readonly inputTokens: number;
+  readonly outputTokens: number;
+}
+
 export class SarvamProvider {
   constructor(
     private readonly apiKey: string,
@@ -45,31 +55,44 @@ export class SarvamProvider {
     form.append('model', 'saaras:v4');
     if (languageCode) form.append('language_code', languageCode);
 
-    const response = await fetch(SARVAM_STT_URL, {
-      method: 'POST',
-      headers: { 'api-subscription-key': this.apiKey },
-      body: form,
-    });
-    const payload = (await safeJson(response)) as {
-      readonly transcript?: string;
-      readonly language_code?: string | null;
-      readonly error?: { readonly message?: string };
-    } | null;
-    if (!response.ok) {
-      throw new AppError(
-        'PROVIDER_ERROR',
-        payload?.error?.message
-          ? `Sarvam STT: ${payload.error.message}`
-          : `Sarvam STT returned ${response.status}.`,
-      );
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), SARVAM_STT_TIMEOUT_MS);
+    try {
+      const response = await fetch(SARVAM_STT_URL, {
+        method: 'POST',
+        headers: { 'api-subscription-key': this.apiKey },
+        body: form,
+        signal: controller.signal,
+      });
+      const payload = (await safeJson(response)) as {
+        readonly transcript?: string;
+        readonly language_code?: string | null;
+        readonly error?: { readonly message?: string };
+      } | null;
+      if (!response.ok) {
+        throw new AppError(
+          'PROVIDER_ERROR',
+          payload?.error?.message
+            ? `Sarvam STT: ${payload.error.message}`
+            : `Sarvam STT returned ${response.status}.`,
+        );
+      }
+      return {
+        transcript: payload?.transcript ?? '',
+        languageCode: payload?.language_code ?? null,
+      };
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        throw new AppError('TIMEOUT', 'Sarvam STT timed out.');
+      }
+      throw new AppError('PROVIDER_ERROR', 'Sarvam STT failed.');
+    } finally {
+      clearTimeout(timer);
     }
-    return {
-      transcript: payload?.transcript ?? '',
-      languageCode: payload?.language_code ?? null,
-    };
   }
 
-  async chat(messages: readonly ChatMessage[]): Promise<string> {
+  async chat(messages: readonly ChatMessage[]): Promise<ChatResult> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), SARVAM_CHAT_TIMEOUT_MS);
     try {
@@ -92,6 +115,10 @@ export class SarvamProvider {
         readonly choices?: readonly {
           readonly message?: { readonly content?: string };
         }[];
+        readonly usage?: {
+          readonly prompt_tokens?: number;
+          readonly completion_tokens?: number;
+        };
         readonly error?: { readonly message?: string };
       } | null;
       if (!response.ok) {
@@ -104,7 +131,11 @@ export class SarvamProvider {
       }
       const text = payload?.choices?.[0]?.message?.content?.trim();
       if (!text) throw new AppError('PROVIDER_ERROR', 'Sarvam chat returned no reply.');
-      return text;
+      return {
+        text,
+        inputTokens: payload?.usage?.prompt_tokens ?? 0,
+        outputTokens: payload?.usage?.completion_tokens ?? 0,
+      };
     } catch (error) {
       if (error instanceof AppError) throw error;
       if (error instanceof DOMException && error.name === 'AbortError') {
@@ -151,6 +182,8 @@ export class SarvamProvider {
     return { audio, sampleRate: 22050 };
   }
 }
+
+export const SARVAM_PROVIDER = Symbol('SARVAM_PROVIDER');
 
 function filenameFor(mimeType: string): string {
   if (mimeType.includes('wav')) return 'audio.wav';

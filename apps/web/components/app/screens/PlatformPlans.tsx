@@ -136,7 +136,9 @@ export function PlatformPlans() {
         <LoadingBlock label="Loading plans" />
       ) : plans.length === 0 ? (
         <EmptyState icon="i-layers" title="No plans yet">
-          <p>Create the first one — it appears on the marketing pricing page as soon as it is ACTIVE.</p>
+          <p>
+            Create the first one — it appears on the marketing pricing page as soon as it is ACTIVE.
+          </p>
         </EmptyState>
       ) : (
         <div className="grid gap-3">

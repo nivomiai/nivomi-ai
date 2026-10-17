@@ -44,6 +44,13 @@ export const apiEnvSchema = z
     /** Public URL of the web app, used for links in emails. Required in production. */
     APP_WEB_URL: z.url({ protocol: /^https?$/ }).optional(),
 
+    /**
+     * Public base URL of this API, used by Exotel for `<Record action>` continuation and status
+     * callbacks. Required in production and whenever VOICE_PROVIDER=exotel so the inbound AI loop
+     * can post audio back to us; defaults to `http://localhost:4000` otherwise.
+     */
+    API_PUBLIC_URL: z.url({ protocol: /^https?$/ }).optional(),
+
     EMAIL_PROVIDER: z.enum(['dev-mailbox', 'ses']).default('dev-mailbox'),
     EMAIL_FROM: z.string().default('Nivomi AI <no-reply@nivomi.ai>'),
     /** Where the development mailbox writes emails (git-ignored; never used in production). */
@@ -130,6 +137,7 @@ export const apiEnvSchema = z
     requireInProduction('CORS_ALLOWED_ORIGINS', Boolean(env.CORS_ALLOWED_ORIGINS?.length));
     requireInProduction('DATABASE_URL', env.DATABASE_URL !== undefined);
     requireInProduction('APP_WEB_URL', env.APP_WEB_URL !== undefined);
+    requireInProduction('API_PUBLIC_URL', env.API_PUBLIC_URL !== undefined);
     if (env.NODE_ENV === 'production' && env.EMAIL_PROVIDER === 'dev-mailbox') {
       ctx.addIssue({
         code: 'custom',
@@ -197,6 +205,7 @@ export const apiEnvSchema = z
     ...env,
     CORS_ALLOWED_ORIGINS: env.CORS_ALLOWED_ORIGINS ?? DEVELOPMENT_ORIGINS,
     APP_WEB_URL: (env.APP_WEB_URL ?? DEVELOPMENT_WEB_URL).replace(/\/+$/, ''),
+    API_PUBLIC_URL: (env.API_PUBLIC_URL ?? `http://localhost:${env.PORT}`).replace(/\/+$/, ''),
     DATABASE_AUTO_MIGRATE: env.DATABASE_AUTO_MIGRATE ?? env.NODE_ENV !== 'production',
     COOKIE_SECURE: env.NODE_ENV === 'production',
     HUBSPOT_CONFIGURED: Boolean(env.HUBSPOT_CLIENT_ID && env.HUBSPOT_CLIENT_SECRET),

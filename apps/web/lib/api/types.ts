@@ -30,7 +30,8 @@ export type Permission =
   | 'consent.manage'
   | 'agents.read'
   | 'agents.manage'
-  | 'dashboard.read';
+  | 'dashboard.read'
+  | 'calls.read';
 
 export type OrganizationStatus = 'PENDING_APPROVAL' | 'ACTIVE' | 'SUSPENDED' | 'CLOSED';
 
@@ -990,6 +991,37 @@ export interface AgentTool {
 }
 
 export type ConversationOutcome = EndOutcome | 'OPTED_OUT' | 'TRANSFERRED' | 'INCOMPLETE';
+
+/** Per-caller-number inbound config (ADR-024 §1). */
+export type InboundMode = 'AI' | 'HUMAN';
+
+export interface InboundConfig {
+  callerNumberId: string;
+  phoneE164: string;
+  mode: InboundMode;
+  agentVersionId: string | null;
+  handoffE164: string | null;
+  updatedAt: string | null;
+}
+
+/**
+ * Full call detail returned by `GET /calls/:id`. `transcript` is the ordered caller/agent turns
+ * written by `AiConversationService` on the inbound AI loop (ADR-024).
+ */
+export interface CallSessionDetail {
+  id: string;
+  direction: 'INBOUND' | 'OUTBOUND';
+  fromE164: string;
+  toE164: string;
+  startedAt: string;
+  endedAt: string | null;
+  durationSeconds: number;
+  telephonyOutcome: string | null;
+  conversationOutcome: ConversationOutcome | null;
+  transcript: { role: 'agent' | 'caller'; text: string; nodeId?: string; atMs?: number }[];
+  qualification: Record<string, unknown> | null;
+  usage: { inputTokens: number; outputTokens: number; audioSeconds: number };
+}
 
 export interface TestSession {
   id: string;

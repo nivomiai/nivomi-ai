@@ -24,6 +24,18 @@ export const callDirections = ['INBOUND', 'OUTBOUND'] as const;
 export const callDirection = pgEnum('call_direction', callDirections);
 export type CallDirection = (typeof callDirections)[number];
 
+/**
+ * Inbound mode (ADR-024 §1): what happens when a call lands on a caller_number.
+ *
+ *   AI    — AiConversationService runs a turn-based conversation on `agentVersionId`.
+ *   HUMAN — ExoML `<Dial>` connects the caller to `handoffE164` (voicemail / live human).
+ *
+ * The tenant switches between these per number from /app/telecom.
+ */
+export const inboundModes = ['AI', 'HUMAN'] as const;
+export const inboundMode = pgEnum('inbound_mode', inboundModes);
+export type InboundMode = (typeof inboundModes)[number];
+
 export const conversationOutcomes = [
   'INTERESTED',
   'NOT_INTERESTED',
@@ -95,10 +107,13 @@ export const inboundBindings = pgTable(
     callerNumberId: uuid('caller_number_id')
       .notNull()
       .references(() => callerNumbers.id, { onDelete: 'cascade' }),
-    agentVersionId: uuid('agent_version_id')
-      .notNull()
-      .references(() => agentVersions.id),
-    /** Where handoffs route for inbound calls on this number. Null = fall back to agent's escalation target. */
+    mode: inboundMode('mode').notNull().default('AI'),
+    /** Required when mode='AI'. Null for mode='HUMAN'. */
+    agentVersionId: uuid('agent_version_id').references(() => agentVersions.id),
+    /**
+     * Required when mode='HUMAN'. E.164 destination the inbound call is <Dial>ed to. In mode='AI'
+     * this is still allowed as an escalation target (future AgentHandoffService hop).
+     */
     handoffE164: text('handoff_e164'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true })

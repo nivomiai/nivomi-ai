@@ -123,9 +123,7 @@ function IntegrationRow({ item }: { readonly item: IntegrationCheck }) {
   return (
     <Panel
       title={item.label}
-      action={
-        <Badge tone={STATUS_TONE[item.status]}>{STATUS_LABEL[item.status]}</Badge>
-      }
+      action={<Badge tone={STATUS_TONE[item.status]}>{STATUS_LABEL[item.status]}</Badge>}
     >
       <p className="text-[14px] text-ink-2">{item.summary}</p>
       {item.missing.length > 0 ? (

@@ -78,6 +78,13 @@
       "when": 1791305351481,
       "tag": "0010_plans_annual_discount_and_org_trial",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1791698798920,
+      "tag": "0011_clear_madame_hydra",
+      "breakpoints": true
     }
   ]
 }

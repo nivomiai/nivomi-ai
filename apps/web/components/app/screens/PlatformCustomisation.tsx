@@ -20,8 +20,7 @@ function limitSummary(plan: Plan): string {
   const outbound = plan.limits.CALL_MINUTES_OUTBOUND;
   if (typeof outbound === 'number') return `${outbound.toLocaleString()} outbound minutes / month`;
   const first = Object.entries(plan.limits).find(([, v]) => typeof v === 'number') as
-    | [UsageEventKind, number]
-    | undefined;
+    [UsageEventKind, number] | undefined;
   if (!first) return 'No metered limits';
   return `${USAGE_KIND_LABELS[first[0]]}: ${first[1].toLocaleString()}`;
 }
@@ -81,8 +80,12 @@ export function PlatformCustomisation() {
 
       <Notice tone="info">
         No organization is selected yet. In the next build, pick an organization from the
-        Organizations tab to assign one of the plans below. For now, the catalogue is read-only
-        here — edit it on <Link className="font-semibold text-accent hover:underline" href="/app/platform/plans">Plans</Link>.
+        Organizations tab to assign one of the plans below. For now, the catalogue is read-only here
+        — edit it on{' '}
+        <Link className="font-semibold text-accent hover:underline" href="/app/platform/plans">
+          Plans
+        </Link>
+        .
       </Notice>
 
       <Panel
@@ -101,7 +104,14 @@ export function PlatformCustomisation() {
         ) : activePlans.length === 0 ? (
           <EmptyState icon="i-layers" title="No active plans yet">
             <p>
-              Create one on the <Link className="font-semibold text-accent hover:underline" href="/app/platform/plans">Plans</Link> page.
+              Create one on the{' '}
+              <Link
+                className="font-semibold text-accent hover:underline"
+                href="/app/platform/plans"
+              >
+                Plans
+              </Link>{' '}
+              page.
             </p>
           </EmptyState>
         ) : (
@@ -109,7 +119,9 @@ export function PlatformCustomisation() {
             {activePlans.map((plan) => (
               <div key={plan.id} className="rounded-[12px] border border-line bg-soft/40 p-4">
                 <p className="font-semibold text-ink">{plan.name}</p>
-                <p className="mt-1 text-[12.5px] text-muted">{formatRupees(plan.monthlyPaiseInr)} / month</p>
+                <p className="mt-1 text-[12.5px] text-muted">
+                  {formatRupees(plan.monthlyPaiseInr)} / month
+                </p>
                 <p className="mt-1 text-[12.5px] text-muted">{limitSummary(plan)}</p>
                 {plan.orgsActive > 0 ? (
                   <p className="mt-2">

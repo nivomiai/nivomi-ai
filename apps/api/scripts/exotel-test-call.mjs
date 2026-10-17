@@ -41,7 +41,13 @@ const { values } = parseArgs({
 
 const E164 = /^\+[1-9]\d{7,14}$/;
 
-const required = ['EXOTEL_SID', 'EXOTEL_API_KEY', 'EXOTEL_API_TOKEN', 'EXOTEL_API_URL', 'EXOTEL_CALLER_ID'];
+const required = [
+  'EXOTEL_SID',
+  'EXOTEL_API_KEY',
+  'EXOTEL_API_TOKEN',
+  'EXOTEL_API_URL',
+  'EXOTEL_CALLER_ID',
+];
 const missing = required.filter((k) => !env[k]);
 if (missing.length) {
   console.error(`Missing in .env.local: ${missing.join(', ')}`);
@@ -60,7 +66,8 @@ if (!E164.test(values.bridge)) {
   process.exit(1);
 }
 
-const auth = 'Basic ' + Buffer.from(`${env.EXOTEL_API_KEY}:${env.EXOTEL_API_TOKEN}`).toString('base64');
+const auth =
+  'Basic ' + Buffer.from(`${env.EXOTEL_API_KEY}:${env.EXOTEL_API_TOKEN}`).toString('base64');
 const url = `${env.EXOTEL_API_URL}/v1/Accounts/${encodeURIComponent(env.EXOTEL_SID)}/Calls/connect`;
 
 const body = new URLSearchParams({
@@ -92,14 +99,20 @@ const text = await res.text();
 console.log(`HTTP ${res.status} ${res.statusText}`);
 
 if (res.status === 200) {
-  const sid = text.match(/<Sid>(.*?)<\/Sid>/)?.[1] ?? text.match(/"Sid":\s*"(.*?)"/)?.[1] ?? '(not found)';
-  const status = text.match(/<Status>(.*?)<\/Status>/)?.[1] ?? text.match(/"Status":\s*"(.*?)"/)?.[1] ?? '(not found)';
+  const sid =
+    text.match(/<Sid>(.*?)<\/Sid>/)?.[1] ?? text.match(/"Sid":\s*"(.*?)"/)?.[1] ?? '(not found)';
+  const status =
+    text.match(/<Status>(.*?)<\/Status>/)?.[1] ??
+    text.match(/"Status":\s*"(.*?)"/)?.[1] ??
+    '(not found)';
   console.log(`CALL QUEUED`);
   console.log(`  CallSid: ${sid}`);
   console.log(`  Status:  ${status}`);
   console.log('');
   console.log('Your phone should ring in a few seconds. If it does not:');
-  console.log('  - verify the destination number is on your Exotel Allowed Numbers list (trial-only restriction)');
+  console.log(
+    '  - verify the destination number is on your Exotel Allowed Numbers list (trial-only restriction)',
+  );
   console.log('  - check the number is in E.164 format with the correct country code');
   console.log('  - look at the call log in Exotel dashboard: Calls -> Inbox');
   process.exit(0);
@@ -110,8 +123,14 @@ console.error(text.slice(0, 600));
 console.error('');
 console.error('Common causes:');
 console.error('  401:       credentials bad; run `npm run exotel:probe` to confirm');
-console.error('  403:       KYC not complete (Indian TRAI requirement) OR API key missing "Call Connect" permission OR IP restriction blocks this host.');
-console.error('             Complete KYC in Exotel dashboard: MY ACCOUNT -> Company Info (or the "Complete KYC" banner).');
-console.error('  400:       bad params (From/To not verified on trial, bad format, insufficient credits)');
+console.error(
+  '  403:       KYC not complete (Indian TRAI requirement) OR API key missing "Call Connect" permission OR IP restriction blocks this host.',
+);
+console.error(
+  '             Complete KYC in Exotel dashboard: MY ACCOUNT -> Company Info (or the "Complete KYC" banner).',
+);
+console.error(
+  '  400:       bad params (From/To not verified on trial, bad format, insufficient credits)',
+);
 console.error('  404:       wrong EXOTEL_API_URL for your account region');
 process.exit(1);

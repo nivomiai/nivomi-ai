@@ -28,7 +28,8 @@ if (missing.length) {
   process.exit(1);
 }
 
-const auth = 'Basic ' + Buffer.from(`${env.EXOTEL_API_KEY}:${env.EXOTEL_API_TOKEN}`).toString('base64');
+const auth =
+  'Basic ' + Buffer.from(`${env.EXOTEL_API_KEY}:${env.EXOTEL_API_TOKEN}`).toString('base64');
 const url = `${env.EXOTEL_API_URL}/v1/Accounts/${encodeURIComponent(env.EXOTEL_SID)}`;
 
 console.log(`GET  ${url}`);
@@ -42,9 +43,13 @@ if (res.status === 200) {
   console.log('Account type:          ' + field('Type'));
   console.log('Account status:        ' + field('Status'));
   if (env.EXOTEL_CALLER_ID) {
-    console.log('Caller ID configured:  ' + env.EXOTEL_CALLER_ID + ' (verify this is one of your ExoPhones)');
+    console.log(
+      'Caller ID configured:  ' + env.EXOTEL_CALLER_ID + ' (verify this is one of your ExoPhones)',
+    );
   } else {
-    console.log('Caller ID configured:  (empty — set EXOTEL_CALLER_ID to one of your ExoPhones to place calls)');
+    console.log(
+      'Caller ID configured:  (empty — set EXOTEL_CALLER_ID to one of your ExoPhones to place calls)',
+    );
   }
   process.exit(0);
 }

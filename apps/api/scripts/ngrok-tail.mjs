@@ -23,14 +23,19 @@ async function fetchRequests() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return (await res.json()).requests;
   } catch (e) {
-    console.error(`cannot reach ngrok inspector at http://127.0.0.1:4040 — is \`ngrok http 4000\` running? (${e.message})`);
+    console.error(
+      `cannot reach ngrok inspector at http://127.0.0.1:4040 — is \`ngrok http 4000\` running? (${e.message})`,
+    );
     process.exit(1);
   }
 }
 
 function render(r) {
   const url = new URL('http://x' + r.request.uri);
-  const start = new Date(r.start).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: false });
+  const start = new Date(r.start).toLocaleString('en-IN', {
+    timeZone: 'Asia/Kolkata',
+    hour12: false,
+  });
   const dur = (r.duration / 1_000_000).toFixed(0);
   const ua = r.request.headers['User-Agent']?.[0] ?? '?';
   const ip = r.request.headers['X-Forwarded-For']?.[0] ?? '?';
