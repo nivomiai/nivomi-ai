@@ -1,15 +1,30 @@
 'use client';
 
+import Link from 'next/link';
+import type { Plan, UsageEventKind } from '@/lib/api/types';
+import { USAGE_KIND_LABELS } from '@/lib/api/types';
 import { useSession } from '@/lib/app/session';
-import {
-  Badge,
-  EmptyState,
-  Notice,
-  PageHeader,
-  Panel,
-} from '../ui';
+import { useResource } from '@/lib/app/use-resource';
+import { Badge, EmptyState, ErrorBlock, LoadingBlock, Notice, PageHeader, Panel } from '../ui';
 
-const PLAN_OPTIONS = ['Starter', 'Growth', 'Business', 'Enterprise'] as const;
+function formatRupees(paise: number): string {
+  if (paise <= 0) return 'Custom';
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 0,
+  }).format(paise / 100);
+}
+
+function limitSummary(plan: Plan): string {
+  const outbound = plan.limits.CALL_MINUTES_OUTBOUND;
+  if (typeof outbound === 'number') return `${outbound.toLocaleString()} outbound minutes / month`;
+  const first = Object.entries(plan.limits).find(([, v]) => typeof v === 'number') as
+    | [UsageEventKind, number]
+    | undefined;
+  if (!first) return 'No metered limits';
+  return `${USAGE_KIND_LABELS[first[0]]}: ${first[1].toLocaleString()}`;
+}
 
 const FEATURE_FLAGS = [
   {
@@ -19,10 +34,10 @@ const FEATURE_FLAGS = [
     enabled: true,
   },
   {
-    id: 'crm_hubspot',
-    label: 'HubSpot sync',
-    description: 'OAuth connection, contact and lead sync, call-outcome write-back.',
-    enabled: true,
+    id: 'crm_external',
+    label: 'External CRM sync',
+    description: 'OAuth connection, contact/lead sync, call-outcome write-back. Not in MVP.',
+    enabled: false,
   },
   {
     id: 'imports_csv',
@@ -40,6 +55,9 @@ const FEATURE_FLAGS = [
 
 export function PlatformCustomisation() {
   const { me } = useSession();
+  const plansResource = useResource<{ items: Plan[] }>(
+    me?.user.isSuperAdmin ? '/platform/plans' : null,
+  );
 
   if (!me?.user.isSuperAdmin) {
     return (
@@ -52,36 +70,58 @@ export function PlatformCustomisation() {
     );
   }
 
+  const activePlans = (plansResource.data?.items ?? []).filter((p) => p.status === 'ACTIVE');
+
   return (
     <div className="grid gap-8">
       <PageHeader
         title="Customisation"
-        description="Per-organization plan, feature flags, branding and limits. Persisting these changes lands with the billing phase — the controls below are visual previews until then."
+        description="Per-organization plan, feature flags, branding and limits. The plan catalogue below is live — manage it on the Plans page. Per-org editing lands with the billing phase."
       />
 
       <Notice tone="info">
         No organization is selected yet. In the next build, pick an organization from the
-        Organizations tab to edit its plan, flags, and branding here.
+        Organizations tab to assign one of the plans below. For now, the catalogue is read-only
+        here — edit it on <Link className="font-semibold text-accent hover:underline" href="/app/platform/plans">Plans</Link>.
       </Notice>
 
-      <Panel title="Plan" description="The subscription tier that governs limits and billing.">
-        <div className="grid gap-3 sm:grid-cols-4">
-          {PLAN_OPTIONS.map((plan) => (
-            <div
-              key={plan}
-              aria-disabled="true"
-              className="rounded-[12px] border border-line bg-soft/40 p-4 opacity-70"
-            >
-              <p className="font-semibold text-ink">{plan}</p>
-              <p className="mt-1 text-[12.5px] text-muted">
-                {plan === 'Starter' ? 'Up to 2,000 calls / month' : null}
-                {plan === 'Growth' ? 'Up to 15,000 calls / month' : null}
-                {plan === 'Business' ? 'Up to 60,000 calls / month' : null}
-                {plan === 'Enterprise' ? 'Custom volume & SLA' : null}
-              </p>
-            </div>
-          ))}
-        </div>
+      <Panel
+        title="Plan catalogue"
+        description="Live from the plans table. These are the choices the super admin will pick from when assigning an org."
+        action={
+          <Link href="/app/platform/plans" className="btn btn-secondary btn-sm">
+            Open Plans
+          </Link>
+        }
+      >
+        {plansResource.error ? (
+          <ErrorBlock message={plansResource.error} onRetry={plansResource.reload} />
+        ) : plansResource.loading && !plansResource.data ? (
+          <LoadingBlock label="Loading plans" />
+        ) : activePlans.length === 0 ? (
+          <EmptyState icon="i-layers" title="No active plans yet">
+            <p>
+              Create one on the <Link className="font-semibold text-accent hover:underline" href="/app/platform/plans">Plans</Link> page.
+            </p>
+          </EmptyState>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {activePlans.map((plan) => (
+              <div key={plan.id} className="rounded-[12px] border border-line bg-soft/40 p-4">
+                <p className="font-semibold text-ink">{plan.name}</p>
+                <p className="mt-1 text-[12.5px] text-muted">{formatRupees(plan.monthlyPaiseInr)} / month</p>
+                <p className="mt-1 text-[12.5px] text-muted">{limitSummary(plan)}</p>
+                {plan.orgsActive > 0 ? (
+                  <p className="mt-2">
+                    <Badge tone="accent">
+                      {plan.orgsActive} org{plan.orgsActive === 1 ? '' : 's'}
+                    </Badge>
+                  </p>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )}
       </Panel>
 
       <Panel
@@ -106,9 +146,7 @@ export function PlatformCustomisation() {
               <span
                 aria-hidden="true"
                 className={`inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors ${
-                  flag.enabled
-                    ? 'border-accent bg-accent/80'
-                    : 'border-line bg-soft'
+                  flag.enabled ? 'border-accent bg-accent/80' : 'border-line bg-soft'
                 }`}
               >
                 <span
@@ -131,9 +169,11 @@ export function PlatformCustomisation() {
             </div>
           </div>
           <div>
-            <p className="text-xs font-bold tracking-[0.12em] text-muted uppercase">Accent colour</p>
+            <p className="text-xs font-bold tracking-[0.12em] text-muted uppercase">
+              Accent colour
+            </p>
             <div className="mt-2 grid grid-cols-6 gap-2">
-              {['#CC007E', '#6D4BD8', '#0F8A4A', '#1D4ED8', '#B45309', '#111827'].map((hex) => (
+              {['#C2410C', '#6D4BD8', '#0F8A4A', '#1D4ED8', '#B45309', '#111827'].map((hex) => (
                 <span
                   key={hex}
                   aria-hidden="true"

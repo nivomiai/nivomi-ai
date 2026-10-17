@@ -1,7 +1,14 @@
 import { Module, type DynamicModule } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { LoggerModule } from 'nestjs-pino';
+import { AgentsModule } from './agents/agents.module.js';
+import { AnalyticsModule } from './analytics/analytics.module.js';
+import { AppointmentsModule } from './appointments/appointments.module.js';
 import { AuthController } from './auth/auth.controller.js';
+import { MfaService } from './auth/mfa.service.js';
+import { BillingModule } from './billing/billing.module.js';
+import { NotificationsModule } from './notifications/notifications.module.js';
+import { CallsModule } from './calls/calls.module.js';
 import { CampaignsModule } from './campaigns/campaigns.module.js';
 import { ComplianceModule } from './compliance/compliance.module.js';
 import { AuthEmailJobs } from './auth/auth.jobs.js';
@@ -11,6 +18,7 @@ import { TokenService } from './auth/tokens.js';
 import { AllExceptionsFilter } from './common/all-exceptions.filter.js';
 import { ConfigModule } from './config/config.module.js';
 import type { ApiEnv } from './config/env.js';
+import { DashboardModule } from './dashboard/dashboard.module.js';
 import { DatabaseModule } from './database/database.module.js';
 import { DemoModule } from './demo/demo.module.js';
 import { CrmModule } from './crm/crm.module.js';
@@ -22,10 +30,13 @@ import { MeController, OrganizationsController } from './organizations/organizat
 import { OrganizationJobs } from './organizations/organizations.jobs.js';
 import { OrganizationsService } from './organizations/organizations.service.js';
 import { PlatformModule } from './platform/platform.module.js';
+import { PlatformIntegrationsController } from './platform/platform-integrations.controller.js';
 import { PlatformOrganizationsController } from './platform/platform-organizations.controller.js';
 import { PlatformOrganizationsService } from './platform/platform-organizations.service.js';
 import { PlatformUsersController } from './platform/platform-users.controller.js';
 import { PlatformUsersService } from './platform/platform-users.service.js';
+import { PlatformPlansModule } from './platform-plans/platform-plans.module.js';
+import { VoiceModule } from './voice/voice.module.js';
 
 @Module({})
 export class AppModule {
@@ -42,13 +53,23 @@ export class AppModule {
         ImportsModule.forRoot(env),
         CrmModule,
         ComplianceModule,
+        AgentsModule,
+        AnalyticsModule,
+        AppointmentsModule,
+        BillingModule,
         CampaignsModule,
+        CallsModule,
+        DashboardModule,
         DemoModule,
+        NotificationsModule,
+        PlatformPlansModule,
+        VoiceModule,
       ],
       controllers: [
         AuthController,
         MeController,
         OrganizationsController,
+        PlatformIntegrationsController,
         PlatformOrganizationsController,
         PlatformUsersController,
       ],
@@ -60,6 +81,7 @@ export class AppModule {
         { provide: APP_GUARD, useClass: AuthGuard },
         TokenService,
         AuthService,
+        MfaService,
         AuthEmailJobs,
         OrganizationsService,
         OrganizationJobs,

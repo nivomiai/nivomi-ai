@@ -102,7 +102,7 @@ export function Leads() {
     <div className="grid gap-8">
       <PageHeader
         title="Leads"
-        description="Everyone you can reach, from files, HubSpot and manual entry — one record each."
+        description="Everyone you can reach, from files and manual entry — one record each."
         actions={
           <div className="flex flex-wrap gap-2">
             <Link href="/app/leads/suppression" className="btn btn-secondary btn-sm">
@@ -160,7 +160,6 @@ export function Leads() {
             options={[
               { value: '', label: 'Any source' },
               { value: 'FILE_IMPORT', label: 'File import' },
-              { value: 'HUBSPOT', label: 'HubSpot' },
               { value: 'MANUAL', label: 'Manual' },
             ]}
           />
@@ -176,7 +175,7 @@ export function Leads() {
             >
               {filtered ? null : (
                 <>
-                  Import a CSV or Excel file, connect HubSpot from{' '}
+                  Import a CSV or Excel file from{' '}
                   <Link
                     href="/app/data-sources"
                     className="font-semibold text-accent hover:underline"

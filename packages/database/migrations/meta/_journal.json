@@ -22,6 +22,62 @@
       "when": 1790455660856,
       "tag": "0002_compliance_campaigns",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790531478812,
+      "tag": "0003_ai_agents",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791123040164,
+      "tag": "0004_call_sessions",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791123697781,
+      "tag": "0005_appointments",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791124553797,
+      "tag": "0006_crm_writeback",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791124842675,
+      "tag": "0007_billing",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791138589222,
+      "tag": "0008_notifications_mfa",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791299824375,
+      "tag": "0009_plans_display_order_and_updated_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791305351481,
+      "tag": "0010_plans_annual_discount_and_org_trial",
+      "breakpoints": true
     }
   ]
 }

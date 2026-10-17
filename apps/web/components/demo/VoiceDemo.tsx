@@ -1,14 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type MutableRefObject,
-} from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import { ThemeToggle } from '@/components/marketing/ThemeToggle';
 import { Icon, Logo } from '@/components/marketing/primitives';
 import { cx } from '@/lib/site/cx';
@@ -31,13 +24,7 @@ interface Turn {
 
 type ChatMessage = { role: 'user' | 'assistant'; content: string };
 
-type Stage =
-  | 'off'
-  | 'listening'
-  | 'capturing'
-  | 'transcribing'
-  | 'thinking'
-  | 'speaking';
+type Stage = 'off' | 'listening' | 'capturing' | 'transcribing' | 'thinking' | 'speaking';
 
 const STAGE_LABELS: Record<Stage, string> = {
   off: 'Press start to begin the conversation',
@@ -265,7 +252,9 @@ export function VoiceDemo() {
       <main className="mx-auto grid max-w-6xl gap-8 px-5 py-10 lg:grid-cols-[minmax(0,1fr)_380px] lg:py-14">
         <section className="grid gap-6">
           <div>
-            <p className="text-xs font-bold tracking-[0.16em] text-accent uppercase">Live voice demo</p>
+            <p className="text-xs font-bold tracking-[0.16em] text-accent uppercase">
+              Live voice demo
+            </p>
             <h1 className="mt-2 font-brand text-3xl font-bold tracking-tight text-ink sm:text-4xl">
               Talk to Nivomi
             </h1>
@@ -324,7 +313,9 @@ export function VoiceDemo() {
         <aside className="grid gap-5 self-start">
           <div className="card-nv rounded-[20px] border border-line bg-card p-6">
             <h2 className="font-brand text-lg font-bold text-ink">Agent setup</h2>
-            <p className="mt-1 text-sm text-muted">Choose the language and voice before you start.</p>
+            <p className="mt-1 text-sm text-muted">
+              Choose the language and voice before you start.
+            </p>
 
             <div className="mt-5 grid gap-4">
               <LabeledSelect
@@ -356,7 +347,8 @@ export function VoiceDemo() {
             <ul className="mt-3 grid gap-1.5 text-[13px] text-muted">
               <li className="flex items-start gap-2">
                 <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-accent" />
-                Audio is captured in the browser, transcribed server-side; API keys stay off the client.
+                Audio is captured in the browser, transcribed server-side; API keys stay off the
+                client.
               </li>
               <li className="flex items-start gap-2">
                 <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-accent" />
@@ -375,7 +367,13 @@ export function VoiceDemo() {
   );
 }
 
-function ConversationIndicator({ stage, level }: { readonly stage: Stage; readonly level: number }) {
+function ConversationIndicator({
+  stage,
+  level,
+}: {
+  readonly stage: Stage;
+  readonly level: number;
+}) {
   const liveStage = stage !== 'off';
   const scale = 1 + Math.min(level, 1) * 0.6;
   const colour = {
@@ -401,7 +399,7 @@ function ConversationIndicator({ stage, level }: { readonly stage: Stage; readon
           className="absolute size-36 animate-ping rounded-full bg-live/15"
         />
       ) : null}
-      {(stage === 'thinking' || stage === 'transcribing') ? (
+      {stage === 'thinking' || stage === 'transcribing' ? (
         <span
           aria-hidden="true"
           className="absolute size-28 animate-pulse rounded-full bg-accent/15"
@@ -414,10 +412,7 @@ function ConversationIndicator({ stage, level }: { readonly stage: Stage; readon
           liveStage ? 'opacity-100' : 'opacity-80',
         )}
       >
-        <Icon
-          name={stage === 'speaking' ? 'i-chat' : 'i-mic'}
-          className="size-9"
-        />
+        <Icon name={stage === 'speaking' ? 'i-chat' : 'i-mic'} className="size-9" />
       </span>
     </div>
   );
@@ -713,7 +708,8 @@ async function transcribe(blob: Blob, mimeType: string, language: string): Promi
     body: blob,
     credentials: 'omit',
   });
-  if (!response.ok) throw new Error(await errorMessage(response, 'Could not transcribe your voice.'));
+  if (!response.ok)
+    throw new Error(await errorMessage(response, 'Could not transcribe your voice.'));
   const data = (await response.json()) as { transcript: string; stubbed: boolean };
   return data.transcript;
 }
@@ -751,8 +747,7 @@ async function speak(
   });
   if (!response.ok) throw new Error(await errorMessage(response, 'The agent could not speak.'));
   const data = (await response.json()) as
-    | { audio: string; sampleRate: number }
-    | { fallback: 'web-speech' };
+    { audio: string; sampleRate: number } | { fallback: 'web-speech' };
   if ('fallback' in data) {
     await speakBrowser(text, languageCode);
     return;

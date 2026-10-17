@@ -62,7 +62,10 @@ export function LeadDetail({ id }: { readonly id: string }) {
   }
   if (!lead.data) return <LoadingBlock label="Loading lead" />;
   const data = lead.data;
-  const hubspot = data.sources.find((s) => s.provider === 'HUBSPOT' && s.objectType === 'contact');
+  // External CRM contact link, if this lead was synced in from a legacy CRM connection.
+  const crmContact = data.sources.find(
+    (s) => s.provider === 'HUBSPOT' && s.objectType === 'contact',
+  );
 
   return (
     <div className="grid gap-8">
@@ -167,15 +170,15 @@ export function LeadDetail({ id }: { readonly id: string }) {
             <dl className="grid gap-2 text-sm">
               <Row label="Created from" value={SOURCE_LABELS[data.source]} />
               <Row label="Added" value={formatDateTime(data.createdAt)} />
-              {hubspot ? (
+              {crmContact ? (
                 <Row
-                  label="HubSpot"
-                  value={`Contact ${hubspot.externalId}${hubspot.connectionStatus === 'DISCONNECTED' ? ' · Disconnected' : ''}${hubspot.lastSyncedAt ? ` · last synced ${formatDateTime(hubspot.lastSyncedAt)}` : ''}`}
+                  label="External CRM"
+                  value={`Contact ${crmContact.externalId}${crmContact.connectionStatus === 'DISCONNECTED' ? ' · Disconnected' : ''}${crmContact.lastSyncedAt ? ` · last synced ${formatDateTime(crmContact.lastSyncedAt)}` : ''}`}
                 />
               ) : null}
               {data.crmDetails?.hubspotLeadName ? (
                 <Row
-                  label="HubSpot lead"
+                  label="External CRM lead"
                   value={[data.crmDetails.hubspotLeadName, data.crmDetails.hubspotLeadLabel]
                     .filter(Boolean)
                     .join(' · ')}

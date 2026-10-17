@@ -8,38 +8,58 @@ of every phase. The detailed trackers are:
 - [TECH_DEBT](../TECH_DEBT.md) — known gaps;
 - [production-readiness-checklist](../operations/production-readiness-checklist.md) — the launch gate.
 
-_Last updated: 2026-09-27._
+_Last updated: 2026-10-05._
 
 ## Phases
 
-| #   | Phase                                | Status                                                                                   | Where                                        |
-| --- | ------------------------------------ | ---------------------------------------------------------------------------------------- | -------------------------------------------- |
-| 1   | Platform foundation                  | ✅ Done                                                                                  | PR #8                                        |
-| 2   | Contacts, leads, CSV/XLSX import     | ✅ Done                                                                                  | PR #9                                        |
-| 3   | Compliance engine and campaigns      | ✅ Done — rules are a **draft pending counsel**; the dialer is simulated                 | `feature/compliance-campaigns` (PR after #9) |
-| 4   | Calls and call history               | 🔨 **Next** — see [Next](#next)                                                          | —                                            |
-| 5   | Inbound calls                        | Not started                                                                              | —                                            |
-| 6   | Appointments                         | Not started                                                                              | —                                            |
-| 7   | CRM (HubSpot)                        | 🟡 Inbound done (connect, fetch contacts and leads); write-back and webhooks not started | PR #9 (inbound)                              |
-| 8   | Usage, quotas, billing               | Not started                                                                              | —                                            |
-| 9   | Notifications, OTP, Super Admin, MFA | Not started                                                                              | —                                            |
-| 10  | Analytics and observability          | Not started                                                                              | —                                            |
-| 11  | Deploy and hardening                 | Not started                                                                              | —                                            |
+| #   | Phase                                | Status                                                                                                                                            | Where                                        |
+| --- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| 1   | Platform foundation                  | ✅ Done                                                                                                                                           | PR #8                                        |
+| 2   | Contacts, leads, CSV/XLSX import     | ✅ Done                                                                                                                                           | PR #9                                        |
+| 3   | Compliance engine and campaigns      | ✅ Done — rules are a **draft pending counsel**; the dialer is simulated                                                                          | `feature/compliance-campaigns` (PR after #9) |
+| 4   | Calls and call history               | 🟡 4a done; 4b in progress — STT/TTS seams + VoiceSessionRunner + fakes landed; Exotel/Sarvam adapters deferred to adapter PRs when accounts open | `main` (session runner); adapter PRs TBD     |
+| 5   | Inbound calls + call_sessions        | ✅ Shipped against fakes — ADR-024 + persisted transcripts + inbound bindings + /api/v1/calls                                                     | `main`                                       |
+| 6   | Appointments                         | ✅ Shipped against fakes — ADR-025 + CalendarProvider seam + appointment.book tool                                                                | `main`                                       |
+| 7   | CRM write-back + webhooks            | ✅ Shipped — ADR-026 + outbox + signed webhook; real HubSpot adapter deferred to hold                                                             | `main`                                       |
+| 8   | Usage, quotas, billing               | ✅ Shipped against fakes — ADR-027 + usage events + plans + quotas + PaymentProvider seam                                                         | `main`                                       |
+| 9   | Notifications, OTP, Super Admin, MFA | 🟡 Service layer shipped — ADR-028 + NotificationsService + OtpProvider seam + TOTP MFA; Super Admin UI still TECH_DEBT                           | `main`                                       |
+| 10  | Analytics and observability          | 🟡 Shipped — ADR-029 + @nivomi/observability + /api/v1/analytics; OTel SDK binding + dashboards TECH_DEBT                                         | `main`                                       |
+| 11  | Deploy and hardening                 | 🟡 Skeleton shipped — ADR-030 + Terraform modules + deploy.yml gated workflow; real apply after AWS hold lifts                                    | `main`                                       |
 
 PRs merge in order: **#7 → #8 → #9 → Phase 3**. Each branch builds on the one before.
 
 Phase 3 details: [story spec](../stories/spec-phase-3-compliance-campaigns.md), [ADR-021](../decisions/ADR-021-compliance-rule-data-and-eligibility-decisions.md), the Phase 3 section of the [requirements matrix](requirements-matrix.md).
 
+## HubSpot removed from MVP (owner decision 2026-10-06)
+
+HubSpot is **no longer part of the Nivomi MVP.** Nivomi owns the Leads domain natively; the
+primary and only supported lead-ingestion paths are:
+
+1. **Excel / CSV upload** — the full Phase 2 pipeline: signed upload, column mapping, preview,
+   chunked import. Lives under `/app/data-sources` and the `/imports` API.
+2. **Direct `POST /leads` API** — one lead per request, with `Idempotency-Key` honoured; the
+   same payload shape the import pipeline uses. Any back-office tool or form can hit it.
+3. **Manual entry** — `/app/leads/new`.
+4. **Status-driven campaigns** — campaigns select leads with
+   `selection = { kind: 'FILTER', statuses: [...] }`, so a saved campaign dials every lead that
+   enters a given status (NEW, FOLLOW_UP, CALLBACK_REQUESTED, …) without a manual re-select.
+
+The `CRMProvider` seam, HubSpot adapter code (`apps/api/src/crm/hubspot.adapter.ts`), and the
+integration tests against the in-process fake HubSpot (`apps/api/test/support/fake-hubspot.ts`)
+are kept as a **reference implementation of a generic external-CRM connector**, so a future
+generic connector has a template. The web app no longer offers "Connect HubSpot"; the Data
+Sources page shows an "External CRM — coming soon" placeholder. HubSpot env vars remain
+optional (unset = feature invisible).
+
 ## On hold by owner decision (2026-09-27)
 
-The owner decided to **hold these until every product phase is complete**, then set them up
-together. Nothing here blocks building or testing: each one already has a development stand-in,
-and production refuses to start without it (fail fast, never a silent fallback).
+The owner decided to **hold the AWS account until the deploy phase is ready.** Nothing here
+blocks building or testing: each capability already has a development stand-in, and production
+refuses to start without the real adapter (fail fast, never a silent fallback).
 
-| Item                                                      | What it unblocks                                                                                                                                                                                   | Development stand-in today                                                                 | How to set it up later                              |
-| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------- |
-| **HubSpot app** (developer account; client ID and secret) | Real "Connect HubSpot" for customers; testing against a real HubSpot account; later, write-back and webhooks (FR-87–FR-95)                                                                         | In-process fake HubSpot in the tests; the app shows "Connecting HubSpot is not enabled"    | [hubspot-setup.md](../operations/hubspot-setup.md)  |
-| **AWS account** (ap-south-1)                              | **S3** storage for uploads and recordings; **KMS** envelope encryption for CRM tokens; **malware scanning** of uploads; **SES** email; **RDS** PostgreSQL; **ECS Fargate** hosting; **CloudWatch** | Local file storage, a static encryption key, the dev mailbox, embedded PostgreSQL (PGlite) | Phase 11, plus the adapter work listed in TECH_DEBT |
+| Item                         | What it unblocks                                                                                                                                                                                   | Development stand-in today                                                                 | How to set it up later                              |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------- |
+| **AWS account** (ap-south-1) | **S3** storage for uploads and recordings; **KMS** envelope encryption for CRM tokens; **malware scanning** of uploads; **SES** email; **RDS** PostgreSQL; **ECS Fargate** hosting; **CloudWatch** | Local file storage, a static encryption key, the dev mailbox, embedded PostgreSQL (PGlite) | Phase 11, plus the adapter work listed in TECH_DEBT |
 
 **Rule while on hold:** new code keeps depending on the provider interfaces (`StorageProvider`,
 `EmailProvider`, `CRMProvider`, …) and ships with a development adapter or a fake, so turning on
@@ -63,7 +83,9 @@ Work proceeds around them with fakes and fail-closed defaults.
 
 ## Next
 
-**Phase 4 — Calls and call history.** Phase 3 left these seams for it:
+**Phase 4b — live voice.** Phase 4a (ADR-022) built the AI Agent layer: definitions, the
+visual workflow builder, immutable versions pinned by campaigns and a conversation engine that
+runs in browser test chat. The same engine drives live calls next. Phase 3 left these seams:
 
 - **`VoiceProvider`** (`apps/api/src/campaigns/voice-provider.ts`): the Exotel adapter replaces
   `SimulatedVoiceProvider` and must implement `findCall(reference)` so crash reconciliation works

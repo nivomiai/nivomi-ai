@@ -32,6 +32,9 @@ export type AuditAction =
   | 'platform.organization_closed'
   | 'platform.user_promoted'
   | 'platform.user_demoted'
+  | 'platform.plan_created'
+  | 'platform.plan_updated'
+  | 'platform.plan_archived'
   | 'security.cross_tenant_access_denied'
   | 'lead.created'
   | 'lead.updated'
@@ -72,7 +75,12 @@ export type AuditAction =
   | 'compliance.breaker_tripped'
   | 'compliance.breaker_acknowledged'
   | 'compliance.breaker_cleared'
-  | 'compliance.review_resolved';
+  | 'compliance.review_resolved'
+  | 'agent.created'
+  | 'agent.updated'
+  | 'agent.published'
+  | 'agent.archived'
+  | 'agent.test_started';
 
 export interface AuditEntry {
   readonly action: AuditAction;

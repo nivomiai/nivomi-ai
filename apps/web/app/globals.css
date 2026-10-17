@@ -1,8 +1,10 @@
 @import 'tailwindcss';
 
 /*
- * Nivomi design tokens — carried over from the established Nivomi brand (mulberry + plum,
- * Inter / Poppins). Semantic variables switch with the theme; Tailwind utilities map to them,
+ * Nivomi design tokens — orange accent on navy ink with warm off-white surfaces
+ * (Inter / Poppins). The `pink` / `plum` token names are kept for compatibility: `pink` is the
+ * brand accent (orange) and `plum` is the deep brand dark (navy).
+ * Semantic variables switch with the theme; Tailwind utilities map to them,
  * so components use `bg-surface`, `text-ink`, `border-line`… and never raw colours.
  * These tokens are the seed of the product design system (to be extended in `bmad-ux`).
  */
@@ -10,55 +12,59 @@
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
 :root {
-  --nv-pink: #cc007e;
-  --nv-pink-2: #e21a92;
-  --nv-pink-light: #ff75bf;
-  --nv-plum-950: #10050e;
-  --nv-plum-900: #170816;
-  --nv-plum-800: #240b20;
-  --nv-plum-700: #3b0c2e;
+  --nv-pink: #c2410c;
+  --nv-pink-2: #ea580c;
+  --nv-pink-light: #fb923c;
+  --nv-plum-950: #050b1f;
+  --nv-plum-900: #0a1128;
+  --nv-plum-800: #111c3d;
+  --nv-plum-700: #1b2a57;
   --nv-grad: linear-gradient(135deg, var(--nv-pink) 0%, var(--nv-pink-2) 100%);
 
   --nv-surface: #ffffff;
-  --nv-soft: #fcf8fb;
+  --nv-soft: #fbf8f4;
   --nv-card: #ffffff;
-  --nv-ink: #111827;
-  --nv-ink-2: #2b3140;
-  --nv-muted: #5d6679;
-  --nv-line: #ead8e4;
-  --nv-line-2: #f2e6ee;
-  --nv-line-hover: #e7c4d8;
-  --nv-accent: #cc007e;
-  --nv-accent-soft: #fff2f9;
-  --nv-accent-tint: #fbe3f0;
+  --nv-ink: #0f1b3d;
+  --nv-ink-2: #27324f;
+  --nv-muted: #5b6478;
+  --nv-line: #ece3d9;
+  --nv-line-2: #f4eee7;
+  --nv-line-hover: #e2cdb8;
+  --nv-accent: #c2410c;
+  --nv-accent-soft: #fff5ed;
+  /* Single-series chart mark; validated for contrast and lightness on the light surface. */
+  --nv-chart-1: #ea580c;
+  --nv-accent-tint: #ffe4d1;
   --nv-header: rgba(255, 255, 255, 0.78);
   --nv-soon: #6d4bd8;
   --nv-soon-soft: #f1edff;
   --nv-live: #0f8a4a;
   --nv-live-soft: #e9faf1;
-  --nv-warn: #9a5b00;
-  --nv-warn-soft: #fff6e5;
-  --nv-sh-sm: 0 1px 2px rgba(17, 24, 39, 0.04), 0 2px 8px rgba(60, 10, 45, 0.04);
-  --nv-sh-md: 0 2px 4px rgba(17, 24, 39, 0.03), 0 12px 32px rgba(60, 10, 45, 0.07);
-  --nv-sh-lg: 0 4px 10px rgba(17, 24, 39, 0.04), 0 28px 60px rgba(60, 10, 45, 0.12);
-  --nv-sh-pink: 0 10px 28px rgba(204, 0, 126, 0.28);
+  --nv-warn: #a16207;
+  --nv-warn-soft: #fef9e3;
+  --nv-sh-sm: 0 1px 2px rgba(15, 27, 61, 0.04), 0 2px 8px rgba(15, 27, 61, 0.04);
+  --nv-sh-md: 0 2px 4px rgba(15, 27, 61, 0.03), 0 12px 32px rgba(15, 27, 61, 0.07);
+  --nv-sh-lg: 0 4px 10px rgba(15, 27, 61, 0.04), 0 28px 60px rgba(15, 27, 61, 0.12);
+  --nv-sh-pink: 0 10px 28px rgba(234, 88, 12, 0.28);
   color-scheme: light;
 }
 
 [data-theme='dark'] {
-  --nv-surface: #0e050c;
-  --nv-soft: #130810;
-  --nv-card: #1a0c17;
-  --nv-ink: #f7eef4;
-  --nv-ink-2: #ddcfd8;
-  --nv-muted: #b3a3ae;
-  --nv-line: #35192e;
-  --nv-line-2: #261220;
-  --nv-line-hover: #5a2449;
-  --nv-accent: #ff5cb4;
-  --nv-accent-soft: #2b0e24;
-  --nv-accent-tint: #3a1030;
-  --nv-header: rgba(14, 5, 12, 0.72);
+  --nv-surface: #070d1f;
+  --nv-soft: #0a1228;
+  --nv-card: #0f1a36;
+  --nv-ink: #eef2fa;
+  --nv-ink-2: #cdd5e6;
+  --nv-muted: #9ca7bf;
+  --nv-line: #1f2b4d;
+  --nv-line-2: #162142;
+  --nv-line-hover: #34446f;
+  --nv-accent: #fb923c;
+  --nv-accent-soft: #2a1f24;
+  /* Its own dark step (not the text accent), validated against the dark card surface. */
+  --nv-chart-1: #f97316;
+  --nv-accent-tint: #3d2619;
+  --nv-header: rgba(7, 13, 31, 0.72);
   --nv-soon: #b9a5ff;
   --nv-soon-soft: rgba(145, 118, 255, 0.14);
   --nv-live: #5be59a;
@@ -95,6 +101,7 @@
   --color-line-hover: var(--nv-line-hover);
   --color-accent: var(--nv-accent);
   --color-accent-soft: var(--nv-accent-soft);
+  --color-chart-1: var(--nv-chart-1);
   --color-accent-tint: var(--nv-accent-tint);
   --color-soon: var(--nv-soon);
   --color-soon-soft: var(--nv-soon-soft);
@@ -200,7 +207,7 @@
     color: transparent;
   }
   [data-theme='dark'] .grad-text {
-    background: linear-gradient(135deg, var(--nv-pink-light) 0%, #ff9fd2 100%);
+    background: linear-gradient(135deg, var(--nv-pink-light) 0%, #fdba74 100%);
     -webkit-background-clip: text;
     background-clip: text;
   }
@@ -274,16 +281,16 @@
   }
   .hero-glow {
     background:
-      radial-gradient(60% 50% at 80% 10%, rgba(204, 0, 126, 0.14), transparent 70%),
-      radial-gradient(50% 40% at 0% 30%, rgba(226, 26, 146, 0.08), transparent 70%);
+      radial-gradient(60% 50% at 80% 10%, rgba(234, 88, 12, 0.14), transparent 70%),
+      radial-gradient(50% 40% at 0% 30%, rgba(249, 115, 22, 0.08), transparent 70%);
   }
   [data-theme='dark'] .hero-glow {
     background:
-      radial-gradient(60% 50% at 80% 10%, rgba(204, 0, 126, 0.3), transparent 70%),
-      radial-gradient(50% 40% at 0% 30%, rgba(90, 10, 61, 0.45), transparent 70%);
+      radial-gradient(60% 50% at 80% 10%, rgba(234, 88, 12, 0.24), transparent 70%),
+      radial-gradient(50% 40% at 0% 30%, rgba(27, 42, 87, 0.55), transparent 70%);
   }
   .band-plum {
-    background: linear-gradient(145deg, #120611 0%, #2a0a22 55%, #5a0a3d 100%);
+    background: linear-gradient(145deg, #050b1f 0%, #0f1b3d 55%, #1b2a57 100%);
   }
   .dotgrid {
     background-image: radial-gradient(var(--nv-line) 1px, transparent 1px);
@@ -342,7 +349,7 @@
   color: #fff;
 }
 [data-theme='dark'] .cs-solid {
-  color: #10050e;
+  color: #050b1f;
 }
 .cs-glow {
   background:
@@ -351,7 +358,7 @@
       color-mix(in srgb, var(--cs) 22%, transparent),
       transparent 70%
     ),
-    radial-gradient(45% 40% at 5% 35%, rgba(204, 0, 126, 0.1), transparent 70%);
+    radial-gradient(45% 40% at 5% 35%, rgba(234, 88, 12, 0.1), transparent 70%);
 }
 
 /* Workflow step highlight: a slow, CSS-only pulse through the steps of a diagram. */

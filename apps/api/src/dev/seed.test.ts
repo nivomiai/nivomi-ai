@@ -211,6 +211,7 @@ describe('seedDevData', () => {
         status: 'DRAFT',
         callCategory: 'PROMOTIONAL',
         callerNumberId: numbers[0]?.id,
+        agentVersionId: expect.any(String) as unknown as string,
       }),
     ]);
   });

@@ -21,6 +21,8 @@ import { RATE_LIMITS, RateLimiter } from '../security/rate-limit.js';
 
 export const ORGANIZATION_JOBS = { sendInvitationEmail: 'email.invitation' } as const;
 export const INVITATION_TTL_MS = 7 * 24 * 60 * 60_000;
+/** Length of the free trial every new organization gets at creation. */
+export const TRIAL_DAYS = 7;
 
 export interface OrganizationSummary {
   readonly id: string;
@@ -28,6 +30,8 @@ export interface OrganizationSummary {
   readonly slug: string;
   readonly status: string;
   readonly role: OrganizationRole;
+  /** 7-day free-trial deadline (ISO) or null for pre-trial orgs. */
+  readonly trialEndsAt: Date | null;
 }
 
 function slugify(name: string): string {
@@ -70,9 +74,10 @@ export class OrganizationsService {
         .limit(1);
       if (taken) slug = `${slug}-${randomBytes(3).toString('hex')}`;
 
+      const trialEndsAt = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
       const [organization] = await tx
         .insert(organizations)
-        .values({ name, slug, createdByUserId: principal.userId })
+        .values({ name, slug, createdByUserId: principal.userId, trialEndsAt })
         .returning();
       if (!organization) throw new Error('organization insert returned no row');
       await tx
@@ -100,6 +105,7 @@ export class OrganizationsService {
         slug: organization.slug,
         status: organization.status,
         role: 'INDV_USER',
+        trialEndsAt: organization.trialEndsAt,
       };
     });
   }
@@ -112,6 +118,7 @@ export class OrganizationsService {
         slug: organizations.slug,
         status: organizations.status,
         role: organizationMembers.role,
+        trialEndsAt: organizations.trialEndsAt,
       })
       .from(organizationMembers)
       .innerJoin(organizations, eq(organizations.id, organizationMembers.organizationId))
@@ -169,6 +176,7 @@ export class OrganizationsService {
       slug: organization.slug,
       status: organization.status,
       role: tenant.membership.role,
+      trialEndsAt: organization.trialEndsAt,
     };
   }
 
@@ -451,6 +459,7 @@ export class OrganizationsService {
         slug: organization.slug,
         status: organization.status,
         role: membership?.role ?? invitation.role,
+        trialEndsAt: organization.trialEndsAt,
       };
     });
   }

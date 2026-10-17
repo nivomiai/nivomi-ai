@@ -26,8 +26,8 @@ export const PERMISSION_LABELS: Record<Permission, { area: AccessArea; label: st
   'suppression.manage': { area: 'Leads & data', label: 'Manage the suppression list' },
   'consent.manage': { area: 'Leads & data', label: 'Record consent' },
   'integrations.read': { area: 'Integrations', label: 'View data sources' },
-  'integrations.sync': { area: 'Integrations', label: 'Run a HubSpot sync' },
-  'integrations.manage': { area: 'Integrations', label: 'Connect or disconnect HubSpot' },
+  'integrations.sync': { area: 'Integrations', label: 'Run an external CRM sync' },
+  'integrations.manage': { area: 'Integrations', label: 'Manage external CRM connections' },
   'campaigns.read': { area: 'Campaigns & compliance', label: 'View campaigns' },
   'campaigns.manage': {
     area: 'Campaigns & compliance',
@@ -38,6 +38,9 @@ export const PERMISSION_LABELS: Record<Permission, { area: AccessArea; label: st
   'compliance.review': { area: 'Campaigns & compliance', label: 'Resolve reviews and complaints' },
   'telecom.read': { area: 'Campaigns & compliance', label: 'View telecom identity' },
   'telecom.manage': { area: 'Campaigns & compliance', label: 'Edit telecom identity' },
+  'dashboard.read': { area: 'Organization & team', label: 'See the dashboard' },
+  'agents.read': { area: 'Campaigns & compliance', label: 'View AI agents' },
+  'agents.manage': { area: 'Campaigns & compliance', label: 'Build and edit AI agents' },
 };
 
 /** Every permission, grouped by area in display order. */

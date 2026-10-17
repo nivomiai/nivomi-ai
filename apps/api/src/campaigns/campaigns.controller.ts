@@ -32,6 +32,7 @@ const campaignSchema = z.object({
   type: z.enum(['STATIC', 'CONTINUOUS']).default('STATIC'),
   callCategory: z.enum(callCategories),
   callerNumberId: z.uuid().nullable().default(null),
+  agentVersionId: z.uuid().nullable().default(null),
   selection: z.discriminatedUnion('kind', [
     z.object({
       kind: z.literal('FILTER'),

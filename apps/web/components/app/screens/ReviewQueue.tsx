@@ -44,7 +44,7 @@ export function ReviewQueue() {
         <Panel key={item.id}>
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone="warn">
-              {item.source === 'HUBSPOT' ? 'From HubSpot' : 'From an import'}
+              {item.source === 'HUBSPOT' ? 'From an external CRM' : 'From an import'}
             </Badge>
             <span className="text-sm text-muted">{formatDateTime(item.createdAt)}</span>
           </div>

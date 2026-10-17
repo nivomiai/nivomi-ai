@@ -1,5 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
+  agentVersions,
+  aiAgents,
   callAttempts,
   callerNumbers,
   campaignLeads,
@@ -40,6 +42,8 @@ export interface CampaignInput {
   readonly type: 'STATIC' | 'CONTINUOUS';
   readonly callCategory: (typeof callCategories)[number];
   readonly callerNumberId: string | null;
+  /** The pinned Agent Version (FR-32); required to launch. */
+  readonly agentVersionId: string | null;
   readonly selection: CampaignSelection;
   readonly windowStart: string;
   readonly windowEnd: string;
@@ -127,6 +131,22 @@ export class CampaignsService {
         .limit(1);
       if (!number) details.push('The caller number is not one of this organization’s numbers.');
     }
+    if (input.agentVersionId) {
+      const [version] = await db
+        .select({ callCategory: agentVersions.callCategory })
+        .from(agentVersions)
+        .where(
+          and(eq(agentVersions.id, input.agentVersionId), eq(agentVersions.organizationId, orgId)),
+        )
+        .limit(1);
+      if (!version) {
+        details.push('The AI agent version is not one of this organization’s agents.');
+      } else if (version.callCategory !== input.callCategory) {
+        details.push(
+          `The AI agent is for ${version.callCategory.toLowerCase()} calls; the campaign's call type must match.`,
+        );
+      }
+    }
     if (input.selection.kind === 'LIST' && input.selection.leadIds?.length) {
       const ids = [...new Set(input.selection.leadIds)];
       const [found] = await db
@@ -152,6 +172,7 @@ export class CampaignsService {
           type: input.type,
           callCategory: input.callCategory,
           callerNumberId: input.callerNumberId,
+          agentVersionId: input.agentVersionId,
           selection: input.selection,
           windowStart: input.windowStart,
           windowEnd: input.windowEnd,
@@ -199,6 +220,7 @@ export class CampaignsService {
           type: input.type,
           callCategory: input.callCategory,
           callerNumberId: input.callerNumberId,
+          agentVersionId: input.agentVersionId,
           selection: input.selection,
           windowStart: input.windowStart,
           windowEnd: input.windowEnd,
@@ -308,6 +330,9 @@ export class CampaignsService {
         );
       }
       if (!campaign.callerNumberId) throw new AppError('CONFLICT', 'Choose a caller number first.');
+      if (!campaign.agentVersionId) {
+        throw new AppError('CONFLICT', 'Choose a published AI agent version first.');
+      }
       await this.assertCallingAllowed(tx, tenant.membership.organizationId);
       const scheduled = campaign.startsAt !== null && campaign.startsAt > now;
       await tx
@@ -536,9 +561,14 @@ export class CampaignsService {
         campaign: campaigns,
         callerNumber: callerNumbers.phoneE164,
         callerSeries: callerNumbers.series,
+        agentVersion: agentVersions.version,
+        agentId: aiAgents.id,
+        agentName: aiAgents.name,
       })
       .from(campaigns)
       .leftJoin(callerNumbers, eq(callerNumbers.id, campaigns.callerNumberId))
+      .leftJoin(agentVersions, eq(agentVersions.id, campaigns.agentVersionId))
+      .leftJoin(aiAgents, eq(aiAgents.id, agentVersions.agentId))
       .where(
         and(eq(campaigns.id, id), eq(campaigns.organizationId, tenant.membership.organizationId)),
       )
@@ -578,6 +608,15 @@ export class CampaignsService {
       status: c.status,
       type: c.type,
       callCategory: c.callCategory,
+      agentVersion:
+        row.agentId && row.agentVersion !== null
+          ? {
+              id: c.agentVersionId,
+              agentId: row.agentId,
+              agentName: row.agentName,
+              version: row.agentVersion,
+            }
+          : null,
       callerNumber: row.callerNumber
         ? { id: c.callerNumberId, phone: row.callerNumber, series: row.callerSeries }
         : null,

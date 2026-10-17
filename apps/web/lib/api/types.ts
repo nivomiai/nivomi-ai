@@ -27,7 +27,10 @@ export type Permission =
   | 'compliance.review'
   | 'telecom.read'
   | 'telecom.manage'
-  | 'consent.manage';
+  | 'consent.manage'
+  | 'agents.read'
+  | 'agents.manage'
+  | 'dashboard.read';
 
 export type OrganizationStatus = 'PENDING_APPROVAL' | 'ACTIVE' | 'SUSPENDED' | 'CLOSED';
 
@@ -84,6 +87,8 @@ export interface OrganizationSummary {
   slug: string;
   status: OrganizationStatus;
   role: Role;
+  /** 7-day free-trial deadline (ISO) or null for pre-trial orgs. */
+  trialEndsAt: string | null;
 }
 
 export interface Me {
@@ -139,6 +144,76 @@ export interface AuditItem {
 export interface Page<T> {
   items: T[];
   nextCursor?: string | null;
+}
+
+/** Usage kinds metered by the billing engine (apps/api UsageEventKind). */
+export const USAGE_EVENT_KINDS = [
+  'CALL_MINUTES_OUTBOUND',
+  'CALL_MINUTES_INBOUND',
+  'STT_AUDIO_SECONDS',
+  'TTS_AUDIO_SECONDS',
+  'LLM_INPUT_TOKENS',
+  'LLM_OUTPUT_TOKENS',
+  'SMS_SENT',
+  'EMAILS_SENT',
+  'IMPORT_ROWS',
+  'CRM_API_CALLS',
+] as const;
+export type UsageEventKind = (typeof USAGE_EVENT_KINDS)[number];
+
+export const USAGE_KIND_LABELS: Record<UsageEventKind, string> = {
+  CALL_MINUTES_OUTBOUND: 'Outbound call minutes',
+  CALL_MINUTES_INBOUND: 'Inbound call minutes',
+  STT_AUDIO_SECONDS: 'STT seconds',
+  TTS_AUDIO_SECONDS: 'TTS seconds',
+  LLM_INPUT_TOKENS: 'LLM input tokens',
+  LLM_OUTPUT_TOKENS: 'LLM output tokens',
+  SMS_SENT: 'SMS sent',
+  EMAILS_SENT: 'Emails sent',
+  IMPORT_ROWS: 'Import rows',
+  CRM_API_CALLS: 'CRM API calls',
+};
+
+export type PlanStatus = 'ACTIVE' | 'ARCHIVED';
+
+/** A row from `GET /platform/plans` (super admin console). */
+export interface Plan {
+  id: string;
+  code: string;
+  name: string;
+  monthlyPaiseInr: number;
+  /** Annual discount in basis points: 2000 = 20% off the annual total. */
+  annualDiscountBps: number;
+  limits: Partial<Record<UsageEventKind, number>>;
+  overageRates: Partial<Record<UsageEventKind, number>>;
+  status: PlanStatus;
+  displayOrder: number;
+  updatedAt: string;
+  createdAt: string;
+  orgsActive: number;
+}
+
+/** One integration from `GET /platform/integrations/health`. */
+export interface IntegrationCheck {
+  key: string;
+  label: string;
+  status: 'ready' | 'simulated' | 'missing';
+  summary: string;
+  missing: string[];
+  productionBlocker: boolean;
+  docs?: string;
+}
+
+/** A row from `GET /plans/public` (marketing site, unauthenticated). */
+export interface PublicPlan {
+  code: string;
+  name: string;
+  monthlyPaiseInr: number;
+  /** Effective annual paise after annualDiscountBps; 0 ⇒ Custom pricing. */
+  annualPaiseInr: number;
+  annualDiscountBps: number;
+  limits: Partial<Record<UsageEventKind, number>>;
+  displayOrder: number;
 }
 
 export const ROLE_LABELS: Record<Role, string> = {
@@ -397,7 +472,7 @@ export const CONSENT_LABELS: Record<ConsentBasis, string> = {
 
 export const SOURCE_LABELS: Record<DataSource, string> = {
   FILE_IMPORT: 'File import',
-  HUBSPOT: 'HubSpot',
+  HUBSPOT: 'External CRM (legacy)',
   MANUAL: 'Manual',
   INBOUND: 'Inbound call',
 };
@@ -713,6 +788,7 @@ export interface PrelaunchCheck {
 
 export interface Campaign extends CampaignListItem {
   callerNumber: { id: string; phone: string; series: string } | null;
+  agentVersion: { id: string; agentId: string; agentName: string; version: number } | null;
   selection: CampaignSelection;
   windowStart: string;
   windowEnd: string;
@@ -758,4 +834,230 @@ export interface CampaignLead {
   lastReasons: string[];
   lastOutcome: CallOutcome | null;
   createdAt: string;
+}
+
+// ── AI Agents (FR-26–FR-32, ADR-022) ────────────────────────────────────
+
+export const AGENT_LANGUAGES = ['en', 'hi', 'ml', 'ta', 'te', 'kn'] as const;
+export type AgentLanguage = (typeof AGENT_LANGUAGES)[number];
+
+export const LANGUAGE_LABELS: Record<AgentLanguage, string> = {
+  en: 'English',
+  hi: 'Hindi',
+  ml: 'Malayalam',
+  ta: 'Tamil',
+  te: 'Telugu',
+  kn: 'Kannada',
+};
+
+export const ANSWER_TYPES = ['yes_no', 'single_choice', 'number', 'date', 'free_text'] as const;
+export type AnswerType = (typeof ANSWER_TYPES)[number];
+export const ANSWER_TYPE_LABELS: Record<AnswerType, string> = {
+  yes_no: 'Yes / no',
+  single_choice: 'One of several options',
+  number: 'Number',
+  date: 'Date',
+  free_text: 'Free text',
+};
+
+export const END_OUTCOMES = [
+  'INTERESTED',
+  'NOT_INTERESTED',
+  'CALLBACK_REQUESTED',
+  'COMPLETED',
+] as const;
+export type EndOutcome = (typeof END_OUTCOMES)[number];
+export const END_OUTCOME_LABELS: Record<EndOutcome, string> = {
+  INTERESTED: 'Interested',
+  NOT_INTERESTED: 'Not interested',
+  CALLBACK_REQUESTED: 'Callback requested',
+  COMPLETED: 'Completed',
+};
+
+export const EDGE_INTENTS = ['affirm', 'deny', 'not_interested', 'callback'] as const;
+export type EdgeIntent = (typeof EDGE_INTENTS)[number];
+export const INTENT_LABELS: Record<EdgeIntent, string> = {
+  affirm: 'says yes',
+  deny: 'says no',
+  not_interested: 'is not interested',
+  callback: 'asks for a callback',
+};
+
+export const COMPARE_OPS = ['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'in'] as const;
+export type CompareOp = (typeof COMPARE_OPS)[number];
+export const COMPARE_LABELS: Record<CompareOp, string> = {
+  eq: 'is',
+  neq: 'is not',
+  gt: '>',
+  gte: '≥',
+  lt: '<',
+  lte: '≤',
+  in: 'is one of',
+};
+
+export type ConditionValue = string | number | boolean | string[];
+
+export type EdgeCondition =
+  | { type: 'always' }
+  | { type: 'answer'; key: string; op: CompareOp; value: ConditionValue }
+  | { type: 'intent'; intent: EdgeIntent };
+
+interface NodeBase {
+  id: string;
+  position: { x: number; y: number };
+}
+export type WorkflowNode =
+  | (NodeBase & { type: 'start'; data: { greeting: string } })
+  | (NodeBase & {
+      type: 'question';
+      data: {
+        key: string;
+        prompt: string;
+        answerType: AnswerType;
+        options: string[];
+        required: boolean;
+      };
+    })
+  | (NodeBase & { type: 'agent'; data: { instructions: string; maxTurns: number } })
+  | (NodeBase & { type: 'handoff'; data: { message: string } })
+  | (NodeBase & { type: 'end'; data: { outcome: EndOutcome; message: string } });
+export type WorkflowNodeType = WorkflowNode['type'];
+
+export interface WorkflowEdge {
+  id: string;
+  source: string;
+  target: string;
+  condition: EdgeCondition;
+}
+
+export interface AgentDefinition {
+  schemaVersion: 1;
+  personaName: string;
+  companyName: string;
+  purpose: string;
+  primaryLanguage: AgentLanguage;
+  otherLanguages: AgentLanguage[];
+  voice: string | null;
+  callLimits: { maxCallSeconds: number; silenceTimeoutSeconds: number; maxReprompts: number };
+  recordingEnabled: boolean;
+  escalation: { humanRequest: true; afterRepromptsExhausted: boolean; target: string | null };
+  knowledge: string;
+  objectionGuidance: string;
+  tools: string[];
+  qualification: {
+    mode: 'ALL' | 'ANY';
+    rules: { key: string; op: CompareOp; value: ConditionValue }[];
+  };
+  workflow: { nodes: WorkflowNode[]; edges: WorkflowEdge[] };
+}
+
+export type AgentStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+export type AgentCallCategory = 'PROMOTIONAL' | 'SERVICE';
+
+export interface AgentSummary {
+  id: string;
+  name: string;
+  status: AgentStatus;
+  callCategory: AgentCallCategory;
+  latestVersion: number;
+  latestVersionId: string | null;
+  personaName: string | null;
+  primaryLanguage: AgentLanguage | null;
+  otherLanguages: AgentLanguage[];
+  tools: string[];
+  updatedAt: string;
+}
+
+export interface AgentDetail {
+  id: string;
+  name: string;
+  status: AgentStatus;
+  callCategory: AgentCallCategory;
+  latestVersion: number;
+  definition: AgentDefinition;
+  problems: string[];
+  unpublishedChanges: boolean;
+  versions: { id: string; version: number; createdAt: string; publishedBy: string | null }[];
+  updatedAt: string;
+}
+
+export interface AgentTool {
+  name: string;
+  label: string;
+  description: string;
+  sideEffect: string;
+  audited: boolean;
+}
+
+export type ConversationOutcome = EndOutcome | 'OPTED_OUT' | 'TRANSFERRED' | 'INCOMPLETE';
+
+export interface TestSession {
+  id: string;
+  agentId: string;
+  versionId: string | null;
+  turn: number;
+  transcript: { role: 'agent' | 'caller'; text: string; nodeId?: string; at: string }[];
+  currentStep: string;
+  answers: Record<string, string | number | boolean | null>;
+  ended: boolean;
+  outcome: ConversationOutcome | null;
+  qualification: 'QUALIFIED' | 'NOT_QUALIFIED' | 'INCOMPLETE';
+  expiresAt: string;
+}
+
+// ── Dashboard and call queue ─────────────────────────────────────────────
+
+export interface DashboardSummary {
+  timezone: string;
+  since: string;
+  today: {
+    dialled: number;
+    completed: number;
+    answered: number;
+    connected: number;
+    answerRate: number | null;
+  };
+  funnel: { stage: string; count: number }[];
+  leads: { total: number; qualified: number; appointments: number; doNotCall: number };
+  setup: {
+    agentsPublished: number;
+    callerNumbersVerified: number;
+    hasLeads: boolean;
+    campaignCount: number;
+  };
+  attention: {
+    code: string;
+    label: string;
+    count: number | null;
+    href: string;
+    severity: 'critical' | 'warning';
+  }[];
+  campaigns: {
+    id: string;
+    name: string;
+    status: CampaignStatus;
+    pauseReason: string | null;
+    budgetMinutes: number;
+    usedSeconds: number;
+    leads: number;
+    settled: number;
+    calls: number;
+  }[];
+}
+
+export interface CallQueueItem {
+  id: string;
+  state: CampaignLeadState;
+  attemptsMade: number;
+  nextAttemptAt: string | null;
+  lastResult: EligibilityResult | null;
+  lastReasons: string[];
+  lastOutcome: CallOutcome | null;
+  campaignId: string;
+  campaignName: string;
+  campaignStatus: CampaignStatus;
+  leadId: string;
+  leadStatus: LeadStatus;
+  fullName: string;
+  phone: string | null;
 }

@@ -1,0 +1,22 @@
+{
+  "name": "@nivomi/observability",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "@nivomi/source": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test:unit": "vitest run"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "vitest": "5.0.1"
+  }
+}

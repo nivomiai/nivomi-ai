@@ -434,6 +434,8 @@ export interface DevCalling {
   };
   /** A fictitious 140-series number; the dialer is simulated. */
   readonly callerNumber: string;
+  /** A published AI Agent (version 1) the demo campaign is pinned to. */
+  readonly agent: { readonly name: string; readonly personaName: string; readonly purpose: string };
   /** A DRAFT campaign over every lead, ready for its pre-launch check. */
   readonly campaign: {
     readonly name: string;
@@ -458,6 +460,11 @@ export const DEV_CALLING: Readonly<Record<string, DevCalling>> = {
       a2pDeclarationReference: 'DEMO-A2P-01',
     },
     callerNumber: '+911400000001',
+    agent: {
+      name: 'Site-visit assistant (demo)',
+      personaName: 'Maya',
+      purpose: 'your recent property enquiry',
+    },
     campaign: {
       name: 'Site-visit follow-up (demo)',
       windowStart: '10:00',

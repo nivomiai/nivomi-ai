@@ -116,11 +116,7 @@ export class SarvamProvider {
     }
   }
 
-  async synthesize(
-    text: string,
-    languageCode: string,
-    speaker: string,
-  ): Promise<SynthesizeResult> {
+  async synthesize(text: string, languageCode: string, speaker: string): Promise<SynthesizeResult> {
     const response = await fetch(SARVAM_TTS_URL, {
       method: 'POST',
       headers: {

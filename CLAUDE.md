@@ -18,23 +18,29 @@ memberships, invitations, RBAC, audit log, rate limiting, PostgreSQL job queue (
 email mailbox. `apps/web` serves the **public website** plus the **customer app** (`/login`,
 `/signup`, verification, recovery, `/invite`, `/app/*`: onboarding, overview, team, security,
 audit log). Phase 2 (ADR-020): contacts, leads, suppression list, dedupe review queue, CSV/XLSX
-import (signed uploads, mapping, preview, chunked jobs) and HubSpot inbound (OAuth, encrypted
-tokens, full + 15-min incremental sync of contacts, companies and HubSpot Leads); web `/app/leads`,
+import (signed uploads, mapping, preview, chunked jobs). HubSpot inbound was built behind the
+`CRMProvider` seam, but **external CRM integrations are not in the MVP** (owner decision
+2026-10-06) — the primary lead paths are CSV/XLSX upload, manual entry, and `POST /leads`; web `/app/leads`,
 `/app/data-sources`. Phase 3 (ADR-021): `ComplianceEngine` over versioned rule data (India v1,
 **DRAFT pending counsel**), eligibility engine with a recorded decision per check and dial, two
 append-only consent ledgers, telecom identity and 140xx/1601xx caller numbers, campaigns with
 pre-launch check, job-driven dialling, retries, Emergency Stop and complaint breaker, against a
 **simulated** `VoiceProvider` and preference registry (refused in production); web `/app/campaigns`,
-`/app/compliance`, `/app/telecom`. Not built yet: real calls (Exotel), CRM write-back and webhooks,
-billing, Super Admin UI (a few `/platform` APIs exist), MFA, SES/MSG91/S3 adapters. Requirement status: `docs/planning/requirements-matrix.md`. Holds (HubSpot app,
-AWS account — parked until all phases are done) and next steps: `docs/planning/status-holds-and-next.md`.
+`/app/compliance`, `/app/telecom`. Phase 4a (ADR-022): AI Agents with a typed conversation workflow,
+visual builder (React Flow), deterministic qualification, platform guardrails, immutable versions
+pinned by campaigns, and browser test chat on a conversation engine with a **simulated** `LLMProvider`;
+web `/app/agents`. Dograh is a feature reference only. Not built yet: real calls (Exotel), real external CRM adapters
+(not in MVP), billing (Razorpay), Super Admin UI (a few `/platform` APIs exist), MFA enforcement,
+SES/MSG91/S3 adapters. Requirement status: `docs/planning/requirements-matrix.md`. Holds (AWS account — parked
+until the deploy phase) and next steps: `docs/planning/status-holds-and-next.md`.
 
 ## Platform decisions (accepted — see ADRs before touching these areas)
 
 India first, jurisdiction rules as data in a `ComplianceEngine` (ADR-014) · languages en, hi, ml,
 ta, te, kn · Exotel telephony via `VoiceProvider`, Sarvam streaming STT/TTS, LLM via
-`LLMProvider`/`LLMRouter`, barge-in + fallback, < 1.5–2 s turn-latency target (ADR-011) · HubSpot
-per-organization OAuth via `CRMProvider`, optional per org, Nivomi DB authoritative (ADR-012) · every
+`LLMProvider`/`LLMRouter`, barge-in + fallback, < 1.5–2 s turn-latency target (ADR-011) · `CRMProvider`
+seam remains for future generic external-CRM connectors but **no CRM is in the MVP** (ADR-012 kept
+as history; owner decision 2026-10-06), Nivomi DB authoritative · every
 source (Excel/CSV, CRM, manual, inbound) converges on the Nivomi Contact/Lead domain; campaigns never
 touch CRM objects (ADR-017) · Razorpay via
 `PaymentProvider`, Nivomi-owned billing (ADR-013) · Nivomi-owned authentication (JWT + rotating

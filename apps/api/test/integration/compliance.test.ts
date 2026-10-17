@@ -168,7 +168,7 @@ describe('ComplianceEngine, eligibility, telecom identity and consent (Phase 3)'
         consentBasis: 'EXISTING_CUSTOMER',
       });
 
-      const id = await createCampaign(o.client, o.callerNumberId);
+      const id = await createCampaign(o);
       const view = await prelaunch(t, o.client, id);
       expect(view.prelaunch).toMatchObject({
         status: 'COMPLETED',
@@ -215,7 +215,7 @@ describe('ComplianceEngine, eligibility, telecom identity and consent (Phase 3)'
     it('blocks every call until the telecom identity is verified, so launch is refused', async () => {
       const o = await callingOrg(t, null, 'Unverified Co');
       await addLead(o.client, { fullName: 'Ready', consentBasis: 'INQUIRY', consentAt: iso(DAY) });
-      const id = await createCampaign(o.client, o.callerNumberId);
+      const id = await createCampaign(o);
       const view = await prelaunch(t, o.client, id);
       expect(view.prelaunch).toMatchObject({ eligible: 0, blocked: 1 });
       expect(view.prelaunch?.byReason).toMatchObject({ TELECOM_IDENTITY_NOT_VERIFIED: 1 });
@@ -226,7 +226,7 @@ describe('ComplianceEngine, eligibility, telecom identity and consent (Phase 3)'
     it('defers every lead while the preference registry is down (fail closed)', async () => {
       const o = await callingOrg(t, admin, 'Registry Down Co');
       await addLead(o.client, { fullName: 'Ready', consentBasis: 'INQUIRY', consentAt: iso(DAY) });
-      const id = await createCampaign(o.client, o.callerNumberId);
+      const id = await createCampaign(o);
       registryOf(t).outage = true;
       try {
         const view = await prelaunch(t, o.client, id);
@@ -254,7 +254,7 @@ describe('ComplianceEngine, eligibility, telecom identity and consent (Phase 3)'
       expect(JSON.stringify(wide.body)).toContain('10:00 and 21:00');
 
       await addLead(o.client, { fullName: 'Ready', consentBasis: 'INQUIRY', consentAt: iso(DAY) });
-      const id = await createCampaign(o.client, o.callerNumberId);
+      const id = await createCampaign(o);
       await prelaunch(t, o.client, id);
       await o.client
         .put(`/api/v1/campaigns/${id}`)
@@ -289,7 +289,7 @@ describe('ComplianceEngine, eligibility, telecom identity and consent (Phase 3)'
         .post(`/api/v1/leads/${lead.id}/consents`)
         .send({ ledger: 'DPDP', kind: 'REVOCATION', purpose: 'Sales follow-up calls' })
         .expect(201);
-      const id = await createCampaign(o.client, o.callerNumberId);
+      const id = await createCampaign(o);
       let view = await prelaunch(t, o.client, id);
       expect(view.prelaunch?.byReason).toEqual({ DPDP_CONSENT_REVOKED: 1 });
 
@@ -351,7 +351,7 @@ describe('ComplianceEngine, eligibility, telecom identity and consent (Phase 3)'
         consentBasis: 'APPLICATION',
       });
       await addLead(o.client, { fullName: 'Ready', consentBasis: 'INQUIRY', consentAt: iso(DAY) });
-      const id = await createCampaign(o.client, o.callerNumberId);
+      const id = await createCampaign(o);
       await prelaunch(t, o.client, id);
       await o.client.post(`/api/v1/campaigns/${id}/launch`).expect(204);
       await runJobs(t, 4);
@@ -394,7 +394,7 @@ describe('ComplianceEngine, eligibility, telecom identity and consent (Phase 3)'
     it('trips at two complaints, pauses the number and campaigns, and needs a Super Admin to clear', async () => {
       const o = await callingOrg(t, admin, 'Breaker Co');
       await addLead(o.client, { fullName: 'Ready', consentBasis: 'EXISTING_CUSTOMER' });
-      const id = await createCampaign(o.client, o.callerNumberId, { callCategory: 'PROMOTIONAL' });
+      const id = await createCampaign(o, { callCategory: 'PROMOTIONAL' });
       await prelaunch(t, o.client, id);
       await o.client.post(`/api/v1/campaigns/${id}/launch`).expect(204);
 
@@ -444,7 +444,7 @@ describe('ComplianceEngine, eligibility, telecom identity and consent (Phase 3)'
         consentAt: iso(DAY),
       });
       await addLead(b.client, { fullName: 'B Lead', consentBasis: 'INQUIRY', consentAt: iso(DAY) });
-      const campaignA = await createCampaign(a.client, a.callerNumberId);
+      const campaignA = await createCampaign(a);
 
       await b.client.get(`/api/v1/campaigns/${campaignA}`).expect(404);
       await b.client.post(`/api/v1/campaigns/${campaignA}/prelaunch-check`).expect(404);

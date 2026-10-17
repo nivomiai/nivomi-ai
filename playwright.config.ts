@@ -3,8 +3,15 @@ import { join } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { defineConfig, devices } from '@playwright/test';
 
-const API_URL = 'http://localhost:4000';
-const WEB_URL = 'http://localhost:3000';
+/**
+ * Ports for the e2e servers. Override (e.g. `E2E_WEB_PORT=3100 E2E_API_PORT=4100`) when a dev
+ * server already holds 3000/4000 — otherwise Playwright would silently reuse it and test the
+ * wrong code.
+ */
+const WEB_PORT = Number(process.env.E2E_WEB_PORT ?? 3000);
+const API_PORT = Number(process.env.E2E_API_PORT ?? 4000);
+const API_URL = `http://localhost:${API_PORT}`;
+const WEB_URL = `http://localhost:${WEB_PORT}`;
 /** The API's development mailbox; e2e tests read verification links from it. */
 const E2E_MAILBOX_DIR = join(tmpdir(), 'nivomi-e2e-mailbox');
 /**
@@ -38,7 +45,7 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
       env: {
         NODE_ENV: 'test',
-        PORT: '4000',
+        PORT: String(API_PORT),
         LOG_LEVEL: 'warn',
         CORS_ALLOWED_ORIGINS: WEB_URL,
         APP_WEB_URL: WEB_URL,
@@ -57,7 +64,7 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
       // Stands in for the production load-balancer rule that routes /api/v1 to the API.
       // 127.0.0.1, not localhost: Node resolves localhost to ::1 first and the API binds IPv4.
-      env: { NIVOMI_API_ORIGIN: 'http://127.0.0.1:4000' },
+      env: { PORT: String(WEB_PORT), NIVOMI_API_ORIGIN: `http://127.0.0.1:${API_PORT}` },
     },
   ],
 });

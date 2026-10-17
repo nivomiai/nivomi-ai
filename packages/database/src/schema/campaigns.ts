@@ -10,6 +10,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { agentVersions } from './agents.js';
 import { users } from './identity.js';
 import { callCategory, callerNumbers, complianceRuleSets } from './compliance.js';
 import { leads, type dataSources, type leadStatuses } from './leads.js';
@@ -85,6 +86,8 @@ export const campaigns = pgTable(
     callerNumberId: uuid('caller_number_id').references(() => callerNumbers.id, {
       onDelete: 'set null',
     }),
+    /** The pinned, immutable Agent Version (FR-32); required to launch. */
+    agentVersionId: uuid('agent_version_id').references(() => agentVersions.id),
     selection: jsonb('selection').$type<CampaignSelection>().notNull(),
     /** Daily window, HH:MM in the recipient's local time; narrowed further by the Rule Set. */
     windowStart: text('window_start').notNull(),
@@ -296,6 +299,8 @@ export const callAttempts = pgTable(
       onDelete: 'set null',
     }),
     toPhoneE164: text('to_phone_e164').notNull(),
+    /** Every call records the Agent Version it used (FR-32). */
+    agentVersionId: uuid('agent_version_id').references(() => agentVersions.id),
     status: callAttemptStatus('status').notNull().default('DIALING'),
     outcome: callOutcome('outcome'),
     provider: text('provider').notNull(),

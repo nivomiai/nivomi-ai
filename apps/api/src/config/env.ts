@@ -73,10 +73,13 @@ export const apiEnvSchema = z
     VOICE_SIMULATED_CALL_MS: z.coerce.number().int().min(0).max(600_000).default(2_000),
     /** Preference registry (NCPR/DND) lookups. Simulated only; refused in production. */
     PREFERENCE_REGISTRY: z.enum(['simulated']).default('simulated'),
+    /** Language model behind `LLMProvider` (ADR-022). Simulated until a vendor is chosen. */
+    LLM_PROVIDER: z.enum(['simulated']).default('simulated'),
 
     /**
-     * Sarvam AI subscription key. Powers the browser voice demo at /demo/voice (STT + TTS + LLM).
-     * Unset = demo falls back to a canned transcript and the browser Web Speech API.
+     * Sarvam AI subscription key. Powers the browser voice demo at /demo/voice (STT + TTS + LLM)
+     * and the eventual real STT/TTS during a call. Unset = demo falls back to a canned transcript
+     * and the browser Web Speech API, and real calls stay simulated.
      */
     SARVAM_API_KEY: z.string().optional(),
     /**
@@ -84,6 +87,31 @@ export const apiEnvSchema = z
      * other id the account can call if `sarvam-m` returns a model-not-found error.
      */
     SARVAM_CHAT_MODEL: z.string().default('sarvam-m'),
+
+    /**
+     * Anthropic (Claude) API key. Used by AnthropicLLMProvider for AI Agents during live calls
+     * once that adapter lands. Unset = LLMProvider stays simulated (dev/test), refused in prod.
+     */
+    ANTHROPIC_API_KEY: z.string().optional(),
+    /** Model id the agent uses. Default is the latest Claude 5 Sonnet; a Super Admin can override. */
+    ANTHROPIC_MODEL: z.string().default('claude-sonnet-5-5'),
+
+    /**
+     * Exotel outbound dialer credentials (ADR-021 Phase 4). Required when VOICE_PROVIDER=exotel.
+     * Get an SID + API token at https://my.exotel.com/.
+     */
+    EXOTEL_SID: z.string().optional(),
+    EXOTEL_API_KEY: z.string().optional(),
+    EXOTEL_API_TOKEN: z.string().optional(),
+    /** The 140xx / 1601xx number Exotel dials from; must match a verified caller number. */
+    EXOTEL_CALLER_ID: z.string().optional(),
+    /**
+     * HMAC secret Exotel signs status webhooks with; verified before any state change. Required
+     * when VOICE_PROVIDER=exotel.
+     */
+    EXOTEL_WEBHOOK_SECRET: z.string().optional(),
+    /** Exotel region host; override only for sandbox or a non-India tenant. */
+    EXOTEL_API_URL: z.url().default('https://api.exotel.com'),
 
     /** HubSpot app credentials (ADR-012). Both or neither; unset = "Connect HubSpot" unavailable. */
     HUBSPOT_CLIENT_ID: z.string().optional(),
@@ -147,7 +175,7 @@ export const apiEnvSchema = z
         message: 'is required when HubSpot is configured',
       });
     }
-    for (const key of ['VOICE_PROVIDER', 'PREFERENCE_REGISTRY'] as const) {
+    for (const key of ['VOICE_PROVIDER', 'PREFERENCE_REGISTRY', 'LLM_PROVIDER'] as const) {
       if (env.NODE_ENV === 'production' && env[key] === 'simulated') {
         ctx.addIssue({
           code: 'custom',

@@ -187,19 +187,29 @@ export function PageHeader({
 export function Panel({
   title,
   description,
+  action,
   children,
   className,
 }: {
   readonly title?: string;
   readonly description?: string;
+  readonly action?: ReactNode;
   readonly children: ReactNode;
   readonly className?: string;
 }) {
+  const hasHeader = Boolean(title ?? description ?? action);
   return (
     <section className={cx('card-nv p-5 sm:p-7', className)}>
-      {title ? <h2 className="text-lg tracking-[-0.02em] text-ink">{title}</h2> : null}
-      {description ? <p className="mt-1.5 text-sm text-muted">{description}</p> : null}
-      <div className={title || description ? 'mt-5' : undefined}>{children}</div>
+      {hasHeader ? (
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            {title ? <h2 className="text-lg tracking-[-0.02em] text-ink">{title}</h2> : null}
+            {description ? <p className="mt-1.5 text-sm text-muted">{description}</p> : null}
+          </div>
+          {action ? <div className="shrink-0">{action}</div> : null}
+        </div>
+      ) : null}
+      <div className={hasHeader ? 'mt-5' : undefined}>{children}</div>
     </section>
   );
 }
