@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import {
   CALL_CATEGORY_LABELS,
   LEAD_STATUSES,
@@ -14,6 +14,7 @@ import {
 } from '@/lib/api/types';
 import { api } from '@/lib/app/api';
 import { formatPhone } from '@/lib/app/format';
+import { takeLeadsForNewCampaign } from '@/lib/app/leads-table';
 import { useResource } from '@/lib/app/use-resource';
 import { useSubmit } from '@/lib/app/use-submit';
 import { cx } from '@/lib/site/cx';
@@ -61,6 +62,20 @@ export function CampaignForm({ campaign }: { readonly campaign?: Campaign }) {
     retryIntervalHours: String((campaign?.retryIntervalMinutes ?? 240) / 60),
     maxAttemptsPerDay: String(campaign?.maxAttemptsPerDay ?? 2),
   });
+  // A hand-picked list (LIST selection): from the campaign being edited, or handed over by the
+  // leads table's "New campaign with these leads". Empty means the status filter applies.
+  const [leadIds, setLeadIds] = useState<string[]>(
+    campaign?.selection.kind === 'LIST' ? (campaign.selection.leadIds ?? []) : [],
+  );
+  useEffect(() => {
+    if (campaign) return;
+    const handed = takeLeadsForNewCampaign();
+    if (handed.length > 0) {
+      setLeadIds(handed);
+      setForm((f) => ({ ...f, type: 'STATIC' }));
+    }
+  }, [campaign]);
+
   const set =
     (key: keyof typeof form) =>
     (e: { target: { value: string } }): void =>
@@ -80,7 +95,10 @@ export function CampaignForm({ campaign }: { readonly campaign?: Campaign }) {
       type: form.type,
       callerNumberId: form.callerNumberId || null,
       agentVersionId: form.agentVersionId || null,
-      selection: { kind: 'FILTER', ...(form.statuses.length ? { statuses: form.statuses } : {}) },
+      selection:
+        leadIds.length > 0
+          ? { kind: 'LIST', leadIds }
+          : { kind: 'FILTER', ...(form.statuses.length ? { statuses: form.statuses } : {}) },
       windowStart: form.windowStart,
       windowEnd: form.windowEnd,
       startsAt: fromLocalInput(form.startsAt),
@@ -232,9 +250,27 @@ export function CampaignForm({ campaign }: { readonly campaign?: Campaign }) {
 
         <Panel
           title="Who to call"
-          description="Leave every status unticked to include all leads; the check shows who is blocked and why."
+          description={
+            leadIds.length > 0
+              ? 'A hand-picked list from the leads table; the check shows who is blocked and why.'
+              : 'Leave every status unticked to include all leads; the check shows who is blocked and why.'
+          }
         >
-          <fieldset>
+          {leadIds.length > 0 ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-accent-tint bg-accent-soft px-4 py-3">
+              <p className="text-sm font-semibold text-accent">
+                {leadIds.length} hand-picked lead{leadIds.length === 1 ? '' : 's'}
+              </p>
+              <button
+                type="button"
+                className="text-sm font-semibold text-accent underline-offset-4 hover:underline"
+                onClick={() => setLeadIds([])}
+              >
+                Use a status filter instead
+              </button>
+            </div>
+          ) : null}
+          <fieldset hidden={leadIds.length > 0}>
             <legend className="sr-only">Lead statuses</legend>
             <div className="flex flex-wrap gap-2">
               {LEAD_STATUSES.map((status) => {

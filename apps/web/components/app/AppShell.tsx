@@ -12,6 +12,7 @@ import { useSubmit } from '@/lib/app/use-submit';
 import type { IconName } from '@/lib/site/icons';
 import { cx } from '@/lib/site/cx';
 import { AuthCard, AuthFrame, ErrorBlock, FormAlert, LoadingBlock, RoleBadge } from './ui';
+import { WelcomeSurvey } from './WelcomeSurvey';
 
 interface NavItem {
   readonly href: string;
@@ -226,194 +227,202 @@ function Frame({ me, children }: { readonly me: Me; readonly children: ReactNode
   useEffect(() => setMenuOpen(false), [pathname]);
 
   return (
-    <div className="min-h-dvh bg-soft">
-      <a
-        href="#main"
-        className="sr-only z-50 rounded-lg bg-card px-4 py-2 focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
-      >
-        Skip to content
-      </a>
-
-      {/* Mobile top bar: workspace mark + menu toggle. The sidebar slides in as a sheet below. */}
-      <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-[var(--nv-header)] px-4 backdrop-blur lg:hidden">
-        <Link href="/app" aria-label="Nivomi AI overview" className="flex items-center gap-2.5">
-          <LogoMark className="h-5 w-auto" />
-          <span className="truncate text-[15px] font-semibold text-ink">
-            {active?.name ?? 'Nivomi AI'}
-          </span>
-        </Link>
-        <button
-          type="button"
-          aria-expanded={menuOpen}
-          aria-controls="app-sidebar"
-          onClick={() => setMenuOpen((open) => !open)}
-          className="inline-flex size-9 items-center justify-center rounded-[10px] border border-line bg-card text-ink-2"
+    <>
+      {/* Inert while the welcome survey is open, so focus and clicks stay in the dialog. */}
+      <div className="min-h-dvh bg-soft" inert={me.welcomeSurveyPending}>
+        <a
+          href="#main"
+          className="sr-only z-50 rounded-lg bg-card px-4 py-2 focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
         >
-          <span className="sr-only">{menuOpen ? 'Close menu' : 'Open menu'}</span>
-          <svg aria-hidden="true" className="size-4" viewBox="0 0 24 24" fill="none">
-            {menuOpen ? (
-              <path
-                d="m6 6 12 12M18 6 6 18"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            ) : (
-              <path
-                d="M4 7h16M4 12h16M4 17h16"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            )}
-          </svg>
-        </button>
-      </header>
+          Skip to content
+        </a>
 
-      <div
-        className={cx(
-          'lg:grid lg:transition-[grid-template-columns] lg:duration-200',
-          collapsed ? 'lg:grid-cols-[72px_1fr]' : 'lg:grid-cols-[260px_1fr]',
-        )}
-      >
-        <aside
-          id="app-sidebar"
+        {/* Mobile top bar: workspace mark + menu toggle. The sidebar slides in as a sheet below. */}
+        <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line bg-[var(--nv-header)] px-4 backdrop-blur lg:hidden">
+          <Link href="/app" aria-label="Nivomi AI overview" className="flex items-center gap-2.5">
+            <LogoMark className="h-5 w-auto" />
+            <span className="truncate text-[15px] font-semibold text-ink">
+              {active?.name ?? 'Nivomi AI'}
+            </span>
+          </Link>
+          <button
+            type="button"
+            aria-expanded={menuOpen}
+            aria-controls="app-sidebar"
+            onClick={() => setMenuOpen((open) => !open)}
+            className="inline-flex size-9 items-center justify-center rounded-[10px] border border-line bg-card text-ink-2"
+          >
+            <span className="sr-only">{menuOpen ? 'Close menu' : 'Open menu'}</span>
+            <svg aria-hidden="true" className="size-4" viewBox="0 0 24 24" fill="none">
+              {menuOpen ? (
+                <path
+                  d="m6 6 12 12M18 6 6 18"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              ) : (
+                <path
+                  d="M4 7h16M4 12h16M4 17h16"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              )}
+            </svg>
+          </button>
+        </header>
+
+        <div
           className={cx(
-            'bg-card lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:border-r lg:border-line',
-            menuOpen ? 'flex flex-col border-b border-line' : 'hidden',
+            'lg:grid lg:transition-[grid-template-columns] lg:duration-200',
+            collapsed ? 'lg:grid-cols-[72px_1fr]' : 'lg:grid-cols-[260px_1fr]',
           )}
         >
-          <div
+          <aside
+            id="app-sidebar"
             className={cx(
-              'flex items-center justify-between gap-2 px-5 pt-5 pb-4',
-              collapsed && 'lg:flex-col lg:justify-start lg:gap-3 lg:px-0',
+              'bg-card lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:border-r lg:border-line',
+              menuOpen ? 'flex flex-col border-b border-line' : 'hidden',
             )}
           >
-            <Link href="/app" aria-label="Nivomi AI home" className="rounded-md">
-              <Logo className={cx(collapsed && 'lg:hidden')} />
-              <LogoMark className={cx('hidden h-6 w-auto', collapsed && 'lg:block')} />
-            </Link>
-            <button
-              type="button"
-              aria-controls="app-sidebar"
-              aria-expanded={!collapsed}
-              onClick={toggleCollapsed}
-              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              className="hidden size-8 items-center justify-center rounded-[8px] text-muted transition-colors hover:bg-soft hover:text-ink lg:inline-flex"
+            <div
+              className={cx(
+                'flex items-center justify-between gap-2 px-5 pt-5 pb-4',
+                collapsed && 'lg:flex-col lg:justify-start lg:gap-3 lg:px-0',
+              )}
             >
-              <span className="sr-only">{collapsed ? 'Expand sidebar' : 'Collapse sidebar'}</span>
-              <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="size-4.5">
-                <rect
-                  x="3.5"
-                  y="5"
-                  width="17"
-                  height="14"
-                  rx="2.5"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                />
-                <path d="M9.5 5v14" stroke="currentColor" strokeWidth="1.6" />
-              </svg>
-            </button>
-          </div>
-          <div className={cx('px-3', collapsed && 'lg:px-0 lg:flex lg:justify-center')}>
-            <WorkspaceSwitcher me={me} compact={collapsed} />
-          </div>
-
-          <nav
-            aria-label="App"
-            className={cx(
-              'mt-4 flex-1 overflow-y-auto px-3 pb-4 lg:min-h-0',
-              collapsed && 'lg:px-2',
-            )}
-            data-testid="app-nav"
-          >
-            {sections.map((section, index) => (
-              <div key={section.title} className={index === 0 ? '' : 'mt-4'}>
-                <p
-                  className={cx(
-                    'px-3 pb-1 text-[10.5px] font-semibold tracking-[0.12em] text-muted uppercase',
-                    collapsed && 'lg:sr-only',
-                  )}
-                >
-                  {section.title}
-                </p>
-                {collapsed && index > 0 ? (
-                  <div
-                    aria-hidden="true"
-                    className="mx-3 mb-2 hidden border-t border-line lg:block"
+              <Link href="/app" aria-label="Nivomi AI home" className="rounded-md">
+                <Logo className={cx(collapsed && 'lg:hidden')} />
+                <LogoMark className={cx('hidden h-6 w-auto', collapsed && 'lg:block')} />
+              </Link>
+              <button
+                type="button"
+                aria-controls="app-sidebar"
+                aria-expanded={!collapsed}
+                onClick={toggleCollapsed}
+                title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                className="hidden size-8 items-center justify-center rounded-[8px] text-muted transition-colors hover:bg-soft hover:text-ink lg:inline-flex"
+              >
+                <span className="sr-only">{collapsed ? 'Expand sidebar' : 'Collapse sidebar'}</span>
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" className="size-4.5">
+                  <rect
+                    x="3.5"
+                    y="5"
+                    width="17"
+                    height="14"
+                    rx="2.5"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
                   />
-                ) : null}
-                <ul className="grid gap-px">
-                  {section.items.map((item) => {
-                    const current =
-                      item.href === '/app'
-                        ? pathname === '/app'
-                        : pathname === item.href || pathname.startsWith(`${item.href}/`);
-                    return (
-                      <li key={item.href}>
-                        <Link
-                          href={item.href}
-                          aria-current={current ? 'page' : undefined}
-                          title={collapsed ? item.label : undefined}
-                          className={cx(
-                            'group relative flex items-center gap-2.5 rounded-[8px] px-3 py-1.5 text-[13.5px] transition-colors',
-                            collapsed && 'lg:justify-center lg:px-0 lg:py-2',
-                            current
-                              ? 'bg-accent-soft font-semibold text-accent'
-                              : 'font-medium text-ink-2 hover:bg-soft hover:text-ink',
-                          )}
-                        >
-                          {current ? (
-                            <span
-                              aria-hidden="true"
-                              className="absolute inset-y-1.5 left-0 w-[3px] rounded-r-full bg-accent"
-                            />
-                          ) : null}
-                          <Icon
-                            name={item.icon}
-                            className={cx(
-                              'size-4 shrink-0',
-                              current ? 'text-accent' : 'text-muted group-hover:text-ink-2',
-                            )}
-                          />
-                          <span className={cx('truncate', collapsed && 'lg:sr-only')}>
-                            {item.label}
-                          </span>
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            ))}
-          </nav>
-
-          <div className="lg:hidden">
-            <AccountDock name={me.user.name} email={me.user.email} signOut={() => void signOut()} />
-          </div>
-        </aside>
-
-        <div className="min-w-0 lg:flex lg:min-h-dvh lg:flex-col">
-          {/* Desktop-only top header: workspace status on the left, account menu on the right. */}
-          <header className="sticky top-0 z-20 hidden h-14 items-center justify-between gap-4 border-b border-line bg-[var(--nv-header)] px-6 backdrop-blur lg:flex">
-            <WorkspaceStatusStrip me={me} />
-            <ProfileMenu
-              name={me.user.name}
-              email={me.user.email}
-              isSuperAdmin={me.user.isSuperAdmin}
-              signOut={() => void signOut()}
-            />
-          </header>
-          <main id="main" className="min-w-0 px-4 py-6 sm:px-8 lg:px-10 lg:py-10">
-            {/* Keyed by tenant: switching organization remounts every screen, dropping its data. */}
-            <div key={me.activeOrganization?.id} className="mx-auto max-w-6xl">
-              {children}
+                  <path d="M9.5 5v14" stroke="currentColor" strokeWidth="1.6" />
+                </svg>
+              </button>
             </div>
-          </main>
+            <div className={cx('px-3', collapsed && 'lg:px-0 lg:flex lg:justify-center')}>
+              <WorkspaceSwitcher me={me} compact={collapsed} />
+            </div>
+
+            <nav
+              aria-label="App"
+              className={cx(
+                'mt-4 flex-1 overflow-y-auto px-3 pb-4 lg:min-h-0',
+                collapsed && 'lg:px-2',
+              )}
+              data-testid="app-nav"
+            >
+              {sections.map((section, index) => (
+                <div key={section.title} className={index === 0 ? '' : 'mt-4'}>
+                  <p
+                    className={cx(
+                      'px-3 pb-1 text-[10.5px] font-semibold tracking-[0.12em] text-muted uppercase',
+                      collapsed && 'lg:sr-only',
+                    )}
+                  >
+                    {section.title}
+                  </p>
+                  {collapsed && index > 0 ? (
+                    <div
+                      aria-hidden="true"
+                      className="mx-3 mb-2 hidden border-t border-line lg:block"
+                    />
+                  ) : null}
+                  <ul className="grid gap-px">
+                    {section.items.map((item) => {
+                      const current =
+                        item.href === '/app'
+                          ? pathname === '/app'
+                          : pathname === item.href || pathname.startsWith(`${item.href}/`);
+                      return (
+                        <li key={item.href}>
+                          <Link
+                            href={item.href}
+                            aria-current={current ? 'page' : undefined}
+                            title={collapsed ? item.label : undefined}
+                            className={cx(
+                              'group relative flex items-center gap-2.5 rounded-[8px] px-3 py-1.5 text-[13.5px] transition-colors',
+                              collapsed && 'lg:justify-center lg:px-0 lg:py-2',
+                              current
+                                ? 'bg-accent-soft font-semibold text-accent'
+                                : 'font-medium text-ink-2 hover:bg-soft hover:text-ink',
+                            )}
+                          >
+                            {current ? (
+                              <span
+                                aria-hidden="true"
+                                className="absolute inset-y-1.5 left-0 w-[3px] rounded-r-full bg-accent"
+                              />
+                            ) : null}
+                            <Icon
+                              name={item.icon}
+                              className={cx(
+                                'size-4 shrink-0',
+                                current ? 'text-accent' : 'text-muted group-hover:text-ink-2',
+                              )}
+                            />
+                            <span className={cx('truncate', collapsed && 'lg:sr-only')}>
+                              {item.label}
+                            </span>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))}
+            </nav>
+
+            <div className="lg:hidden">
+              <AccountDock
+                name={me.user.name}
+                email={me.user.email}
+                signOut={() => void signOut()}
+              />
+            </div>
+          </aside>
+
+          <div className="min-w-0 lg:flex lg:min-h-dvh lg:flex-col">
+            {/* Desktop-only top header: workspace status on the left, account menu on the right. */}
+            <header className="sticky top-0 z-20 hidden h-14 items-center justify-between gap-4 border-b border-line bg-[var(--nv-header)] px-6 backdrop-blur lg:flex">
+              <WorkspaceStatusStrip me={me} />
+              <ProfileMenu
+                name={me.user.name}
+                email={me.user.email}
+                isSuperAdmin={me.user.isSuperAdmin}
+                signOut={() => void signOut()}
+              />
+            </header>
+            <main id="main" className="min-w-0 px-4 py-6 sm:px-8 lg:px-10 lg:py-10">
+              {/* Keyed by tenant: switching organization remounts every screen, dropping its data. */}
+              <div key={me.activeOrganization?.id} className="mx-auto max-w-6xl">
+                {children}
+              </div>
+            </main>
+          </div>
         </div>
       </div>
-    </div>
+      {me.welcomeSurveyPending ? <WelcomeSurvey /> : null}
+    </>
   );
 }
 

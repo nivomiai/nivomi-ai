@@ -57,6 +57,9 @@ export interface CampaignInput {
   readonly budgetMinutes: number;
 }
 
+/** Most leads a hand-picked campaign list may hold. */
+export const MAX_LIST_LEADS = 5_000;
+
 const notFound = () => new AppError('NOT_FOUND', 'Campaign not found.');
 
 /** Campaign definition, lifecycle, progress, Emergency Stop and the review queue (§8.6–8.7). */
@@ -237,6 +240,62 @@ export class CampaignsService {
         })
         .where(eq(campaigns.id, id));
       await this.auditAction(tx, tenant, campaign, 'campaign.updated', context);
+    });
+  }
+
+  /**
+   * "Add to campaign" from the leads table: appends leads to a draft campaign's hand-picked list.
+   * Like any edit, it clears the pre-launch check, so every added lead is still screened by the
+   * eligibility engine before launch. Leads already on the list are ignored (safe to retry).
+   */
+  async addLeads(
+    tenant: TenantPrincipal,
+    id: string,
+    leadIds: readonly string[],
+    context: ClientContext,
+  ): Promise<{ added: number; alreadyIncluded: number }> {
+    const orgId = tenant.membership.organizationId;
+    return this.db.transaction(async (tx) => {
+      const campaign = await this.lock(tx, tenant, id);
+      if (campaign.status !== 'DRAFT') {
+        throw new AppError('CONFLICT', 'Leads can only be added to a draft campaign.');
+      }
+      if (campaign.selection.kind !== 'LIST') {
+        throw new AppError(
+          'CONFLICT',
+          'This campaign picks its leads with a filter, so leads cannot be added by hand.',
+        );
+      }
+      const requested = [...new Set(leadIds)];
+      const [found] = await tx
+        .select({ n: count() })
+        .from(leads)
+        .where(and(eq(leads.organizationId, orgId), inArray(leads.id, requested)));
+      if ((found?.n ?? 0) !== requested.length) {
+        throw new AppError('VALIDATION_ERROR', 'Some selected leads were not found.');
+      }
+      const current = new Set(campaign.selection.leadIds ?? []);
+      const fresh = requested.filter((leadId) => !current.has(leadId));
+      if (fresh.length === 0) return { added: 0, alreadyIncluded: requested.length };
+      if (current.size + fresh.length > MAX_LIST_LEADS) {
+        throw new AppError(
+          'VALIDATION_ERROR',
+          `A campaign list holds at most ${MAX_LIST_LEADS.toLocaleString('en-IN')} leads.`,
+        );
+      }
+      await tx.delete(campaignLeads).where(eq(campaignLeads.campaignId, id));
+      await tx
+        .update(campaigns)
+        .set({
+          selection: { ...campaign.selection, leadIds: [...current, ...fresh] },
+          prelaunch: null,
+          editedAt: this.clock.now(),
+        })
+        .where(eq(campaigns.id, id));
+      await this.auditAction(tx, tenant, campaign, 'campaign.updated', context, {
+        leadsAdded: fresh.length,
+      });
+      return { added: fresh.length, alreadyIncluded: requested.length - fresh.length };
     });
   }
 
@@ -536,6 +595,8 @@ export class CampaignsService {
         budgetMinutes: campaigns.budgetMinutes,
         usedSeconds: campaigns.usedSeconds,
         launchedAt: campaigns.launchedAt,
+        /** LIST campaigns accept leads added from the leads table while in draft. */
+        selectionKind: sql<'FILTER' | 'LIST'>`${campaigns.selection}->>'kind'`,
         createdAt: campaigns.createdAt,
       })
       .from(campaigns)

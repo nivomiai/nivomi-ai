@@ -104,3 +104,19 @@ export const passwordResetTokens = pgTable('password_reset_tokens', oneTimeToken
   uniqueIndex('password_reset_tokens_hash_uq').on(t.tokenHash),
   index('password_reset_tokens_user_idx').on(t.userId),
 ]);
+
+/**
+ * Answers to the one-time welcome survey shown after a person's first sign-in. Belongs to the
+ * person, not to an organization. A row means the survey is done; answers are null only for
+ * accounts that existed before the survey and were marked done by the migration.
+ */
+export const userWelcomeSurveys = pgTable('user_welcome_surveys', {
+  userId: uuid('user_id')
+    .primaryKey()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  role: text('role'),
+  callVolume: text('call_volume'),
+  migratingFrom: text('migrating_from'),
+  referralSource: text('referral_source'),
+  completedAt: timestamp('completed_at', { withTimezone: true }).notNull().defaultNow(),
+});

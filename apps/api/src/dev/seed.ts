@@ -9,6 +9,7 @@ import {
   plans,
   telecomIdentities,
   users,
+  userWelcomeSurveys,
   type Database,
 } from '@nivomi/database';
 import { and, eq, isNull } from 'drizzle-orm';
@@ -332,6 +333,8 @@ async function seedAccounts(
         .onConflictDoUpdate({ target: users.email, set: account })
         .returning({ id: users.id });
       if (!row) throw new Error(`user upsert returned no row for ${user.email}`);
+      // Seeded accounts skip the first-sign-in welcome survey.
+      await tx.insert(userWelcomeSurveys).values({ userId: row.id }).onConflictDoNothing();
       userIds.set(user.email, row.id);
     }
     const userId = (email: string): string => {

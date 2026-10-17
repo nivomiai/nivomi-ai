@@ -18,6 +18,8 @@ import {
 } from '@nivomi/database';
 import {
   and,
+  asc,
+  count,
   desc,
   eq,
   ilike,
@@ -48,9 +50,48 @@ import {
 } from './ingestion.js';
 import { cleanText, nameKey, normalizeEmail, normalizePhone } from './normalize.js';
 
-export interface LeadListQuery {
+export interface LeadListQuery extends LeadFilters {
   readonly limit: number;
   readonly cursor?: string | undefined;
+}
+
+/** Columns the leads table can sort by. */
+export const LEAD_SORTS = [
+  'created',
+  'name',
+  'phone',
+  'status',
+  'consent',
+  'source',
+  'activity',
+] as const;
+export type LeadSort = (typeof LEAD_SORTS)[number];
+
+const LEAD_SORT_COLUMNS = {
+  created: leads.createdAt,
+  name: contacts.fullName,
+  phone: contacts.phoneE164,
+  status: leads.status,
+  consent: leads.consentBasis,
+  source: leads.source,
+  activity: leads.updatedAt,
+} as const satisfies Record<LeadSort, unknown>;
+
+export interface LeadPageQuery extends LeadFilters {
+  readonly page: number;
+  readonly pageSize: number;
+  readonly sort: LeadSort;
+  readonly order: 'asc' | 'desc';
+}
+
+/** Outcome of a bulk action: how many leads changed, were already in that state, or failed. */
+export interface BulkResult {
+  updated: number;
+  unchanged: number;
+  failed: { leadId: string; reason: string }[];
+}
+
+export interface LeadFilters {
   readonly search?: string | undefined;
   readonly status?: LeadStatus | undefined;
   readonly source?: 'FILE_IMPORT' | 'HUBSPOT' | 'MANUAL' | 'INBOUND' | undefined;
@@ -79,6 +120,11 @@ export interface LeadUpdateInput {
 
 const notFound = () => new AppError('NOT_FOUND', 'Lead not found.');
 
+const tenantScope = (tenant: TenantPrincipal) => ({
+  organizationId: tenant.membership.organizationId,
+  userId: tenant.userId,
+});
+
 const asText = (value: unknown): string | null =>
   value === null || value === undefined
     ? null
@@ -100,7 +146,7 @@ export class LeadsService {
 
   /** PRD FR-20: searchable, filterable, keyset-paginated. */
   async list(tenant: TenantPrincipal, query: LeadListQuery) {
-    const conditions: SQL[] = [this.scope(tenant, 'leads.read')];
+    const conditions = this.filterConditions(tenantScope(tenant), query);
     const after = decodeCursor(query.cursor);
     if (after) {
       conditions.push(
@@ -110,11 +156,47 @@ export class LeadsService {
         ) as SQL,
       );
     }
+    const rows = await this.rowQuery(and(...conditions))
+      .orderBy(desc(leads.createdAt), desc(leads.id))
+      .limit(query.limit + 1);
+    return toPage(rows, query.limit);
+  }
+
+  /**
+   * Page-numbered, sortable listing for the leads table: one page plus the total that matches.
+   * Offset paging is bounded by `pageSize` ≤ 100 and the per-tenant index on `leads`.
+   */
+  async listPage(tenant: TenantPrincipal, query: LeadPageQuery) {
+    const where = and(...this.filterConditions(tenantScope(tenant), query));
+    const column = LEAD_SORT_COLUMNS[query.sort];
+    const direction = query.order === 'asc' ? asc : desc;
+    const [rows, [total]] = await Promise.all([
+      this.rowQuery(where)
+        .orderBy(direction(column), direction(leads.id))
+        .limit(query.pageSize)
+        .offset((query.page - 1) * query.pageSize),
+      this.db
+        .select({ n: count() })
+        .from(leads)
+        .innerJoin(contacts, eq(contacts.id, leads.contactId))
+        .where(where),
+    ]);
+    return { items: rows, total: total?.n ?? 0, page: query.page, pageSize: query.pageSize };
+  }
+
+  /** Tenant scope plus the table's filters; shared by every listing and the CSV export. */
+  filterConditions(
+    scope: { readonly organizationId: string; readonly userId: string | null },
+    query: LeadFilters,
+  ): SQL[] {
+    const conditions: SQL[] = [eq(leads.organizationId, scope.organizationId)];
     if (query.status) conditions.push(eq(leads.status, query.status));
     if (query.source) conditions.push(eq(leads.source, query.source));
     if (query.consent === 'with_basis') conditions.push(isNotNull(leads.consentBasis));
     if (query.consent === 'missing') conditions.push(isNull(leads.consentBasis));
-    if (query.owner === 'me') conditions.push(eq(leads.ownerUserId, tenant.userId));
+    if (query.owner === 'me') {
+      conditions.push(scope.userId ? eq(leads.ownerUserId, scope.userId) : sql`false`);
+    }
     if (query.owner === 'unassigned') conditions.push(isNull(leads.ownerUserId));
     const search = cleanText(query.search, 100);
     if (search) {
@@ -128,8 +210,12 @@ export class LeadsService {
         ) as SQL,
       );
     }
+    return conditions;
+  }
 
-    const rows = await this.db
+  /** The leads-table row shape (also the CSV export's); callers add ordering and paging. */
+  rowQuery(where: SQL | undefined) {
+    return this.db
       .select({
         id: leads.id,
         status: leads.status,
@@ -155,10 +241,8 @@ export class LeadsService {
           eq(suppressionEntries.phoneE164, contacts.phoneE164),
         ),
       )
-      .where(and(...conditions))
-      .orderBy(desc(leads.createdAt), desc(leads.id))
-      .limit(query.limit + 1);
-    return toPage(rows, query.limit);
+      .where(where)
+      .$dynamic();
   }
 
   /** Lead, contact, sources and timeline (FR-21). */
@@ -693,6 +777,97 @@ export class LeadsService {
       context,
     );
     return { id: entry.id, phone: phone.e164 };
+  }
+
+  /**
+   * Bulk status change from the leads table. Each lead goes through `changeStatus` (its own
+   * transaction, history row and audit record), so one refusal never blocks the others. A retry
+   * with the same `Idempotency-Key` replays to the same per-lead events.
+   */
+  async bulkChangeStatus(
+    tenant: TenantPrincipal,
+    input: { leadIds: readonly string[]; status: LeadStatus; idempotencyKey: string | null },
+    context: ClientContext,
+  ): Promise<BulkResult> {
+    const result: BulkResult = { updated: 0, unchanged: 0, failed: [] };
+    const key = cleanText(input.idempotencyKey, 80) ?? randomUUID();
+    for (const leadId of new Set(input.leadIds)) {
+      try {
+        const { changed } = await this.changeStatus(
+          tenant,
+          leadId,
+          { status: input.status, idempotencyKey: `${key}:${leadId}` },
+          context,
+        );
+        if (changed) result.updated += 1;
+        else result.unchanged += 1;
+      } catch (error) {
+        if (!(error instanceof AppError)) throw error;
+        result.failed.push({ leadId, reason: error.message });
+      }
+    }
+    return result;
+  }
+
+  /** Puts the selected leads' phone numbers on the suppression list (do not call). */
+  async bulkSuppress(
+    tenant: TenantPrincipal,
+    input: { leadIds: readonly string[]; reason?: string | null | undefined },
+    context: ClientContext,
+  ): Promise<BulkResult> {
+    const orgId = tenant.membership.organizationId;
+    const ids = [...new Set(input.leadIds)];
+    return this.db.transaction(async (tx) => {
+      const found = await tx
+        .select({ leadId: leads.id, phone: contacts.phoneE164 })
+        .from(leads)
+        .innerJoin(contacts, eq(contacts.id, leads.contactId))
+        .where(and(this.scope(tenant, 'leads.write'), inArray(leads.id, ids)));
+      const result: BulkResult = { updated: 0, unchanged: 0, failed: [] };
+      const known = new Set(found.map((f) => f.leadId));
+      for (const leadId of ids) {
+        if (!known.has(leadId)) result.failed.push({ leadId, reason: 'Lead not found.' });
+      }
+      const phones = [...new Set(found.map((f) => f.phone).filter((p): p is string => !!p))];
+      for (const lead of found) {
+        if (!lead.phone) result.failed.push({ leadId: lead.leadId, reason: 'No phone number.' });
+      }
+      if (phones.length === 0) return result;
+      const added = await tx
+        .insert(suppressionEntries)
+        .values(
+          phones.map((phoneE164) => ({
+            organizationId: orgId,
+            phoneE164,
+            source: 'MANUAL' as const,
+            reason: cleanText(input.reason, 500),
+            createdByUserId: tenant.userId,
+          })),
+        )
+        .onConflictDoNothing()
+        .returning({ id: suppressionEntries.id, phone: suppressionEntries.phoneE164 });
+      const addedPhones = new Set(added.map((a) => a.phone));
+      for (const lead of found) {
+        if (!lead.phone) continue;
+        if (addedPhones.has(lead.phone)) result.updated += 1;
+        else result.unchanged += 1;
+      }
+      for (const entry of added) {
+        await this.audit.record(
+          {
+            action: 'suppression.added',
+            organizationId: orgId,
+            actorUserId: tenant.userId,
+            resourceType: 'suppression_entry',
+            resourceId: entry.id,
+            metadata: { via: 'bulk' },
+          },
+          context,
+          tx,
+        );
+      }
+      return result;
+    });
   }
 
   /** Only entries added by a Member or an import can be removed; opt-outs are permanent. */

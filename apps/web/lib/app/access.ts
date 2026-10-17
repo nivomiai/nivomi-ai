@@ -22,6 +22,7 @@ export const PERMISSION_LABELS: Record<Permission, { area: AccessArea; label: st
   'audit.read': { area: 'Organization & team', label: 'Read the audit log' },
   'leads.read': { area: 'Leads & data', label: 'View leads' },
   'leads.write': { area: 'Leads & data', label: 'Add and edit leads' },
+  'leads.export': { area: 'Leads & data', label: 'Export leads to CSV' },
   'imports.manage': { area: 'Leads & data', label: 'Import CSV / Excel files' },
   'suppression.manage': { area: 'Leads & data', label: 'Manage the suppression list' },
   'consent.manage': { area: 'Leads & data', label: 'Record consent' },

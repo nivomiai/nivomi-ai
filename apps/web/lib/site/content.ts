@@ -52,7 +52,7 @@ export const footerColumns: readonly { readonly title: string; readonly links: N
       { label: 'WhatsApp', href: whatsappEnquiryHref, external: true },
       { label: siteConfig.contact.phoneDisplay, href: siteConfig.contact.phoneHref },
       { label: 'Email', href: `mailto:${siteConfig.contact.email}` },
-      { label: 'www.nivomi.ai', href: siteConfig.url, external: true },
+      { label: 'www.nivomiai.com', href: siteConfig.url, external: true },
     ],
   },
 ];

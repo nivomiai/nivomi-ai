@@ -23,9 +23,11 @@ import {
 import { clientContext } from '../common/request-context.js';
 import { validate } from '../common/validation.js';
 import { PACING_LIMITS, RETRY_LIMITS } from './campaign-policy.js';
-import { CampaignsService } from './campaigns.service.js';
+import { CampaignsService, MAX_LIST_LEADS } from './campaigns.service.js';
 
 const hhmm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'must be HH:MM');
+
+const addLeadsSchema = z.object({ leadIds: z.array(z.uuid()).min(1).max(100) });
 
 const campaignSchema = z.object({
   name: z.string().trim().min(1).max(120),
@@ -39,7 +41,7 @@ const campaignSchema = z.object({
       statuses: z.array(z.enum(leadStatuses)).max(leadStatuses.length).optional(),
       sources: z.array(z.enum(dataSources)).max(dataSources.length).optional(),
     }),
-    z.object({ kind: z.literal('LIST'), leadIds: z.array(z.uuid()).min(1).max(5_000) }),
+    z.object({ kind: z.literal('LIST'), leadIds: z.array(z.uuid()).min(1).max(MAX_LIST_LEADS) }),
   ]),
   windowStart: hhmm.default('10:00'),
   windowEnd: hhmm.default('19:00'),
@@ -150,6 +152,20 @@ export class CampaignsController {
     @Query() query: unknown,
   ) {
     return this.campaigns.campaignLeadList(tenant, id, validate(leadPageSchema, query));
+  }
+
+  /** Adds leads ticked in the leads table to a draft campaign's list (idempotent). */
+  @RequirePermission('campaigns.manage')
+  @Post(':id/leads')
+  @HttpCode(HttpStatus.OK)
+  addLeads(
+    @CurrentTenant() tenant: TenantPrincipal,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() body: unknown,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    const { leadIds } = validate(addLeadsSchema, body);
+    return this.campaigns.addLeads(tenant, id, leadIds, clientContext(request));
   }
 
   @RequirePermission('campaigns.manage')

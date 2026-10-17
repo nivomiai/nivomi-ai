@@ -39,6 +39,8 @@ export type AuditAction =
   | 'lead.created'
   | 'lead.updated'
   | 'lead.status_changed'
+  | 'lead.export_requested'
+  | 'lead.export_downloaded'
   | 'suppression.added'
   | 'suppression.removed'
   | 'ingestion.review_resolved'
@@ -80,7 +82,8 @@ export type AuditAction =
   | 'agent.updated'
   | 'agent.published'
   | 'agent.archived'
-  | 'agent.test_started';
+  | 'agent.test_started'
+  | 'user.welcome_survey_completed';
 
 export interface AuditEntry {
   readonly action: AuditAction;

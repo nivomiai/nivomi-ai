@@ -1,6 +1,6 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { type Page, expect } from '@playwright/test';
+import { type Locator, type Page, expect } from '@playwright/test';
 import { E2E_MAILBOX_DIR } from '../../playwright.config.js';
 
 export const PASSWORD = 'e2e correct horse battery';
@@ -59,6 +59,35 @@ export async function signIn(page: Page, email: string): Promise<void> {
   await page.getByRole('button', { name: 'Sign in' }).click();
 }
 
+/**
+ * Picks an option in the app's custom dropdown (`components/app/Select.tsx`): opens the
+ * combobox, then clicks the option with that value, or the option at `{ index }`.
+ */
+export async function chooseOption(
+  combobox: Locator,
+  option: string | { readonly index: number },
+): Promise<void> {
+  await combobox.click();
+  const list = combobox.page().getByRole('listbox');
+  const target =
+    typeof option === 'string'
+      ? list.locator(`[data-value="${option}"]`)
+      : list.getByRole('option').nth(option.index);
+  await target.click();
+  await expect(list).toBeHidden();
+}
+
+/** Answers the one-time welcome survey a new account sees on first entering the app. */
+export async function answerWelcomeSurvey(page: Page): Promise<void> {
+  const dialog = page.getByRole('dialog', { name: 'Welcome to Nivomi' });
+  await chooseOption(dialog.getByLabel('What best describes you?'), 'business_owner');
+  await chooseOption(dialog.getByLabel('Expected monthly call volume'), 'not_sure');
+  await chooseOption(dialog.getByLabel('Are you migrating from another provider?'), 'new');
+  await chooseOption(dialog.getByLabel('How did you hear about us?'), 'search');
+  await dialog.getByRole('button', { name: 'Get started' }).click();
+  await expect(dialog).toBeHidden();
+}
+
 /** A new verified owner with an organization, signed in on `page`. */
 export async function ownerWithOrganization(page: Page, name: string, organization: string) {
   const email = uniqueEmail('owner');
@@ -66,6 +95,7 @@ export async function ownerWithOrganization(page: Page, name: string, organizati
   await signIn(page, email);
   await page.getByLabel('Organization name').fill(organization);
   await page.getByRole('button', { name: 'Create organization' }).click();
+  await answerWelcomeSurvey(page);
   await expect(
     page.getByRole('heading', { name: `Welcome, ${name.split(' ')[0] ?? name}` }),
   ).toBeVisible();

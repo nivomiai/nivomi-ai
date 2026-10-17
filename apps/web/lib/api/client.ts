@@ -69,6 +69,8 @@ export interface RequestOptions {
   readonly method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   readonly body?: unknown;
   readonly signal?: AbortSignal;
+  /** Sent as `Idempotency-Key`: a retried side-effecting request is applied once. */
+  readonly idempotencyKey?: string;
 }
 
 type Fetch = typeof fetch;
@@ -93,7 +95,10 @@ export function createApiClient(options: ApiClientOptions = {}) {
       return await doFetch(`${API_BASE}${path}`, {
         method: init.method ?? 'GET',
         credentials: 'same-origin',
-        headers: init.body === undefined ? {} : { 'Content-Type': 'application/json' },
+        headers: {
+          ...(init.body === undefined ? {} : { 'Content-Type': 'application/json' }),
+          ...(init.idempotencyKey ? { 'Idempotency-Key': init.idempotencyKey } : {}),
+        },
         body: init.body === undefined ? null : JSON.stringify(init.body),
         signal: init.signal ?? null,
       });
@@ -173,7 +178,8 @@ export function createApiClient(options: ApiClientOptions = {}) {
   return {
     request,
     get: <T>(path: string, signal?: AbortSignal) => request<T>(path, signal ? { signal } : {}),
-    post: <T = void>(path: string, body?: unknown) => request<T>(path, { method: 'POST', body }),
+    post: <T = void>(path: string, body?: unknown, idempotencyKey?: string) =>
+      request<T>(path, { method: 'POST', body, ...(idempotencyKey ? { idempotencyKey } : {}) }),
     put: <T = void>(path: string, body?: unknown) => request<T>(path, { method: 'PUT', body }),
     patch: <T = void>(path: string, body?: unknown) => request<T>(path, { method: 'PATCH', body }),
     del: <T = void>(path: string) => request<T>(path, { method: 'DELETE' }),

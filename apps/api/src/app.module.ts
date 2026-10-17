@@ -29,6 +29,7 @@ import { buildLoggerOptions } from './observability/logger.js';
 import { MeController, OrganizationsController } from './organizations/organizations.controller.js';
 import { OrganizationJobs } from './organizations/organizations.jobs.js';
 import { OrganizationsService } from './organizations/organizations.service.js';
+import { WelcomeSurveyService } from './organizations/welcome-survey.service.js';
 import { PlatformModule } from './platform/platform.module.js';
 import { PlatformIntegrationsController } from './platform/platform-integrations.controller.js';
 import { PlatformOrganizationsController } from './platform/platform-organizations.controller.js';
@@ -84,6 +85,7 @@ export class AppModule {
         MfaService,
         AuthEmailJobs,
         OrganizationsService,
+        WelcomeSurveyService,
         OrganizationJobs,
         PlatformOrganizationsService,
         PlatformUsersService,

@@ -4,6 +4,7 @@ import { Icon, Logo } from '@/components/marketing/primitives';
 import type { IconName } from '@/lib/site/icons';
 import { cx } from '@/lib/site/cx';
 import { ROLE_LABELS, type Role } from '@/lib/api/types';
+import { Select, type SelectOption } from './Select';
 
 const INPUT =
   'mt-1.5 w-full rounded-[12px] border bg-surface px-4 py-3 text-[15px] text-ink placeholder:text-muted/70 transition-colors focus:border-pink focus:outline-none focus-visible:ring-4 focus-visible:ring-accent-tint disabled:opacity-60';
@@ -14,29 +15,57 @@ export function Field({
   hint,
   error,
   className,
+  leading,
+  trailing,
   ...input
 }: InputHTMLAttributes<HTMLInputElement> & {
   readonly id: string;
   readonly label: string;
   readonly hint?: string;
   readonly error?: string | null;
+  /** Decorative icon inside the input, before the text. */
+  readonly leading?: ReactNode;
+  /** Control inside the input, after the text (e.g. a show-password toggle). */
+  readonly trailing?: ReactNode;
 }) {
   const describedBy = [hint ? `${id}-hint` : null, error ? `${id}-error` : null]
     .filter(Boolean)
     .join(' ');
+  const field = (
+    <input
+      id={id}
+      name={id}
+      {...input}
+      aria-invalid={error ? true : undefined}
+      aria-describedby={describedBy || undefined}
+      className={cx(
+        INPUT,
+        error ? 'border-[#d33] dark:border-[#ff7a7a]' : 'border-line',
+        leading ? 'pl-12' : null,
+        trailing ? 'pr-12' : null,
+      )}
+    />
+  );
   return (
     <div className={className}>
       <label htmlFor={id} className="text-sm font-semibold text-ink">
         {label}
       </label>
-      <input
-        id={id}
-        name={id}
-        {...input}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={describedBy || undefined}
-        className={cx(INPUT, error ? 'border-[#d33] dark:border-[#ff7a7a]' : 'border-line')}
-      />
+      {leading || trailing ? (
+        <div className="relative">
+          {field}
+          {leading ? (
+            <span className="pointer-events-none absolute top-1/2 left-4 mt-[3px] -translate-y-1/2 text-ink-2">
+              {leading}
+            </span>
+          ) : null}
+          {trailing ? (
+            <span className="absolute top-1/2 right-2 mt-[3px] -translate-y-1/2">{trailing}</span>
+          ) : null}
+        </div>
+      ) : (
+        field
+      )}
       {hint && !error ? (
         <p id={`${id}-hint`} className="mt-1.5 text-[13px] text-muted">
           {hint}
@@ -90,15 +119,19 @@ export function SubmitButton({
   children,
   pendingLabel = 'Please wait…',
   className,
+  form,
 }: {
   readonly pending: boolean;
   readonly children: ReactNode;
   readonly pendingLabel?: string;
   readonly className?: string;
+  /** Submits a form elsewhere in the DOM (e.g. a dialog footer button). */
+  readonly form?: string;
 }) {
   return (
     <button
       type="submit"
+      form={form}
       disabled={pending}
       aria-busy={pending || undefined}
       className={cx('btn btn-primary w-full disabled:cursor-wait disabled:opacity-70', className)}
@@ -324,35 +357,33 @@ export function SelectField({
   hint,
   className,
   disabled,
+  placeholder,
 }: {
   readonly id: string;
   readonly label: string;
   readonly value: string;
   readonly onChange: (value: string) => void;
-  readonly options: readonly { readonly value: string; readonly label: string }[];
+  readonly options: readonly SelectOption[];
   readonly hint?: string;
   readonly className?: string;
   readonly disabled?: boolean;
+  /** Shown when `value` matches no option. */
+  readonly placeholder?: string;
 }) {
   return (
     <div className={className}>
       <label htmlFor={id} className="text-sm font-semibold text-ink">
         {label}
       </label>
-      <select
+      <Select
         id={id}
-        className={selectClass}
         value={value}
+        onChange={onChange}
+        options={options}
         disabled={disabled}
+        {...(placeholder ? { placeholder } : {})}
         aria-describedby={hint ? `${id}-hint` : undefined}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
+      />
       {hint ? (
         <p id={`${id}-hint`} className="mt-1.5 text-[13px] text-muted">
           {hint}

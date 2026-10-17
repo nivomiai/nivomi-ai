@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Header,
   Headers,
   HttpCode,
   HttpStatus,
@@ -12,7 +13,10 @@ import {
   Post,
   Query,
   Req,
+  Res,
+  StreamableFile,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { consentBases, dataSources, leadStatuses } from '@nivomi/database';
 import { z } from 'zod';
 import {
@@ -23,7 +27,8 @@ import {
 } from '../auth/principal.js';
 import { clientContext } from '../common/request-context.js';
 import { validate } from '../common/validation.js';
-import { LeadsService } from './leads.service.js';
+import { LeadExportsService, MAX_EXPORT_ROWS } from './lead-exports.js';
+import { LEAD_SORTS, LeadsService } from './leads.service.js';
 
 const text = (max: number) => z.string().max(max).nullish();
 
@@ -73,6 +78,36 @@ const updateSchema = z
   })
   .partial();
 
+const pageListSchema = listSchema.omit({ limit: true, cursor: true }).extend({
+  page: z.coerce.number().int().min(1).max(10_000),
+  pageSize: z.coerce.number().int().min(1).max(100).default(25),
+  sort: z.enum(LEAD_SORTS).default('created'),
+  order: z.enum(['asc', 'desc']).default('desc'),
+});
+
+/** Bulk actions act on the rows a member ticked: at most one page of the table. */
+const leadIdsSchema = z.array(z.uuid()).min(1).max(100);
+
+const bulkStatusSchema = z.object({ leadIds: leadIdsSchema, status: z.enum(leadStatuses) });
+
+const bulkSuppressSchema = z.object({
+  leadIds: leadIdsSchema,
+  reason: z.string().max(500).nullish(),
+});
+
+const exportSchema = z.union([
+  z.object({ leadIds: z.array(z.uuid()).min(1).max(MAX_EXPORT_ROWS) }),
+  z.object({
+    filters: listSchema.pick({
+      search: true,
+      status: true,
+      source: true,
+      consent: true,
+      owner: true,
+    }),
+  }),
+]);
+
 const statusSchema = z.object({
   status: z.enum(leadStatuses),
   reason: z.string().max(500).nullish(),
@@ -95,12 +130,87 @@ const resolveSchema = z.object({
 
 @Controller({ path: 'leads' })
 export class LeadsController {
-  constructor(private readonly leads: LeadsService) {}
+  constructor(
+    private readonly leads: LeadsService,
+    private readonly exports: LeadExportsService,
+  ) {}
 
+  /** `?page=` returns a numbered, sortable page with a total; otherwise keyset pages. */
   @RequirePermission('leads.read')
   @Get()
   list(@CurrentTenant() tenant: TenantPrincipal, @Query() query: unknown) {
+    if (query && typeof query === 'object' && 'page' in query) {
+      return this.leads.listPage(tenant, validate(pageListSchema, query));
+    }
     return this.leads.list(tenant, validate(listSchema, query));
+  }
+
+  /** Same `Idempotency-Key` → the same per-lead status events (no double transitions). */
+  @RequirePermission('leads.write')
+  @Post('bulk/status')
+  @HttpCode(HttpStatus.OK)
+  bulkStatus(
+    @CurrentTenant() tenant: TenantPrincipal,
+    @Body() body: unknown,
+    @Headers('idempotency-key') idempotencyKey: string | undefined,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.leads.bulkChangeStatus(
+      tenant,
+      { ...validate(bulkStatusSchema, body), idempotencyKey: idempotencyKey ?? null },
+      clientContext(request),
+    );
+  }
+
+  /** Adding a number that is already suppressed is a no-op, so retries are safe. */
+  @RequirePermission('suppression.manage')
+  @Post('bulk/suppress')
+  @HttpCode(HttpStatus.OK)
+  bulkSuppress(
+    @CurrentTenant() tenant: TenantPrincipal,
+    @Body() body: unknown,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.leads.bulkSuppress(
+      tenant,
+      validate(bulkSuppressSchema, body),
+      clientContext(request),
+    );
+  }
+
+  /** Queues a CSV export of the ticked leads, or of everything matching the filters. */
+  @RequirePermission('leads.export')
+  @Post('exports')
+  requestExport(
+    @CurrentTenant() tenant: TenantPrincipal,
+    @Body() body: unknown,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.exports.request(tenant, validate(exportSchema, body), clientContext(request));
+  }
+
+  @RequirePermission('leads.export')
+  @Get('exports/:exportId')
+  getExport(
+    @CurrentTenant() tenant: TenantPrincipal,
+    @Param('exportId', new ParseUUIDPipe()) exportId: string,
+  ) {
+    return this.exports.get(tenant, exportId);
+  }
+
+  @RequirePermission('leads.export')
+  @Get('exports/:exportId/file')
+  @Header('Cache-Control', 'no-store')
+  async downloadExport(
+    @CurrentTenant() tenant: TenantPrincipal,
+    @Param('exportId', new ParseUUIDPipe()) exportId: string,
+    @Req() request: AuthenticatedRequest,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    const file = await this.exports.download(tenant, exportId, clientContext(request));
+    response.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    response.setHeader('Content-Disposition', `attachment; filename="${file.fileName}"`);
+    return new StreamableFile(file.content);
   }
 
   @RequirePermission('leads.write')

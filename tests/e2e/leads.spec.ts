@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { ownerWithOrganization } from './helpers.js';
+import { chooseOption, ownerWithOrganization } from './helpers.js';
 
 test.describe('leads and data sources', () => {
   test('add a lead by hand, then import a CSV through mapping, preview and confirmation', async ({
@@ -15,14 +15,14 @@ test.describe('leads and data sources', () => {
     await page.getByRole('link', { name: 'Add lead' }).click();
     await page.getByLabel('Name').fill('Ishaan Verma');
     await page.getByLabel('Phone').fill('98100 12345');
-    await page.getByLabel('Consent basis').selectOption('INQUIRY');
+    await chooseOption(page.getByLabel('Consent basis'), 'INQUIRY');
     await page.getByLabel('Evidence source').fill('Walk-in enquiry');
     await page.getByRole('button', { name: 'Save lead' }).click();
     await expect(page.getByRole('heading', { level: 1, name: 'Ishaan Verma' })).toBeVisible();
     await expect(page.getByText('+91 98100 12345')).toBeVisible();
 
     // Status change is recorded on the timeline.
-    await page.getByLabel('Status', { exact: true }).selectOption('INTERESTED');
+    await chooseOption(page.getByLabel('Status', { exact: true }), 'INTERESTED');
     await page.getByRole('button', { name: 'Save status' }).click();
     await expect(page.getByText('Status New → Interested')).toBeVisible();
 
@@ -49,8 +49,8 @@ test.describe('leads and data sources', () => {
     await expect(page.getByRole('heading', { name: 'Match your columns' })).toBeVisible({
       timeout: 15_000,
     });
-    await expect(page.getByLabel('Nivomi field for column Mobile')).toHaveValue('phone');
-    await page.getByLabel('Nivomi field for column Project').selectOption('custom');
+    await expect(page.getByLabel('Nivomi field for column Mobile')).toContainText(/phone/i);
+    await chooseOption(page.getByLabel('Nivomi field for column Project'), 'custom');
     await page.getByText('Apply a consent basis to rows without one').click();
     await page.getByLabel('Where these leads came from').fill('Site visit register');
     await page.getByText('I confirm our organization holds this consent basis').click();

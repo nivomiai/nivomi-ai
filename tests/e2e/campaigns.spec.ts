@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { chooseOption } from './helpers.js';
 
 /** Seeded by `apps/api/src/dev/seed.ts` before the e2e API starts (see playwright.config.ts). */
 const DEMO_OWNER = 'admin@example.com';
@@ -26,8 +27,8 @@ test.describe('campaigns and eligibility', () => {
     const name = `E2E site-visit calls ${Date.now()}`;
     await page.getByRole('link', { name: 'New campaign' }).click();
     await page.getByLabel('Name').fill(name);
-    await page.getByLabel('Caller number').selectOption({ index: 1 });
-    await page.getByLabel('Agent version').selectOption({ index: 1 });
+    await chooseOption(page.getByLabel('Caller number'), { index: 1 });
+    await chooseOption(page.getByLabel('Agent version'), { index: 1 });
     await page.getByRole('button', { name: 'Create campaign' }).click();
     await expect(page.getByRole('heading', { level: 1, name })).toBeVisible();
     await expect(page.getByText('Draft', { exact: true })).toBeVisible();

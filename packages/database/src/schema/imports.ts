@@ -91,3 +91,36 @@ export const importRows = pgTable(
   },
   (t) => [primaryKey({ columns: [t.importJobId, t.rowNumber] })],
 );
+
+export const leadExportStatuses = ['QUEUED', 'RUNNING', 'COMPLETED', 'FAILED'] as const;
+export const leadExportStatus = pgEnum('lead_export_status', leadExportStatuses);
+
+/**
+ * A CSV export of leads (personal data). Built by a background job into private storage,
+ * downloaded through an audited endpoint, and purged after `expiresAt`.
+ */
+export const leadExports = pgTable(
+  'lead_exports',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    organizationId: uuid('organization_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    requestedByUserId: uuid('requested_by_user_id').references(() => users.id, {
+      onDelete: 'set null',
+    }),
+    /** Either explicit lead ids or the table filters at the time of the request. */
+    selection: jsonb('selection')
+      .$type<{ leadIds?: string[]; filters?: Record<string, string> }>()
+      .notNull(),
+    status: leadExportStatus('status').notNull().default('QUEUED'),
+    rowCount: integer('row_count'),
+    storageKey: text('storage_key'),
+    /** User-safe failure reason. */
+    error: text('error'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  },
+  (t) => [index('lead_exports_org_created_idx').on(t.organizationId, t.createdAt)],
+);

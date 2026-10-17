@@ -7,10 +7,10 @@ import { Icon, Logo } from './primitives';
 export function Footer() {
   const year = new Date().getFullYear();
   return (
-    <footer className="relative overflow-hidden border-t border-white/[0.06] bg-[#0a1128] pt-[clamp(72px,9vw,112px)] text-white/60 dark:bg-[#050b1f]">
+    <footer className="relative overflow-hidden border-t border-white/[0.06] bg-[#220d28] pt-[clamp(72px,9vw,112px)] text-white/60 dark:bg-[#150818]">
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute bottom-[-30%] left-1/2 h-[520px] w-[1100px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(234,88,12,0.16),transparent)]"
+        className="pointer-events-none absolute bottom-[-30%] left-1/2 h-[520px] w-[1100px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,rgba(214,47,132,0.18),transparent)]"
       />
       <div className="container-nv relative">
         <div className="grid grid-cols-2 gap-x-5 gap-y-10 md:grid-cols-3 md:gap-10 lg:grid-cols-[1.4fr_repeat(3,minmax(0,1fr))]">

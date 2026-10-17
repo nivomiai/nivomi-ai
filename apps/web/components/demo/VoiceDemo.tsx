@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import { ThemeToggle } from '@/components/marketing/ThemeToggle';
 import { Icon, Logo } from '@/components/marketing/primitives';
+import { Select } from '@/components/app/Select';
 import { cx } from '@/lib/site/cx';
 
 interface DemoConfig {
@@ -481,19 +482,14 @@ function LabeledSelect({
       <label htmlFor={id} className="text-xs font-bold tracking-[0.12em] text-muted uppercase">
         {label}
       </label>
-      <select
+      <Select
         id={id}
         value={value}
+        onChange={onChange}
+        options={options}
         disabled={disabled || options.length === 0}
-        onChange={(event) => onChange(event.target.value)}
-        className="mt-1.5 w-full rounded-[12px] border border-line bg-surface px-4 py-2.5 text-[14.5px] font-medium text-ink focus:border-accent focus:outline-none focus-visible:ring-4 focus-visible:ring-accent-tint disabled:opacity-60"
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+        className="py-2.5 text-[14.5px] font-medium"
+      />
       {hint ? <p className="mt-1.5 text-[12px] text-muted">{hint}</p> : null}
     </div>
   );

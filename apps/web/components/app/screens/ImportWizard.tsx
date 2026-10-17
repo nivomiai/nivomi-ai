@@ -18,6 +18,7 @@ import {
   Panel,
   Stat,
 } from '../ui';
+import { Select } from '../Select';
 import { IMPORT_STATUS_LABELS, importTone } from './DataSources';
 
 const WORKING: ImportJob['status'][] = [
@@ -224,25 +225,21 @@ function MappingStep({
                   </p>
                 </div>
                 <div className="grid gap-2">
-                  <select
+                  <Select
+                    size="sm"
                     aria-label={`Nivomi field for column ${header}`}
-                    className="rounded-[10px] border border-line bg-surface px-3 py-2.5 text-sm text-ink"
                     value={value}
-                    onChange={(e) => setMapping((m) => ({ ...m, [header]: e.target.value }))}
-                  >
-                    <option value="ignore">Don’t import</option>
-                    {fields.map((f) => (
-                      <option
-                        key={f.key}
-                        value={f.key}
-                        disabled={used.has(f.key) && value !== f.key}
-                      >
-                        {f.label}
-                        {f.required ? ' (required)' : ''}
-                      </option>
-                    ))}
-                    <option value="custom">Custom field…</option>
-                  </select>
+                    onChange={(next) => setMapping((m) => ({ ...m, [header]: next }))}
+                    options={[
+                      { value: 'ignore', label: 'Don’t import' },
+                      ...fields.map((f) => ({
+                        value: f.key,
+                        label: f.required ? `${f.label} (required)` : f.label,
+                        disabled: used.has(f.key) && value !== f.key,
+                      })),
+                      { value: 'custom', label: 'Custom field…' },
+                    ]}
+                  />
                   {value === 'custom' ? (
                     <input
                       aria-label={`Custom field name for ${header}`}
@@ -291,18 +288,12 @@ function MappingStep({
                 <label htmlFor="import-basis" className="text-sm font-semibold text-ink">
                   Basis
                 </label>
-                <select
+                <Select
                   id="import-basis"
-                  className="mt-1.5 w-full rounded-[12px] border border-line bg-surface px-4 py-3 text-[15px] text-ink"
                   value={consent.basis}
-                  onChange={(e) => setConsent((c) => ({ ...c, basis: e.target.value }))}
-                >
-                  {CONSENT_BASES.map((b) => (
-                    <option key={b} value={b}>
-                      {CONSENT_LABELS[b]}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(basis) => setConsent((c) => ({ ...c, basis }))}
+                  options={CONSENT_BASES.map((b) => ({ value: b, label: CONSENT_LABELS[b] }))}
+                />
               </div>
               <Field
                 id="import-consent-source"

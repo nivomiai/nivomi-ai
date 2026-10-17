@@ -23,7 +23,7 @@ import {
   Notice,
   PageHeader,
   Panel,
-  selectClass,
+  SelectField,
 } from '../ui';
 
 type DraftState = { kind: 'create' } | { kind: 'edit'; plan: Plan } | null;
@@ -136,7 +136,9 @@ export function PlatformPlans() {
         <LoadingBlock label="Loading plans" />
       ) : plans.length === 0 ? (
         <EmptyState icon="i-layers" title="No plans yet">
-          <p>Create the first one — it appears on the marketing pricing page as soon as it is ACTIVE.</p>
+          <p>
+            Create the first one — it appears on the marketing pricing page as soon as it is ACTIVE.
+          </p>
         </EmptyState>
       ) : (
         <div className="grid gap-3">
@@ -404,20 +406,17 @@ function PlanDialog({
               inputMode="numeric"
               required
             />
-            <div className="sm:col-span-2">
-              <label htmlFor="plan-status" className="text-sm font-semibold text-ink">
-                Status
-              </label>
-              <select
-                id="plan-status"
-                value={form.status}
-                onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as PlanStatus }))}
-                className={selectClass}
-              >
-                <option value="ACTIVE">Active — shown on the pricing page</option>
-                <option value="ARCHIVED">Archived — hidden from the public endpoint</option>
-              </select>
-            </div>
+            <SelectField
+              id="plan-status"
+              label="Status"
+              className="sm:col-span-2"
+              value={form.status}
+              onChange={(status) => setForm((f) => ({ ...f, status: status as PlanStatus }))}
+              options={[
+                { value: 'ACTIVE', label: 'Active — shown on the pricing page' },
+                { value: 'ARCHIVED', label: 'Archived — hidden from the public endpoint' },
+              ]}
+            />
           </div>
 
           <Panel title="Monthly limits" description="Leave blank for unmetered.">

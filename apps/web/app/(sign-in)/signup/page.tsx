@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { SignInFrame } from '@/components/auth/SignInFrame';
 import { SignupForm } from '@/components/auth/SignupForm';
 
 export const metadata: Metadata = {
@@ -13,5 +14,9 @@ export default async function SignupPage({
   readonly searchParams: Promise<{ next?: string; email?: string }>;
 }) {
   const params = await searchParams;
-  return <SignupForm next={params.next ?? null} defaultEmail={params.email ?? ''} />;
+  return (
+    <SignInFrame lead="Get started with">
+      <SignupForm next={params.next ?? null} defaultEmail={params.email ?? ''} />
+    </SignInFrame>
+  );
 }

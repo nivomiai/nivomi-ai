@@ -27,6 +27,7 @@ import { permissionsFor, roleMatrix } from '../authorization/permissions.js';
 import { clientContext } from '../common/request-context.js';
 import { validate } from '../common/validation.js';
 import { OrganizationsService } from './organizations.service.js';
+import { WelcomeSurveyService, welcomeSurveySchema } from './welcome-survey.service.js';
 
 const createSchema = z.object({ name: z.string().trim().min(2).max(100) });
 const switchSchema = z.object({ organizationId: z.uuid() });
@@ -40,7 +41,10 @@ const auditQuerySchema = z.object({
 /** The caller's identity and memberships — the web app's bootstrap call. */
 @Controller({ path: 'me' })
 export class MeController {
-  constructor(private readonly organizations: OrganizationsService) {}
+  constructor(
+    private readonly organizations: OrganizationsService,
+    private readonly welcomeSurvey: WelcomeSurveyService,
+  ) {}
 
   @Get()
   async me(@CurrentPrincipal() principal: Principal) {
@@ -60,6 +64,7 @@ export class MeController {
           }
         : null,
       organizations: await this.organizations.listForUser(principal.userId),
+      welcomeSurveyPending: await this.welcomeSurvey.isPending(principal.userId),
     };
   }
 
@@ -72,6 +77,18 @@ export class MeController {
   ): Promise<void> {
     const { organizationId } = validate(switchSchema, body);
     await this.organizations.switchActive(principal, organizationId, clientContext(request));
+  }
+
+  /** One-time welcome survey; the web app asks while `welcomeSurveyPending` is true. */
+  @Put('welcome-survey')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async submitWelcomeSurvey(
+    @CurrentPrincipal() principal: Principal,
+    @Body() body: unknown,
+    @Req() request: AuthenticatedRequest,
+  ): Promise<void> {
+    const answers = validate(welcomeSurveySchema, body);
+    await this.welcomeSurvey.submit(principal, answers, clientContext(request));
   }
 }
 

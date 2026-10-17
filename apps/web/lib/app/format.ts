@@ -11,6 +11,29 @@ export function formatDateTime(iso: string): string {
   return Number.isNaN(date.getTime()) ? '—' : dateTime.format(date);
 }
 
+const shortDate = new Intl.DateTimeFormat('en-IN', { day: 'numeric', month: 'short' });
+const MINUTE = 60_000;
+const HOUR = 60 * MINUTE;
+
+/** Table-friendly age: "Just now", "5 minutes ago", "2 hours ago", "Yesterday", "16 Oct". */
+export function formatRelative(iso: string, now: Date = new Date()): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '—';
+  const ago = now.getTime() - date.getTime();
+  if (ago < MINUTE) return 'Just now';
+  if (ago < HOUR) {
+    const minutes = Math.floor(ago / MINUTE);
+    return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+  }
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  if (date.getTime() >= startOfToday) {
+    const hours = Math.floor(ago / HOUR);
+    return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+  }
+  if (date.getTime() >= startOfToday - 24 * HOUR) return 'Yesterday';
+  return shortDate.format(date);
+}
+
 /** A short, human label for a browser user-agent string (no fingerprinting detail). */
 export function describeDevice(userAgent: string | null): string {
   if (!userAgent) return 'Unknown device';
@@ -54,6 +77,8 @@ const AUDIT_LABELS: Record<string, string> = {
   'lead.created': 'Added a lead',
   'lead.updated': 'Edited a lead',
   'lead.status_changed': 'Changed a lead’s status',
+  'lead.export_requested': 'Requested a leads export',
+  'lead.export_downloaded': 'Downloaded a leads export',
   'suppression.added': 'Added a number to the suppression list',
   'suppression.removed': 'Removed a number from the suppression list',
   'ingestion.review_resolved': 'Resolved a possible duplicate',

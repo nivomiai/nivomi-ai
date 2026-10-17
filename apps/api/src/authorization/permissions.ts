@@ -14,6 +14,7 @@ export type Permission =
   | 'audit.read'
   | 'leads.read'
   | 'leads.write'
+  | 'leads.export'
   | 'imports.manage'
   | 'suppression.manage'
   | 'integrations.read'
@@ -44,6 +45,7 @@ const FULL_TENANT: readonly Permission[] = [
   'audit.read',
   'leads.read',
   'leads.write',
+  'leads.export',
   'imports.manage',
   'suppression.manage',
   'integrations.read',

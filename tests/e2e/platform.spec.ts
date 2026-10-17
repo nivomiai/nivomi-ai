@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { chooseOption } from './helpers.js';
 
 const SUPER_ADMIN_EMAIL = 'admin@example.com';
 const PLAIN_MEMBER_EMAIL = 'kavya.viewer@example.com';
@@ -33,7 +34,7 @@ test.describe('Super Admin console', () => {
     await expect(page.getByRole('heading', { level: 3, name: 'Coastal Homes' })).toBeVisible();
 
     // Filter narrows the list.
-    await page.getByLabel('Status').selectOption('PENDING_APPROVAL');
+    await chooseOption(page.getByLabel('Status'), 'PENDING_APPROVAL');
     await expect(page.getByRole('heading', { level: 3, name: 'Coastal Homes' })).toBeVisible();
     await expect(page.getByRole('heading', { level: 3, name: 'Nivomi Demo' })).toHaveCount(0);
   });

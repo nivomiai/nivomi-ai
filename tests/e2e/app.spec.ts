@@ -1,5 +1,12 @@
 import { expect, test } from '@playwright/test';
-import { PASSWORD, linkFromEmail, signIn, signUpAndVerify, uniqueEmail } from './helpers.js';
+import {
+  PASSWORD,
+  answerWelcomeSurvey,
+  linkFromEmail,
+  signIn,
+  signUpAndVerify,
+  uniqueEmail,
+} from './helpers.js';
 
 test.describe('customer app', () => {
   test('signed-out visitors are sent to sign-in', async ({ page }) => {
@@ -22,6 +29,7 @@ test.describe('customer app', () => {
     await expect(page.getByRole('heading', { name: 'Set up your organization' })).toBeVisible();
     await page.getByLabel('Organization name').fill('Sunrise Realty');
     await page.getByRole('button', { name: 'Create organization' }).click();
+    await answerWelcomeSurvey(page);
 
     await expect(page.getByRole('heading', { name: 'Welcome, Priya' })).toBeVisible();
     await expect(page.getByText('awaiting approval by the Nivomi team')).toBeVisible();
@@ -51,6 +59,7 @@ test.describe('customer app', () => {
     await signIn(page, ownerEmail);
     await page.getByLabel('Organization name').fill('Coastal Homes');
     await page.getByRole('button', { name: 'Create organization' }).click();
+    await answerWelcomeSurvey(page);
     await expect(page.getByRole('heading', { name: 'Welcome, Arjun' })).toBeVisible();
 
     const agentEmail = uniqueEmail('agent2');
@@ -71,6 +80,7 @@ test.describe('customer app', () => {
     await agent.getByRole('button', { name: 'Accept invitation' }).click();
     await expect(agent.getByRole('heading', { name: 'You joined Coastal Homes' })).toBeVisible();
     await agent.getByRole('link', { name: 'Open Coastal Homes' }).click();
+    await answerWelcomeSurvey(agent);
 
     await expect(agent.getByRole('heading', { name: 'Welcome, Meera' })).toBeVisible();
     // Agents do not administer the team or read the audit log.

@@ -15,6 +15,7 @@ export type Permission =
   | 'audit.read'
   | 'leads.read'
   | 'leads.write'
+  | 'leads.export'
   | 'imports.manage'
   | 'suppression.manage'
   | 'integrations.read'
@@ -95,6 +96,16 @@ export interface Me {
   user: { id: string; email: string; name: string; emailVerified: boolean; isSuperAdmin: boolean };
   activeOrganization: { id: string; role: Role; permissions: Permission[] } | null;
   organizations: OrganizationSummary[];
+  /** True until the person answers the one-time welcome survey. */
+  welcomeSurveyPending: boolean;
+}
+
+/** `PUT /me/welcome-survey`: values match the API schema. */
+export interface WelcomeSurveyAnswers {
+  role: 'business_owner' | 'sales' | 'marketing' | 'operations' | 'developer' | 'agency' | 'other';
+  callVolume: 'under_1k' | '1k_10k' | '10k_50k' | 'over_50k' | 'not_sure';
+  migratingFrom: 'new' | 'voice_ai' | 'call_center' | 'dialer' | 'other';
+  referralSource: 'search' | 'social' | 'referral' | 'event' | 'ai_assistant' | 'other';
 }
 
 /** `GET /organizations/current/roles`: the permission matrix the API enforces. */
@@ -144,6 +155,33 @@ export interface AuditItem {
 export interface Page<T> {
   items: T[];
   nextCursor?: string | null;
+}
+
+/** A numbered page with the total that matches (`?page=`). */
+export interface NumberedPage<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+/** Result of a bulk action on leads. */
+export interface BulkResult {
+  updated: number;
+  unchanged: number;
+  failed: { leadId: string; reason: string }[];
+}
+
+/** `/leads/exports/:id`: a CSV export built in the background. */
+export interface LeadExport {
+  id: string;
+  status: 'QUEUED' | 'RUNNING' | 'COMPLETED' | 'FAILED';
+  rowCount: number | null;
+  error: string | null;
+  createdAt: string;
+  completedAt: string | null;
+  expiresAt: string;
+  downloadable: boolean;
 }
 
 /** Usage kinds metered by the billing engine (apps/api UsageEventKind). */
@@ -265,6 +303,7 @@ export interface LeadListItem {
   consentBasis: ConsentBasis | null;
   ownerUserId: string | null;
   createdAt: string;
+  updatedAt: string;
   contactId: string;
   fullName: string;
   email: string | null;
@@ -769,6 +808,7 @@ export interface CampaignListItem {
   budgetMinutes: number;
   usedSeconds: number;
   launchedAt: string | null;
+  selectionKind: 'FILTER' | 'LIST';
   createdAt: string;
 }
 

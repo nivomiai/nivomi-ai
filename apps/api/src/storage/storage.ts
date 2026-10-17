@@ -22,6 +22,8 @@ export interface UploadRequest {
 export interface StorageProvider {
   readonly name: string;
   createUploadTarget(key: string, request: UploadRequest): Promise<UploadTarget>;
+  /** Server-side write (generated files such as exports). */
+  write(key: string, data: Buffer): Promise<void>;
   read(key: string): Promise<Buffer>;
   size(key: string): Promise<number | null>;
   delete(key: string): Promise<void>;
@@ -58,7 +60,7 @@ export class LocalStorageProvider implements StorageProvider {
     });
   }
 
-  /** Used by the upload endpoint after it verified the signed token. */
+  /** Used by the upload endpoint after it verified the signed token, and by export jobs. */
   async write(key: string, data: Buffer): Promise<void> {
     const path = this.path(key);
     await mkdir(dirname(path), { recursive: true });

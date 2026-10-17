@@ -2,11 +2,16 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
-import { AuthCard, Field, FormAlert, SubmitButton, TextLink } from '@/components/app/ui';
+import { Field, FormAlert, SubmitButton, TextLink } from '@/components/app/ui';
+import { LockIcon, PasswordToggle } from '@/components/auth/field-icons';
+import { SignInCard } from '@/components/auth/SignInFrame';
+import { Icon } from '@/components/marketing/primitives';
 import { api, safeNext } from '@/lib/app/api';
 import { useSubmit } from '@/lib/app/use-submit';
 
 const MIN_PASSWORD = 10;
+
+const FIELD = '[&_input]:py-3 [&_label]:text-[15px]';
 
 export function SignupForm({
   next,
@@ -18,6 +23,7 @@ export function SignupForm({
   const [name, setName] = useState('');
   const [email, setEmail] = useState(defaultEmail);
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const submit = useSubmit();
   const router = useRouter();
@@ -45,26 +51,25 @@ export function SignupForm({
   const loginHref = next ? `/login?next=${encodeURIComponent(next)}` : '/login';
 
   return (
-    <AuthCard
+    <SignInCard
       title="Create your account"
       intro="Set up Nivomi for your team."
-      footer={
-        <>
-          Already have an account? <TextLink href={loginHref}>Sign in</TextLink>
-        </>
-      }
+      alternate={{ prompt: 'Already have an account?', label: 'Sign in', href: loginHref }}
     >
-      <form noValidate onSubmit={(e) => void onSubmit(e)} className="grid gap-5">
+      <form noValidate onSubmit={(e) => void onSubmit(e)} className="grid gap-4">
         <FormAlert message={submit.error} />
         <Field
           id="name"
           label="Your name"
           autoComplete="name"
+          placeholder="Priya Nair"
           required
           maxLength={100}
           value={name}
           error={fieldErrors.name ?? null}
           onChange={(e) => setName(e.target.value)}
+          leading={<Icon name="i-user" />}
+          className={FIELD}
         />
         <Field
           id="email"
@@ -72,16 +77,20 @@ export function SignupForm({
           type="email"
           autoComplete="email"
           inputMode="email"
+          placeholder="you@company.com"
           required
           value={email}
           error={fieldErrors.email ?? null}
           onChange={(e) => setEmail(e.target.value)}
+          leading={<Icon name="i-mail" />}
+          className={FIELD}
         />
         <Field
           id="password"
           label="Password"
-          type="password"
+          type={showPassword ? 'text' : 'password'}
           autoComplete="new-password"
+          placeholder="Create a password"
           required
           minLength={MIN_PASSWORD}
           maxLength={128}
@@ -89,15 +98,29 @@ export function SignupForm({
           value={password}
           error={fieldErrors.password ?? null}
           onChange={(e) => setPassword(e.target.value)}
+          leading={<LockIcon />}
+          trailing={
+            <PasswordToggle
+              controls="password"
+              visible={showPassword}
+              onToggle={() => setShowPassword((v) => !v)}
+            />
+          }
+          className={FIELD}
         />
-        <SubmitButton pending={submit.pending} pendingLabel="Creating account…">
+        <SubmitButton
+          pending={submit.pending}
+          pendingLabel="Creating account…"
+          className="mt-1 min-h-[50px] text-[16px]"
+        >
           Create account
+          <Icon name="i-arrow" className="size-[18px]" />
         </SubmitButton>
         <p className="text-center text-[13px] text-muted">
           By creating an account you agree to the <TextLink href="/terms">Terms</TextLink> and{' '}
           <TextLink href="/privacy">Privacy Policy</TextLink>.
         </p>
       </form>
-    </AuthCard>
+    </SignInCard>
   );
 }
