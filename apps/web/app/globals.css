@@ -1,72 +1,75 @@
 @import 'tailwindcss';
 
 /*
- * Nivomi design tokens — orange accent on navy ink with warm off-white surfaces
- * (Inter / Poppins). The `pink` / `plum` token names are kept for compatibility: `pink` is the
- * brand accent (orange) and `plum` is the deep brand dark (navy).
+ * Nivomi design tokens — magenta-pink accent on deep plum ink with blush-white surfaces
+ * (Inter / Poppins). `pink` is the brand accent and `plum` is the deep brand dark.
  * Semantic variables switch with the theme; Tailwind utilities map to them,
  * so components use `bg-surface`, `text-ink`, `border-line`… and never raw colours.
  * These tokens are the seed of the product design system (to be extended in `bmad-ux`).
  */
 
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+/* Roomier spacing only when the viewport is tall enough to avoid scrolling. */
+@custom-variant tall (@media (min-height: 900px));
 
 :root {
-  --nv-pink: #c2410c;
-  --nv-pink-2: #ea580c;
-  --nv-pink-light: #fb923c;
-  --nv-plum-950: #050b1f;
-  --nv-plum-900: #0a1128;
-  --nv-plum-800: #111c3d;
-  --nv-plum-700: #1b2a57;
+  --nv-pink: #be1a6e;
+  --nv-pink-2: #d62f84;
+  --nv-pink-light: #f472b6;
+  --nv-plum-950: #150818;
+  --nv-plum-900: #220d28;
+  --nv-plum-800: #33153c;
+  --nv-plum-700: #4a1f56;
   --nv-grad: linear-gradient(135deg, var(--nv-pink) 0%, var(--nv-pink-2) 100%);
 
   --nv-surface: #ffffff;
-  --nv-soft: #fbf8f4;
+  --nv-soft: #fdf5f9;
   --nv-card: #ffffff;
-  --nv-ink: #0f1b3d;
-  --nv-ink-2: #27324f;
-  --nv-muted: #5b6478;
-  --nv-line: #ece3d9;
-  --nv-line-2: #f4eee7;
-  --nv-line-hover: #e2cdb8;
-  --nv-accent: #c2410c;
-  --nv-accent-soft: #fff5ed;
+  --nv-ink: #2b1236;
+  --nv-ink-2: #45284f;
+  --nv-muted: #6b5873;
+  --nv-line: #f0dfe9;
+  --nv-line-2: #f8eef4;
+  --nv-line-hover: #e6c3d7;
+  --nv-accent: #be1a6e;
+  --nv-accent-soft: #fdf0f6;
   /* Single-series chart mark; validated for contrast and lightness on the light surface. */
-  --nv-chart-1: #ea580c;
-  --nv-accent-tint: #ffe4d1;
+  --nv-chart-1: #d62f84;
+  --nv-accent-tint: #fbd8ea;
   --nv-header: rgba(255, 255, 255, 0.78);
   --nv-soon: #6d4bd8;
   --nv-soon-soft: #f1edff;
+  --nv-info: #4f63e8;
   --nv-live: #0f8a4a;
   --nv-live-soft: #e9faf1;
   --nv-warn: #a16207;
   --nv-warn-soft: #fef9e3;
-  --nv-sh-sm: 0 1px 2px rgba(15, 27, 61, 0.04), 0 2px 8px rgba(15, 27, 61, 0.04);
-  --nv-sh-md: 0 2px 4px rgba(15, 27, 61, 0.03), 0 12px 32px rgba(15, 27, 61, 0.07);
-  --nv-sh-lg: 0 4px 10px rgba(15, 27, 61, 0.04), 0 28px 60px rgba(15, 27, 61, 0.12);
-  --nv-sh-pink: 0 10px 28px rgba(234, 88, 12, 0.28);
+  --nv-sh-sm: 0 1px 2px rgba(43, 18, 54, 0.04), 0 2px 8px rgba(43, 18, 54, 0.04);
+  --nv-sh-md: 0 2px 4px rgba(43, 18, 54, 0.03), 0 12px 32px rgba(43, 18, 54, 0.07);
+  --nv-sh-lg: 0 4px 10px rgba(43, 18, 54, 0.04), 0 28px 60px rgba(43, 18, 54, 0.12);
+  --nv-sh-pink: 0 10px 28px rgba(214, 47, 132, 0.28);
   color-scheme: light;
 }
 
 [data-theme='dark'] {
-  --nv-surface: #070d1f;
-  --nv-soft: #0a1228;
-  --nv-card: #0f1a36;
-  --nv-ink: #eef2fa;
-  --nv-ink-2: #cdd5e6;
-  --nv-muted: #9ca7bf;
-  --nv-line: #1f2b4d;
-  --nv-line-2: #162142;
-  --nv-line-hover: #34446f;
-  --nv-accent: #fb923c;
-  --nv-accent-soft: #2a1f24;
+  --nv-surface: #12071a;
+  --nv-soft: #180b21;
+  --nv-card: #20102b;
+  --nv-ink: #f8eef5;
+  --nv-ink-2: #e2cfdc;
+  --nv-muted: #b29db7;
+  --nv-line: #3a2246;
+  --nv-line-2: #2a1734;
+  --nv-line-hover: #57365f;
+  --nv-accent: #f472b6;
+  --nv-accent-soft: #2c1226;
   /* Its own dark step (not the text accent), validated against the dark card surface. */
-  --nv-chart-1: #f97316;
-  --nv-accent-tint: #3d2619;
-  --nv-header: rgba(7, 13, 31, 0.72);
+  --nv-chart-1: #ec4899;
+  --nv-accent-tint: #4a1a39;
+  --nv-header: rgba(18, 7, 26, 0.72);
   --nv-soon: #b9a5ff;
   --nv-soon-soft: rgba(145, 118, 255, 0.14);
+  --nv-info: #8b9bff;
   --nv-live: #5be59a;
   --nv-live-soft: rgba(37, 211, 102, 0.12);
   --nv-warn: #ffc56b;
@@ -105,6 +108,7 @@
   --color-accent-tint: var(--nv-accent-tint);
   --color-soon: var(--nv-soon);
   --color-soon-soft: var(--nv-soon-soft);
+  --color-info: var(--nv-info);
   --color-live: var(--nv-live);
   --color-live-soft: var(--nv-live-soft);
   --color-warn: var(--nv-warn);
@@ -207,7 +211,7 @@
     color: transparent;
   }
   [data-theme='dark'] .grad-text {
-    background: linear-gradient(135deg, var(--nv-pink-light) 0%, #fdba74 100%);
+    background: linear-gradient(135deg, var(--nv-pink-light) 0%, #f9a8d4 100%);
     -webkit-background-clip: text;
     background-clip: text;
   }
@@ -281,16 +285,23 @@
   }
   .hero-glow {
     background:
-      radial-gradient(60% 50% at 80% 10%, rgba(234, 88, 12, 0.14), transparent 70%),
-      radial-gradient(50% 40% at 0% 30%, rgba(249, 115, 22, 0.08), transparent 70%);
+      radial-gradient(60% 50% at 80% 10%, rgba(214, 47, 132, 0.14), transparent 70%),
+      radial-gradient(50% 40% at 0% 30%, rgba(244, 114, 182, 0.1), transparent 70%);
   }
   [data-theme='dark'] .hero-glow {
     background:
-      radial-gradient(60% 50% at 80% 10%, rgba(234, 88, 12, 0.24), transparent 70%),
-      radial-gradient(50% 40% at 0% 30%, rgba(27, 42, 87, 0.55), transparent 70%);
+      radial-gradient(60% 50% at 80% 10%, rgba(214, 47, 132, 0.24), transparent 70%),
+      radial-gradient(50% 40% at 0% 30%, rgba(74, 31, 86, 0.55), transparent 70%);
+  }
+  /* Scrolls by wheel, touch and keyboard, without a visible scrollbar (dropdown lists). */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
   }
   .band-plum {
-    background: linear-gradient(145deg, #050b1f 0%, #0f1b3d 55%, #1b2a57 100%);
+    background: linear-gradient(145deg, #150818 0%, #2b1236 55%, #4a1f56 100%);
   }
   .dotgrid {
     background-image: radial-gradient(var(--nv-line) 1px, transparent 1px);
@@ -349,7 +360,7 @@
   color: #fff;
 }
 [data-theme='dark'] .cs-solid {
-  color: #050b1f;
+  color: #150818;
 }
 .cs-glow {
   background:
@@ -358,7 +369,7 @@
       color-mix(in srgb, var(--cs) 22%, transparent),
       transparent 70%
     ),
-    radial-gradient(45% 40% at 5% 35%, rgba(234, 88, 12, 0.1), transparent 70%);
+    radial-gradient(45% 40% at 5% 35%, rgba(214, 47, 132, 0.1), transparent 70%);
 }
 
 /* Workflow step highlight: a slow, CSS-only pulse through the steps of a diagram. */
