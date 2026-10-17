@@ -365,9 +365,7 @@ function NumberRow({
           ) : null}
         </span>
       </div>
-      {open ? (
-        <InboundConfigEditor callerNumberId={number.id} editable={editable} />
-      ) : null}
+      {open ? <InboundConfigEditor callerNumberId={number.id} editable={editable} /> : null}
     </li>
   );
 }
@@ -399,10 +397,18 @@ function InboundConfigEditor({
   }, [config.data]);
 
   if (config.error && !config.data) {
-    return <div className="mt-3"><ErrorBlock message={config.error} onRetry={config.reload} /></div>;
+    return (
+      <div className="mt-3">
+        <ErrorBlock message={config.error} onRetry={config.reload} />
+      </div>
+    );
   }
   if (!config.data) {
-    return <div className="mt-3"><LoadingBlock /></div>;
+    return (
+      <div className="mt-3">
+        <LoadingBlock />
+      </div>
+    );
   }
 
   const publishedAgents =

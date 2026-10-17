@@ -129,9 +129,7 @@ export function CallHistory() {
                     </td>
                     <td className="py-3 pr-4 font-mono text-xs text-ink-2">{item.fromE164}</td>
                     <td className="py-3 pr-4 font-mono text-xs text-ink-2">{item.toE164}</td>
-                    <td className="py-3 pr-4 text-ink-2">
-                      {formatDuration(item.durationSeconds)}
-                    </td>
+                    <td className="py-3 pr-4 text-ink-2">{formatDuration(item.durationSeconds)}</td>
                     <td className="py-3 text-ink-2">
                       {describeOutcome(item.telephonyOutcome, item.conversationOutcome)}
                     </td>

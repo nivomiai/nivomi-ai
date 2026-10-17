@@ -40,10 +40,7 @@ export class InboundBindingsController {
 
   @RequirePermission('telecom.read')
   @Get()
-  get(
-    @CurrentTenant() tenant: TenantPrincipal,
-    @Param('id', new ParseUUIDPipe()) id: string,
-  ) {
+  get(@CurrentTenant() tenant: TenantPrincipal, @Param('id', new ParseUUIDPipe()) id: string) {
     return this.bindings.get(tenant, id);
   }
 

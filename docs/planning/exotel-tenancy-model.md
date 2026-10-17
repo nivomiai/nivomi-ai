@@ -17,11 +17,11 @@ to Option B (BYO Exotel for enterprise) by storing the Exotel account reference 
 
 ## The three options
 
-| Model                         | Who owns the Exotel contract                                                                                           | Credential storage                                            | Where it fits                                            |
-| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- | -------------------------------------------------------- |
-| **A. Nivomi-owned pool**      | Nivomi owns **one** Exotel account; many ExoPhones live in that account; each number is assigned to a tenant in the DB | One set of credentials, in Nivomi's secrets store             | **MVP, free plan, every SMB customer** — the default     |
-| **B. BYO Exotel (hybrid)**    | Enterprise customer owns their Exotel account and gives Nivomi their SID + API key                                     | Per-organization encrypted credentials (same shape as ADR-011 fallbacks) | Only for customers who insist on owning the carrier contract (procurement, legal, regulated industries) |
-| **C. One Exotel per client**  | Nivomi creates a new Exotel account for every tenant                                                                   | N × credential sets, N × DLT registrations                    | **Avoid.** Not possible on free, ops explodes with scale |
+| Model                        | Who owns the Exotel contract                                                                                           | Credential storage                                                       | Where it fits                                                                                           |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| **A. Nivomi-owned pool**     | Nivomi owns **one** Exotel account; many ExoPhones live in that account; each number is assigned to a tenant in the DB | One set of credentials, in Nivomi's secrets store                        | **MVP, free plan, every SMB customer** — the default                                                    |
+| **B. BYO Exotel (hybrid)**   | Enterprise customer owns their Exotel account and gives Nivomi their SID + API key                                     | Per-organization encrypted credentials (same shape as ADR-011 fallbacks) | Only for customers who insist on owning the carrier contract (procurement, legal, regulated industries) |
+| **C. One Exotel per client** | Nivomi creates a new Exotel account for every tenant                                                                   | N × credential sets, N × DLT registrations                               | **Avoid.** Not possible on free, ops explodes with scale                                                |
 
 ## Why Option A, in plain terms
 
@@ -82,14 +82,14 @@ rewrite. We add this when the first enterprise customer actually asks for it, no
 
 ## Why not Option C
 
-| Problem                | Impact                                                                                                                           |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Not possible on free   | Free plan is one account. Every new tenant would need a paid plan on day 1, before they have proven value to Nivomi             |
-| N × DLT registration   | Each account would need its own DLT templates, caller-ID verification, 140xx series registration. Weeks of ops per customer     |
-| N × credential rotation| Rotating keys across hundreds of customer accounts is a security and ops nightmare                                              |
-| N × invoices           | Finance team reconciles N Exotel bills instead of one                                                                            |
-| No shared pool         | A tenant with 50 calls/day pays for a dedicated account; wasted capacity                                                         |
-| Churn is painful       | Offboarding leaves orphan Exotel accounts and lingering carrier obligations                                                      |
+| Problem                 | Impact                                                                                                                      |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Not possible on free    | Free plan is one account. Every new tenant would need a paid plan on day 1, before they have proven value to Nivomi         |
+| N × DLT registration    | Each account would need its own DLT templates, caller-ID verification, 140xx series registration. Weeks of ops per customer |
+| N × credential rotation | Rotating keys across hundreds of customer accounts is a security and ops nightmare                                          |
+| N × invoices            | Finance team reconciles N Exotel bills instead of one                                                                       |
+| No shared pool          | A tenant with 50 calls/day pays for a dedicated account; wasted capacity                                                    |
+| Churn is painful        | Offboarding leaves orphan Exotel accounts and lingering carrier obligations                                                 |
 
 The only context where C makes sense is a reseller model where Nivomi acts as a managed-services
 partner and the carrier contract is in the customer's name — that is Option B, not C.

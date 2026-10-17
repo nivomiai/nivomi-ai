@@ -212,11 +212,7 @@ export class PlatformPlansService {
     this.validatePayload(input);
     try {
       const updated = await this.db.transaction(async (tx) => {
-        const [current] = await tx
-          .select()
-          .from(plans)
-          .where(eq(plans.id, id))
-          .for('update');
+        const [current] = await tx.select().from(plans).where(eq(plans.id, id)).for('update');
         if (!current) throw new AppError('NOT_FOUND', 'Plan not found.');
         if (current.updatedAt.toISOString() !== input.expectedVersion) {
           throw new AppError(

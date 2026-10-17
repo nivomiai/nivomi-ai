@@ -156,10 +156,7 @@ export class InboundBindingsService {
       .select({ phoneE164: callerNumbers.phoneE164 })
       .from(callerNumbers)
       .where(
-        and(
-          eq(callerNumbers.id, callerNumberId),
-          eq(callerNumbers.organizationId, organizationId),
-        ),
+        and(eq(callerNumbers.id, callerNumberId), eq(callerNumbers.organizationId, organizationId)),
       )
       .limit(1);
     if (!row) throw new AppError('NOT_FOUND', 'Caller number not found for this organization.');
@@ -174,10 +171,7 @@ export class InboundBindingsService {
       .select({ id: agentVersions.id })
       .from(agentVersions)
       .where(
-        and(
-          eq(agentVersions.id, agentVersionId),
-          eq(agentVersions.organizationId, organizationId),
-        ),
+        and(eq(agentVersions.id, agentVersionId), eq(agentVersions.organizationId, organizationId)),
       )
       .limit(1);
     if (!row) {

@@ -31,11 +31,7 @@ export interface SayAndHangupDecision {
 /** Reject the call with a message. Used for unknown numbers, suspended orgs, breaker trips. */
 export interface RejectDecision {
   readonly action: 'reject';
-  readonly reason:
-    | 'unknown_number'
-    | 'organization_blocked'
-    | 'ai_not_available'
-    | 'misconfigured';
+  readonly reason: 'unknown_number' | 'organization_blocked' | 'ai_not_available' | 'misconfigured';
   readonly prompt: string;
   readonly voice: ExoVoice;
 }
@@ -88,11 +84,7 @@ export interface TransferToHumanDecision {
 }
 
 export type InboundDecision =
-  | SayAndHangupDecision
-  | RejectDecision
-  | AiTurnDecision
-  | AiEndDecision
-  | TransferToHumanDecision;
+  SayAndHangupDecision | RejectDecision | AiTurnDecision | AiEndDecision | TransferToHumanDecision;
 
 /** Terminal status Exotel pushes once the call ends. */
 export interface StatusCallbackContext {

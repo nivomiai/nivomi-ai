@@ -42,7 +42,7 @@ describe('Exotel inbound param parser — phone normalization', () => {
     expect(ctx?.toE164).toBe('+919513886363');
   });
 
-  it('prefers canonical `From`/`To` over Exotel\'s alternative `CallFrom`/`CallTo`', () => {
+  it("prefers canonical `From`/`To` over Exotel's alternative `CallFrom`/`CallTo`", () => {
     const ctx = parseInboundContext(
       mockRequest({
         CallFrom: '08590154802',
@@ -97,7 +97,7 @@ describe('Exotel inbound param parser — phone normalization', () => {
     expect(parseTurnContext(mockBody({ RecordingUrl: 'https://x/y.mp3' }), NOW)).toBeNull();
   });
 
-  it('turn callback: tolerates Exotel\'s alternative lowercase recording_url field', () => {
+  it("turn callback: tolerates Exotel's alternative lowercase recording_url field", () => {
     const turn = parseTurnContext(
       mockBody({ CallSid: 'S', recording_url: 'https://x/y.mp3' }),
       NOW,

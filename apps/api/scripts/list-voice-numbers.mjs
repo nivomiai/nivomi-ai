@@ -41,7 +41,9 @@ try {
       console.log(`    series:   ${r.series} (${r.purpose})`);
       console.log(`    status:   ${r.status}`);
       console.log(`    org:      ${r.orgName ?? '(missing)'} [${r.orgStatus ?? '?'}]`);
-      console.log(`    binding:  ${binding ? `agent_version=${binding.agentVersionId}` : '(none — AI uses generic prompt)'}`);
+      console.log(
+        `    binding:  ${binding ? `agent_version=${binding.agentVersionId}` : '(none — AI uses generic prompt)'}`,
+      );
       console.log('');
     }
   }

@@ -71,10 +71,7 @@ export class PlatformVoiceNumbersService {
   ): Promise<PlatformVoiceNumberRow> {
     const phone = input.phoneE164.trim();
     if (!E164.test(phone)) {
-      throw new AppError(
-        'VALIDATION_ERROR',
-        'Phone must be in E.164 format, e.g. +919513886363.',
-      );
+      throw new AppError('VALIDATION_ERROR', 'Phone must be in E.164 format, e.g. +919513886363.');
     }
     return this.db.transaction(async (tx) => {
       const [org] = await tx
@@ -93,7 +90,10 @@ export class PlatformVoiceNumbersService {
       let id: string;
       if (existing) {
         if (existing.organizationId !== org.id) {
-          throw new AppError('CONFLICT', 'This number is already assigned to another organization.');
+          throw new AppError(
+            'CONFLICT',
+            'This number is already assigned to another organization.',
+          );
         }
         if (existing.status !== 'RETIRED' && existing.series === INBOUND_SERIES) {
           throw new AppError('CONFLICT', 'This number is already registered for inbound.');

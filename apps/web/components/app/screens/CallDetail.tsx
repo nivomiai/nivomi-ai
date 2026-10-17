@@ -89,9 +89,7 @@ export function CallDetail({ id }: { readonly id: string }) {
               <li
                 key={`${turn.role}-${index}`}
                 className={`rounded-md border p-3 text-sm ${
-                  turn.role === 'agent'
-                    ? 'border-line bg-surface'
-                    : 'border-line/60 bg-surface/60'
+                  turn.role === 'agent' ? 'border-line bg-surface' : 'border-line/60 bg-surface/60'
                 }`}
               >
                 <div className="text-xs tracking-[0.08em] text-muted uppercase">

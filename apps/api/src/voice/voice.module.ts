@@ -31,9 +31,7 @@ import { VoiceWebhookController } from './voice-webhook.controller.js';
       provide: SARVAM_PROVIDER,
       inject: [API_ENV],
       useFactory: (env: ApiEnv): SarvamProvider | null =>
-        env.SARVAM_API_KEY
-          ? new SarvamProvider(env.SARVAM_API_KEY, env.SARVAM_CHAT_MODEL)
-          : null,
+        env.SARVAM_API_KEY ? new SarvamProvider(env.SARVAM_API_KEY, env.SARVAM_CHAT_MODEL) : null,
     },
   ],
 })

@@ -113,7 +113,13 @@ describe('Super Admin plans CRUD + public pricing', () => {
     };
     const ours = audit.items.filter((row) => row.resourceId === created.id);
     const actions = ours.map((row) => row.action);
-    expect(actions).toEqual(expect.arrayContaining(['platform.plan_created', 'platform.plan_updated', 'platform.plan_archived']));
+    expect(actions).toEqual(
+      expect.arrayContaining([
+        'platform.plan_created',
+        'platform.plan_updated',
+        'platform.plan_archived',
+      ]),
+    );
   });
 
   it('rejects duplicate code with 409 CONFLICT', async () => {
@@ -160,11 +166,12 @@ describe('Super Admin plans CRUD + public pricing', () => {
       startsOn: new Date(),
     });
 
-    const res = await admin.client
-      .post(`/api/v1/platform/plans/${created.id}/archive`)
-      .expect(409);
+    const res = await admin.client.post(`/api/v1/platform/plans/${created.id}/archive`).expect(409);
     expect(res.body).toMatchObject({ error: { code: 'CONFLICT' } });
-    const row = await t.db.select({ status: plans.status }).from(plans).where(eq(plans.id, created.id));
+    const row = await t.db
+      .select({ status: plans.status })
+      .from(plans)
+      .where(eq(plans.id, created.id));
     expect(row[0]?.status).toBe('ACTIVE');
   });
 

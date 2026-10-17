@@ -239,8 +239,7 @@ export class AiConversationService {
       if (!response.ok) {
         throw new Error(`recording fetch returned ${response.status}`);
       }
-      const mimeType =
-        response.headers.get('content-type')?.split(';')[0]?.trim() || 'audio/mpeg';
+      const mimeType = response.headers.get('content-type')?.split(';')[0]?.trim() || 'audio/mpeg';
       const buffer = Buffer.from(await response.arrayBuffer());
       return { buffer, mimeType };
     } finally {

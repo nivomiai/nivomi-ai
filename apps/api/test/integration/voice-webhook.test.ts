@@ -59,9 +59,7 @@ describe('voice webhooks — Exotel inbound call lands in the real app', () => {
     const [session] = await t.db
       .select()
       .from(callSessions)
-      .where(
-        and(eq(callSessions.provider, 'exotel'), eq(callSessions.providerCallId, callSid)),
-      );
+      .where(and(eq(callSessions.provider, 'exotel'), eq(callSessions.providerCallId, callSid)));
     expect(session).toBeDefined();
     expect(session!.organizationId).toBe(tenant.organizationId);
     expect(session!.direction).toBe('INBOUND');
@@ -95,9 +93,7 @@ describe('voice webhooks — Exotel inbound call lands in the real app', () => {
     const rows = await t.db
       .select()
       .from(callSessions)
-      .where(
-        and(eq(callSessions.provider, 'exotel'), eq(callSessions.providerCallId, callSid)),
-      );
+      .where(and(eq(callSessions.provider, 'exotel'), eq(callSessions.providerCallId, callSid)));
     expect(rows).toHaveLength(1);
   });
 
@@ -115,9 +111,7 @@ describe('voice webhooks — Exotel inbound call lands in the real app', () => {
     const rows = await t.db
       .select()
       .from(callSessions)
-      .where(
-        and(eq(callSessions.provider, 'exotel'), eq(callSessions.providerCallId, callSid)),
-      );
+      .where(and(eq(callSessions.provider, 'exotel'), eq(callSessions.providerCallId, callSid)));
     expect(rows).toHaveLength(0);
   });
 
@@ -142,9 +136,7 @@ describe('voice webhooks — Exotel inbound call lands in the real app', () => {
     const [row] = await t.db
       .select({ telephonyOutcome: callSessions.telephonyOutcome })
       .from(callSessions)
-      .where(
-        and(eq(callSessions.provider, 'exotel'), eq(callSessions.providerCallId, callSid)),
-      );
+      .where(and(eq(callSessions.provider, 'exotel'), eq(callSessions.providerCallId, callSid)));
     expect(row?.telephonyOutcome).toBe('organization_blocked');
   });
 
@@ -174,9 +166,7 @@ describe('voice webhooks — Exotel inbound call lands in the real app', () => {
     const [row] = await t.db
       .select()
       .from(callSessions)
-      .where(
-        and(eq(callSessions.provider, 'exotel'), eq(callSessions.providerCallId, callSid)),
-      );
+      .where(and(eq(callSessions.provider, 'exotel'), eq(callSessions.providerCallId, callSid)));
     expect(row?.telephonyOutcome).toBe('completed');
     expect(row?.durationSeconds).toBe(42);
     expect(row?.endedAt).not.toBeNull();
@@ -244,9 +234,7 @@ describe('voice webhooks — turn-based AI conversation (SARVAM_API_KEY set)', (
     const [session] = await t.db
       .select()
       .from(callSessions)
-      .where(
-        and(eq(callSessions.provider, 'exotel'), eq(callSessions.providerCallId, callSid)),
-      );
+      .where(and(eq(callSessions.provider, 'exotel'), eq(callSessions.providerCallId, callSid)));
     expect(session?.organizationId).toBe(tenant.organizationId);
     expect(session?.direction).toBe('INBOUND');
     expect(session?.telephonyOutcome).toBeNull();
@@ -281,7 +269,10 @@ describe('voice webhooks — turn-based AI conversation (SARVAM_API_KEY set)', (
     );
     const sttSpy = vi
       .spyOn(sarvam, 'transcribe')
-      .mockResolvedValue({ transcript: 'Hi, what can you tell me about Nivomi?', languageCode: 'en-IN' });
+      .mockResolvedValue({
+        transcript: 'Hi, what can you tell me about Nivomi?',
+        languageCode: 'en-IN',
+      });
     const chatSpy = vi.spyOn(sarvam, 'chat').mockResolvedValue({
       text: 'Nivomi handles compliant AI calls for Indian businesses. Want a demo?',
       inputTokens: 42,
@@ -319,9 +310,7 @@ describe('voice webhooks — turn-based AI conversation (SARVAM_API_KEY set)', (
     const [session] = await t.db
       .select()
       .from(callSessions)
-      .where(
-        and(eq(callSessions.provider, 'exotel'), eq(callSessions.providerCallId, callSid)),
-      );
+      .where(and(eq(callSessions.provider, 'exotel'), eq(callSessions.providerCallId, callSid)));
     expect(session?.transcript).toHaveLength(2);
     expect(session?.transcript[0]?.role).toBe('caller');
     expect(session?.transcript[0]?.text).toContain('tell me about Nivomi');
@@ -352,9 +341,11 @@ describe('voice webhooks — turn-based AI conversation (SARVAM_API_KEY set)', (
       .send({ CallSid: callSid, From: CALLER, To: phone })
       .expect(200);
 
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(Buffer.from('x'), { status: 200, headers: { 'content-type': 'audio/mpeg' } }),
-    );
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(
+        new Response(Buffer.from('x'), { status: 200, headers: { 'content-type': 'audio/mpeg' } }),
+      );
     const sttSpy = vi.spyOn(sarvam, 'transcribe').mockResolvedValue({
       transcript: 'hello there',
       languageCode: 'en-IN',
@@ -481,18 +472,21 @@ describe('voice webhooks — human handoff (inbound_bindings.mode = HUMAN)', () 
       .expect(200);
 
     expect(res.headers['content-type']).toContain('application/xml');
-    expect(res.text).toContain('<Say voice="female">Connecting you to a member of the Handoff Co team.</Say>');
+    expect(res.text).toContain(
+      '<Say voice="female">Connecting you to a member of the Handoff Co team.</Say>',
+    );
     expect(res.text).toContain('<Dial');
     expect(res.text).toContain('>+919876543210</Dial>');
     expect(res.text).toContain('<Hangup/>');
     expect(res.text).not.toContain('<Record');
 
     const [session] = await t.db
-      .select({ organizationId: callSessions.organizationId, telephonyOutcome: callSessions.telephonyOutcome })
+      .select({
+        organizationId: callSessions.organizationId,
+        telephonyOutcome: callSessions.telephonyOutcome,
+      })
       .from(callSessions)
-      .where(
-        and(eq(callSessions.provider, 'exotel'), eq(callSessions.providerCallId, callSid)),
-      );
+      .where(and(eq(callSessions.provider, 'exotel'), eq(callSessions.providerCallId, callSid)));
     expect(session?.organizationId).toBe(tenant.organizationId);
     expect(session?.telephonyOutcome).toBeNull();
   });
@@ -529,9 +523,7 @@ describe('voice webhooks — human handoff (inbound_bindings.mode = HUMAN)', () 
     const [session] = await t.db
       .select({ telephonyOutcome: callSessions.telephonyOutcome })
       .from(callSessions)
-      .where(
-        and(eq(callSessions.provider, 'exotel'), eq(callSessions.providerCallId, callSid)),
-      );
+      .where(and(eq(callSessions.provider, 'exotel'), eq(callSessions.providerCallId, callSid)));
     expect(session?.telephonyOutcome).toBe('human_misconfigured');
   });
 });
@@ -568,7 +560,11 @@ describe('platform voice-numbers endpoint — super-admin only, auditable', () =
     const { id } = registered.body as { id: string };
 
     const listed = await admin.client.get('/api/v1/platform/voice-numbers').expect(200);
-    const items = (listed.body as { items: Array<{ id: string; phoneE164: string; organizationName: string; status: string }> }).items;
+    const items = (
+      listed.body as {
+        items: Array<{ id: string; phoneE164: string; organizationName: string; status: string }>;
+      }
+    ).items;
     const found = items.find((row) => row.id === id);
     expect(found?.phoneE164).toBe(phone);
     expect(found?.organizationName).toBe('Pool Owner Co');

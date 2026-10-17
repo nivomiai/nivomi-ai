@@ -43,7 +43,11 @@ export class PlatformIntegrationsController {
       {
         key: 'database',
         label: 'Database',
-        status: has(env.DATABASE_URL) ? 'ready' : env.NODE_ENV === 'production' ? 'missing' : 'simulated',
+        status: has(env.DATABASE_URL)
+          ? 'ready'
+          : env.NODE_ENV === 'production'
+            ? 'missing'
+            : 'simulated',
         summary: has(env.DATABASE_URL)
           ? 'PostgreSQL connection string is set.'
           : 'Running on in-process PGlite — refused in production.',
@@ -122,7 +126,8 @@ export class PlatformIntegrationsController {
         key: 'payment',
         label: 'Payments (Razorpay)',
         status: 'simulated',
-        summary: 'SimulatedPaymentProvider is used. Razorpay adapter arrives with the billing phase.',
+        summary:
+          'SimulatedPaymentProvider is used. Razorpay adapter arrives with the billing phase.',
         missing: ['RAZORPAY_KEY_ID', 'RAZORPAY_KEY_SECRET', 'RAZORPAY_WEBHOOK_SECRET'],
         productionBlocker: false,
       },

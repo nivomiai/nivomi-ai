@@ -179,8 +179,8 @@ function TrialNotice({ trialEndsAt }: { readonly trialEndsAt: string | null }) {
       daysLeft === 1 ? '1 day left in your free trial' : `${daysLeft} days left in your free trial`;
     return (
       <Notice tone="info">
-        <span className="font-semibold text-ink">{label}.</span>{' '}
-        After it ends, calls remain available while you choose a plan.{' '}
+        <span className="font-semibold text-ink">{label}.</span> After it ends, calls remain
+        available while you choose a plan.{' '}
         <Link className="font-semibold text-accent hover:underline" href="/#plans">
           See plans →
         </Link>
@@ -189,8 +189,8 @@ function TrialNotice({ trialEndsAt }: { readonly trialEndsAt: string | null }) {
   }
   return (
     <Notice tone="warn">
-      <span className="font-semibold text-ink">Your free trial has ended.</span>{' '}
-      Nothing is blocked yet, but please pick a plan to keep calling without interruption.{' '}
+      <span className="font-semibold text-ink">Your free trial has ended.</span> Nothing is blocked
+      yet, but please pick a plan to keep calling without interruption.{' '}
       <Link className="font-semibold text-accent hover:underline" href="/#plans">
         Choose a plan →
       </Link>
@@ -568,7 +568,9 @@ function OnboardingChecklist({
     {
       key: 'campaign',
       label: 'Create and launch a campaign',
-      text: pending ? 'Available after your workspace is approved.' : 'Pre-launch check + Emergency Stop guard every dial.',
+      text: pending
+        ? 'Available after your workspace is approved.'
+        : 'Pre-launch check + Emergency Stop guard every dial.',
       href: '/app/campaigns/new',
       done: setup.campaignCount > 0,
       waitingOnApproval: pending,
