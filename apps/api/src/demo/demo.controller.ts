@@ -6,7 +6,7 @@ import { AppError } from '../common/errors.js';
 import { API_ENV } from '../config/config.module.js';
 import type { ApiEnv } from '../config/env.js';
 import { validate } from '../common/validation.js';
-import { SarvamProvider, type ChatMessage } from './sarvam.js';
+import { SarvamProvider, type ChatMessage } from '../voice/sarvam-provider.js';
 import { stubReply } from './stub-llm.js';
 
 interface DemoConfigResponse {
@@ -116,7 +116,7 @@ export class DemoController {
       ...history,
     ];
     try {
-      const text = await this.sarvam.chat(prompt);
+      const { text } = await this.sarvam.chat(prompt);
       return { text, source: 'llm' };
     } catch {
       // Never let the demo fall off the call: a canned reply beats dead air.

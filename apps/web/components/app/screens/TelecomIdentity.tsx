@@ -1,10 +1,13 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import {
   BUSINESS_SECTORS,
   SECTOR_LABELS,
+  type AgentSummary,
   type BusinessSector,
+  type InboundConfig,
+  type InboundMode,
   type TelecomIdentity as Identity,
   type TelecomIdentityStatus,
 } from '@/lib/api/types';
@@ -253,40 +256,19 @@ function NumbersPanel({
       ) : (
         <ul className="grid gap-2">
           {identity.numbers.map((n) => (
-            <li
+            <NumberRow
               key={n.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-[12px] border border-line px-4 py-2.5 text-sm"
-            >
-              <span>
-                <span className="font-semibold text-ink">{formatPhone(n.phone)}</span>{' '}
-                <span className="text-muted">
-                  · {n.series}xx · {n.purpose.toLowerCase()} ·{' '}
-                  {n.a2pDeclared ? 'A2P declared' : 'A2P not declared'}
-                </span>
-              </span>
-              <span className="flex items-center gap-2">
-                <Badge tone={n.status === 'ACTIVE' ? 'live' : 'warn'}>
-                  {n.status.toLowerCase()}
-                  {n.statusReason ? ` · ${n.statusReason}` : ''}
-                </Badge>
-                {editable && n.status !== 'RETIRED' ? (
-                  <button
-                    type="button"
-                    className="text-sm font-semibold text-accent hover:underline"
-                    disabled={remove.pending}
-                    onClick={() =>
-                      void remove
-                        .run(() => api.del(`/telecom-identity/numbers/${n.id}`))
-                        .then((ok) => {
-                          if (ok) onChanged();
-                        })
-                    }
-                  >
-                    Remove
-                  </button>
-                ) : null}
-              </span>
-            </li>
+              number={n}
+              editable={editable}
+              removing={remove.pending}
+              onRemove={() =>
+                void remove
+                  .run(() => api.del(`/telecom-identity/numbers/${n.id}`))
+                  .then((ok) => {
+                    if (ok) onChanged();
+                  })
+              }
+            />
           ))}
         </ul>
       )}
@@ -331,5 +313,184 @@ function NumbersPanel({
         </form>
       ) : null}
     </Panel>
+  );
+}
+
+/** One row in the Caller numbers list, with an optional expandable inbound-config editor. */
+function NumberRow({
+  number,
+  editable,
+  removing,
+  onRemove,
+}: {
+  readonly number: Identity['numbers'][number];
+  readonly editable: boolean;
+  readonly removing: boolean;
+  readonly onRemove: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <li className="rounded-[12px] border border-line px-4 py-2.5 text-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <span>
+          <span className="font-semibold text-ink">{formatPhone(number.phone)}</span>{' '}
+          <span className="text-muted">
+            · {number.series}xx · {number.purpose.toLowerCase()} ·{' '}
+            {number.a2pDeclared ? 'A2P declared' : 'A2P not declared'}
+          </span>
+        </span>
+        <span className="flex items-center gap-2">
+          <Badge tone={number.status === 'ACTIVE' ? 'live' : 'warn'}>
+            {number.status.toLowerCase()}
+            {number.statusReason ? ` · ${number.statusReason}` : ''}
+          </Badge>
+          {number.status !== 'RETIRED' ? (
+            <button
+              type="button"
+              className="text-sm font-semibold text-accent hover:underline"
+              onClick={() => setOpen((prev) => !prev)}
+            >
+              {open ? 'Hide inbound config' : 'Inbound config'}
+            </button>
+          ) : null}
+          {editable && number.status !== 'RETIRED' ? (
+            <button
+              type="button"
+              className="text-sm font-semibold text-accent hover:underline"
+              disabled={removing}
+              onClick={onRemove}
+            >
+              Remove
+            </button>
+          ) : null}
+        </span>
+      </div>
+      {open ? (
+        <InboundConfigEditor callerNumberId={number.id} editable={editable} />
+      ) : null}
+    </li>
+  );
+}
+
+/**
+ * Inline inbound-config editor (ADR-024 §1). Loads the current binding, lets the operator pick
+ * AI (agent version) or HUMAN (forward-to number), and PUTs the change. Agent dropdown is filtered
+ * to published versions (`latestVersionId != null`).
+ */
+function InboundConfigEditor({
+  callerNumberId,
+  editable,
+}: {
+  readonly callerNumberId: string;
+  readonly editable: boolean;
+}) {
+  const config = useResource<InboundConfig>(`/caller-numbers/${callerNumberId}/inbound-config`);
+  const agents = useResource<{ items: AgentSummary[] }>('/agents');
+  const save = useSubmit();
+  const [mode, setMode] = useState<InboundMode>('AI');
+  const [agentVersionId, setAgentVersionId] = useState<string>('');
+  const [handoff, setHandoff] = useState<string>('');
+
+  useEffect(() => {
+    if (!config.data) return;
+    setMode(config.data.mode);
+    setAgentVersionId(config.data.agentVersionId ?? '');
+    setHandoff(config.data.handoffE164 ?? '');
+  }, [config.data]);
+
+  if (config.error && !config.data) {
+    return <div className="mt-3"><ErrorBlock message={config.error} onRetry={config.reload} /></div>;
+  }
+  if (!config.data) {
+    return <div className="mt-3"><LoadingBlock /></div>;
+  }
+
+  const publishedAgents =
+    agents.data?.items.filter((agent) => agent.latestVersionId !== null) ?? [];
+  const agentOptions = publishedAgents.map((agent) => ({
+    value: agent.latestVersionId as string,
+    label: `${agent.name} (v${agent.latestVersion})`,
+  }));
+
+  const onSave = async (event: FormEvent) => {
+    event.preventDefault();
+    const payload = {
+      mode,
+      agentVersionId: mode === 'AI' ? agentVersionId || null : null,
+      handoffE164: mode === 'HUMAN' ? handoff || null : null,
+    };
+    const ok = await save.run(async () => {
+      await api.put<InboundConfig>(`/caller-numbers/${callerNumberId}/inbound-config`, payload);
+    });
+    if (ok) config.reload();
+  };
+
+  return (
+    <form onSubmit={(e) => void onSave(e)} className="mt-4 grid gap-3 border-t border-line pt-4">
+      <FormAlert message={save.error} />
+      <div className="flex gap-4 text-sm text-ink">
+        <label className="flex items-center gap-2">
+          <input
+            type="radio"
+            name={`mode-${callerNumberId}`}
+            value="AI"
+            checked={mode === 'AI'}
+            onChange={() => setMode('AI')}
+            disabled={!editable}
+          />
+          AI agent answers
+        </label>
+        <label className="flex items-center gap-2">
+          <input
+            type="radio"
+            name={`mode-${callerNumberId}`}
+            value="HUMAN"
+            checked={mode === 'HUMAN'}
+            onChange={() => setMode('HUMAN')}
+            disabled={!editable}
+          />
+          Forward to a human
+        </label>
+      </div>
+      {mode === 'AI' ? (
+        publishedAgents.length === 0 ? (
+          <p className="text-sm text-muted">
+            No published agent yet. Create one in <strong>Agents</strong>, publish it, then come
+            back.
+          </p>
+        ) : (
+          <SelectField
+            id={`agent-${callerNumberId}`}
+            label="Agent version"
+            value={agentVersionId}
+            onChange={setAgentVersionId}
+            options={[{ value: '', label: 'Choose an agent…' }, ...agentOptions]}
+          />
+        )
+      ) : (
+        <Field
+          id={`handoff-${callerNumberId}`}
+          label="Forward to (E.164 or 10-digit Indian number)"
+          placeholder="+91 98765 43210"
+          inputMode="tel"
+          value={handoff}
+          onChange={(e) => setHandoff(e.target.value)}
+        />
+      )}
+      {editable ? (
+        <div className="flex items-center gap-3">
+          <button type="submit" className="btn btn-primary btn-sm" disabled={save.pending}>
+            {save.pending ? 'Saving…' : 'Save'}
+          </button>
+          {config.data.updatedAt ? (
+            <span className="text-xs text-muted">
+              Last changed {formatDateTime(config.data.updatedAt)}
+            </span>
+          ) : (
+            <span className="text-xs text-muted">Not configured yet</span>
+          )}
+        </div>
+      ) : null}
+    </form>
   );
 }

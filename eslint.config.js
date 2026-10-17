@@ -20,6 +20,11 @@ export default tseslint.config(
       '.claude/**',
       // Local scratch scripts (gitignored)
       'tmp-drive/**',
+      // Dev-only probe/demo scripts: not production code, use their own ad-hoc shape.
+      'apps/api/scripts/exotel-*.mjs',
+      'apps/api/scripts/ngrok-*.mjs',
+      'apps/api/scripts/list-*.mjs',
+      'scripts/*.mjs',
     ],
   },
   js.configs.recommended,

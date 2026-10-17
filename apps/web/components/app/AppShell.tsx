@@ -44,6 +44,7 @@ const NAV: readonly NavSection[] = [
         icon: 'i-repeat',
         permission: 'campaigns.read',
       },
+      { href: '/app/calls', label: 'Call history', icon: 'i-phone', permission: 'calls.read' },
     ],
   },
   {

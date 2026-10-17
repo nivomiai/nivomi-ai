@@ -41,6 +41,7 @@ export const PERMISSION_LABELS: Record<Permission, { area: AccessArea; label: st
   'dashboard.read': { area: 'Organization & team', label: 'See the dashboard' },
   'agents.read': { area: 'Campaigns & compliance', label: 'View AI agents' },
   'agents.manage': { area: 'Campaigns & compliance', label: 'Build and edit AI agents' },
+  'calls.read': { area: 'Campaigns & compliance', label: 'View call history' },
 };
 
 /** Every permission, grouped by area in display order. */

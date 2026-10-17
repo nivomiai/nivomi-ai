@@ -36,8 +36,20 @@ export async function createApp(env: ApiEnv): Promise<NestExpressApplication> {
   app.use('/api/v1/uploads', express.raw({ type: () => true, limit: IMPORT_MAX_BYTES }));
   // Browser voice demo: short mic clips posted as raw audio bytes.
   app.use('/api/v1/demo/stt', express.raw({ type: 'audio/*', limit: '10mb' }));
-  // Exotel's Flow and status callbacks post application/x-www-form-urlencoded.
-  app.use('/api/v1/webhooks/exotel', express.urlencoded({ extended: false, limit: '64kb' }));
+  // Exotel's Flow and status callbacks post application/x-www-form-urlencoded. The raw body is
+  // captured on the request so `ExotelWebhookGuard` can compute HMAC over the exact bytes
+  // received (parsed form values would re-serialize differently and the signature would never
+  // match).
+  app.use(
+    '/api/v1/webhooks/exotel',
+    express.urlencoded({
+      extended: false,
+      limit: '64kb',
+      verify: (req, _res, buf) => {
+        (req as unknown as { rawBody?: Buffer }).rawBody = Buffer.from(buf);
+      },
+    }),
+  );
   app.use(cookieParser());
   app.setGlobalPrefix('api');
   app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });

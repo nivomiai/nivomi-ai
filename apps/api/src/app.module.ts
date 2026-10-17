@@ -35,6 +35,8 @@ import { PlatformOrganizationsController } from './platform/platform-organizatio
 import { PlatformOrganizationsService } from './platform/platform-organizations.service.js';
 import { PlatformUsersController } from './platform/platform-users.controller.js';
 import { PlatformUsersService } from './platform/platform-users.service.js';
+import { PlatformVoiceNumbersController } from './platform/platform-voice-numbers.controller.js';
+import { PlatformVoiceNumbersService } from './platform/platform-voice-numbers.service.js';
 import { PlatformPlansModule } from './platform-plans/platform-plans.module.js';
 import { VoiceModule } from './voice/voice.module.js';
 
@@ -72,6 +74,7 @@ export class AppModule {
         PlatformIntegrationsController,
         PlatformOrganizationsController,
         PlatformUsersController,
+        PlatformVoiceNumbersController,
       ],
       providers: [
         { provide: APP_FILTER, useClass: AllExceptionsFilter },
@@ -87,6 +90,7 @@ export class AppModule {
         OrganizationJobs,
         PlatformOrganizationsService,
         PlatformUsersService,
+        PlatformVoiceNumbersService,
       ],
     };
   }
