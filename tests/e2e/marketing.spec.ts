@@ -114,15 +114,15 @@ test.describe('navigation, theme and layout', () => {
   }
 
   for (const { path } of SHELLS) {
-    test(`${path} theme defaults to dark and the choice persists across reloads`, async ({
+    test(`${path} theme defaults to light and the choice persists across reloads`, async ({
       page,
     }) => {
       await page.goto(path);
+      await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+      await page.getByRole('button', { name: 'Switch to dark mode' }).first().click();
       await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-      await page.getByRole('button', { name: 'Switch to light mode' }).first().click();
-      await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
       await page.reload();
-      await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+      await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     });
   }
 

@@ -16,8 +16,8 @@ export default function GlobalError({
           placeItems: 'center',
           minHeight: '100vh',
           margin: 0,
-          color: '#0f1b3d',
-          background: '#fbf8f4',
+          color: '#2b1236',
+          background: '#fdf5f9',
         }}
       >
         <title>Something went wrong | Nivomi AI</title>
@@ -32,7 +32,7 @@ export default function GlobalError({
               padding: '12px 20px',
               borderRadius: 12,
               border: 0,
-              background: '#c2410c',
+              background: '#be1a6e',
               color: '#fff',
               fontWeight: 600,
               cursor: 'pointer',

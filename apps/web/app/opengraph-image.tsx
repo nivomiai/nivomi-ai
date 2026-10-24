@@ -15,16 +15,16 @@ export default function OpengraphImage() {
         justifyContent: 'space-between',
         padding: 72,
         color: '#ffffff',
-        background: 'linear-gradient(145deg, #050b1f 0%, #0f1b3d 55%, #1b2a57 100%)',
+        background: 'linear-gradient(145deg, #150818 0%, #2b1236 55%, #4a1f56 100%)',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
         <svg viewBox="150 40 1660 1262" width="64" height="49">
           <path
-            fill="#FB923C"
+            fill="#F472B6"
             d="M157 1299 1410 42v1043h183V383h212v916h-607V556L671 1085h398v214z"
           />
-          <path fill="#FB923C" d="M1593 42h212v213h-212z" />
+          <path fill="#F472B6" d="M1593 42h212v213h-212z" />
         </svg>
         <div style={{ fontSize: 40, fontWeight: 700, letterSpacing: -1 }}>NIVOMI AI</div>
       </div>

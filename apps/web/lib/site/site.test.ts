@@ -3,16 +3,16 @@ import { setAnalyticsSink, track } from './analytics';
 import { THEME_STORAGE_KEY, resolveTheme, themeBootstrapScript } from './theme';
 
 describe('resolveTheme', () => {
-  it('defaults to dark and honours valid stored values only', () => {
-    expect(resolveTheme(null)).toBe('dark');
+  it('defaults to light and honours valid stored values only', () => {
+    expect(resolveTheme(null)).toBe('light');
     expect(resolveTheme('light')).toBe('light');
     expect(resolveTheme('dark')).toBe('dark');
-    expect(resolveTheme('purple')).toBe('dark');
+    expect(resolveTheme('purple')).toBe('light');
   });
 
-  it('bootstrap script reads the same storage key and falls back to dark', () => {
+  it('bootstrap script reads the same storage key and falls back to light', () => {
     expect(themeBootstrapScript).toContain(`'${THEME_STORAGE_KEY}'`);
-    expect(themeBootstrapScript).toContain("t='dark'");
+    expect(themeBootstrapScript).toContain("t='light'");
   });
 });
 
