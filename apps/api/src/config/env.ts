@@ -57,6 +57,17 @@ export const apiEnvSchema = z
      */
     DEMO_MODE: booleanFlagSchema.default(false),
 
+    /**
+     * One-time bootstrap: promote this existing account to platform Super Admin at startup, only
+     * while no Super Admin exists (SuperAdminBootstrap). Remove once applied.
+     */
+    PLATFORM_BOOTSTRAP_SUPER_ADMIN_EMAIL: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .pipe(z.email())
+      .optional(),
+
     /** Run the background-job worker inside this process (ADR-019). */
     WORKER_ENABLED: booleanFlagSchema.default(true),
 

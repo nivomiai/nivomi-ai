@@ -53,6 +53,9 @@ services:
         generateValue: true
       - key: CREDENTIALS_ENCRYPTION_KEY
         generateValue: true
+      # The first platform Super Admin is granted by setting PLATFORM_BOOTSTRAP_SUPER_ADMIN_EMAIL
+      # in the dashboard (an existing account; applies only while no Super Admin exists). Remove it
+      # once the API logs that it applied. Not declared here so it never lingers in the blueprint.
 
 databases:
   - name: nivomi-db
